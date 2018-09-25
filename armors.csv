@@ -1,0 +1,18 @@
+internal_name,display_name,base_ac,armor_type,min_str,stealth_disadvantage,tags
+unarmored,Unarmored,10,none,,,preferred
+padded,,11,light,,TRUE,
+leather,,11,light,,,
+studded_leather,Studded leather,12,light,,,
+hide,,12,medium,,,
+chain_shirt,Chain shirt,13,medium,,,
+scale_mail,Scale mail,14,medium,,TRUE,
+breastplate,,14,medium,,,
+half_plate,Half plate,15,medium,,TRUE,
+ring_mail,Ring mail,14,heavy,,TRUE,
+chain_mail,Chain mail,16,heavy,13,TRUE,
+splint,,17,heavy,15,TRUE,
+plate,,18,heavy,15,TRUE,
+unarmored_defense_barbarian,Unarmored,14,none,,,preferred
+unarmored_defense_monk,Unarmored,14,none,,,preferred
+natural_armor,Natural Armor,13,none,,,preferred
+mage_armor,Mage Armor,14,none,,,extra

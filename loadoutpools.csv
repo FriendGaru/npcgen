@@ -1,0 +1,8 @@
+name,weight,armors,shield,weapons
+soldier,,"leather,hide",TRUE,"handaxe,crossbow_light"
+,,"leather,hide",,battleaxe
+,,"leather,hide",TRUE,flail
+,,studded_leather,,"flail,crossbow_light"
+mage,,unarmored,,quarterstaff
+,,padded,,quarterstaff
+,,padded,,dagger

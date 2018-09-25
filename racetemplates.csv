@@ -1,0 +1,5 @@
+internal_name,display_name,attribute_bonuses,base_stats,size,languages,traits
+humanoid,Humanoid (Any),,,,,
+aarakocra,,"dex:2,wis:2","speedWalk,20,speedFly,50",,"common,aarakocra,auran",
+halfling_lightfoot,Halfling (Lightfoot),"dex:2,wis:1","sepeedWalk,25",small,"common,halfling",lucky
+lizardfolk,,"con:2,wis:1","speedSwim,30",,"common,draconic",natural_armor

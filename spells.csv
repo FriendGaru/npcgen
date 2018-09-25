@@ -1,0 +1,461 @@
+name,source,level,school,classes
+abi-dalzim's horrid wilting,xge,8th,necromancy,"sorcerer, wizard"
+absorb elements,xge,1st,abjuration,"druid, ranger, sorcerer, wizard"
+acid splash,phb,cantrip,conjuration,"sorcerer, wizard"
+aganazzar's scorcher,xge,2nd,evocation,"sorcerer, wizard"
+aid,phb,2nd,abjuration,"artificer, cleric, paladin"
+alarm,phb,1st,abjuration,"artificer, ranger, wizard"
+alter self,phb,2nd,transmutation,"artificer, sorcerer, wizard"
+animal friendship,phb,1st,enchantment,"bard, druid, ranger"
+animal messenger,phb,2nd,enchantment,"bard, druid, ranger"
+animal shapes,phb,8th,transmutation,druid
+animate dead,phb,3rd,necromancy,"cleric, wizard"
+animate objects,phb,5th,transmutation,"bard, sorcerer, wizard"
+antilife shell,phb,5th,abjuration,druid
+antimagic field,phb,8th,abjuration,"cleric, wizard"
+antipathy/sympathy,phb,8th,enchantment,"druid, wizard"
+arcane eye,phb,4th,divination,"artificer, wizard"
+arcane gate,phb,6th,conjuration,"sorcerer, warlock, wizard"
+arcane lock,phb,2nd,abjuration,"artificer, wizard"
+armor of agathys,phb,1st,abjuration,warlock
+arms of hadar,phb,1st,conjuration,warlock
+astral projection,phb,9th,necromancy,"cleric, warlock, wizard"
+augury,phb,2nd,divination,cleric
+aura of life,phb,4th,abjuration,paladin
+aura of purity,phb,4th,abjuration,paladin
+aura of vitality,phb,3rd,evocation,paladin
+awaken,phb,5th,transmutation,"bard, druid"
+bane,phb,1st,enchantment,"bard, cleric"
+banishing smite,phb,5th,abjuration,paladin
+banishment,phb,4th,abjuration,"cleric, paladin, sorcerer, warlock, wizard"
+barkskin,phb,2nd,transmutation,"druid, ranger"
+beacon of hope,phb,3rd,abjuration,cleric
+beast bond,xge,1st,divination,"druid, ranger"
+beast sense,phb,2nd,divination,"druid, ranger"
+bestow curse,phb,3rd,necromancy,"bard, cleric, wizard"
+bigby's hand,phb,5th,evocation,wizard
+blade barrier,phb,6th,evocation,cleric
+blade ward,phb,cantrip,abjuration,"bard, sorcerer, warlock, wizard"
+bless,phb,1st,enchantment,"cleric, paladin"
+blight,phb,4th,necromancy,"druid, sorcerer, warlock, wizard"
+blinding smite,phb,3rd,evocation,paladin
+blindness/deafness,phb,2nd,necromancy,"bard, cleric, sorcerer, wizard"
+blink,phb,3rd,transmutation,"artificer, sorcerer, wizard"
+blur,phb,2nd,illusion,"artificer, sorcerer, wizard"
+bones of the earth,xge,6th,transmutation,druid
+booming blade,scag,cantrip,evocation,"sorcerer, warlock, wizard"
+branding smite,phb,2nd,evocation,paladin
+burning hands,phb,1st,evocation,"sorcerer, wizard"
+call lightning,phb,3rd,conjuration,druid
+calm emotions,phb,2nd,enchantment,"bard, cleric"
+catapult,xge,1st,transmutation,"sorcerer, wizard"
+catnap,xge,3rd,enchantment,"bard, sorcerer, wizard"
+cause fear,xge,1st,necromancy,"warlock, wizard"
+ceremony,xge,1st,abjuration,"cleric, paladin"
+chain lightning,phb,6th,evocation,"sorcerer, wizard"
+chaos bolt,xge,1st,evocation,sorcerer
+charm monster,xge,4th,enchantment,"bard, druid, sorcerer, warlock, wizard"
+charm person,phb,1st,enchantment,"bard, druid, sorcerer, warlock, wizard"
+chill touch,phb,cantrip,necromancy,"sorcerer, warlock, wizard"
+chromatic orb,phb,1st,evocation,"sorcerer, wizard"
+circle of death,phb,6th,necromancy,"sorcerer, warlock, wizard"
+circle of power,phb,5th,abjuration,paladin
+clairvoyance,phb,3rd,divination,"bard, cleric, sorcerer, wizard"
+clone,phb,8th,necromancy,wizard
+cloud of daggers,phb,2nd,conjuration,"bard, sorcerer, warlock, wizard"
+cloudkill,phb,5th,conjuration,"sorcerer, wizard"
+color spray,phb,1st,illusion,"sorcerer, wizard"
+command,phb,1st,enchantment,"cleric, paladin"
+commune,phb,5th,divination,cleric
+commune with nature,phb,5th,divination,"druid, ranger"
+compelled duel,phb,1st,enchantment,paladin
+comprehend languages,phb,1st,divination,"bard, sorcerer, warlock, wizard"
+compulsion,phb,4th,enchantment,bard
+cone of cold,phb,5th,evocation,"sorcerer, wizard"
+confusion,phb,4th,enchantment,"bard, druid, sorcerer, wizard"
+conjure animals,phb,3rd,conjuration,"druid, ranger"
+conjure barrage,phb,3rd,conjuration,ranger
+conjure celestial,phb,7th,conjuration,cleric
+conjure elemental,phb,5th,conjuration,"druid, wizard"
+conjure fey,phb,6th,conjuration,"druid, warlock"
+conjure minor elementals,phb,4th,conjuration,"druid, wizard"
+conjure volley,phb,5th,conjuration,ranger
+conjure woodland beings,phb,4th,conjuration,"druid, ranger"
+contact other plane,phb,5th,divination,"warlock, wizard"
+contagion,phb,5th,necromancy,"cleric, druid"
+contingency,phb,6th,evocation,wizard
+continual flame,phb,2nd,evocation,"artificer, cleric, wizard"
+control flames,xge,cantrip,transmutation,"druid, sorcerer, wizard"
+control water,phb,4th,transmutation,"cleric, druid, wizard"
+control weather,phb,8th,transmutation,"cleric, druid, wizard"
+control winds,xge,5th,transmutation,"druid, sorcerer, wizard"
+cordon of arrows,phb,2nd,transmutation,ranger
+counterspell,phb,3rd,abjuration,"sorcerer, warlock, wizard"
+create bonfire,xge,cantrip,conjuration,"druid, sorcerer, warlock, wizard"
+create food and water,phb,3rd,conjuration,"cleric, paladin"
+create homunculus,xge,6th,transmutation,wizard
+create undead,phb,6th,necromancy,"cleric, warlock, wizard"
+create or destroy water,phb,1st,transmutation,"cleric, druid"
+creation,phb,5th,illusion,"sorcerer, wizard"
+crown of madness,phb,2nd,enchantment,"bard, sorcerer, warlock, wizard"
+crown of stars,xge,7th,evocation,"sorcerer, warlock, wizard"
+crusader's mantle,phb,3rd,evocation,paladin
+cure wounds,phb,1st,evocation,"artificer, bard, cleric, druid, paladin, ranger"
+dancing lights,phb,cantrip,evocation,"bard, sorcerer, wizard"
+danse macabre,xge,5th,necromancy,"warlock, wizard"
+darkness,phb,2nd,evocation,"sorcerer, warlock, wizard"
+darkvision,phb,2nd,transmutation,"artificer, druid, ranger, sorcerer, wizard"
+dawn,xge,5th,evocation,"cleric, wizard"
+daylight,phb,3rd,evocation,"cleric, druid, paladin, ranger, sorcerer"
+death ward,phb,4th,abjuration,"artificer, cleric, paladin"
+delayed blast fireball,phb,7th,evocation,"sorcerer, wizard"
+demiplane,phb,8th,conjuration,"warlock, wizard"
+destructive wave,phb,5th,evocation,paladin
+detect evil and good,phb,1st,divination,"cleric, paladin"
+detect magic,phb,1st,divination,"bard, cleric, druid, paladin, ranger, sorcerer, wizard"
+detect poison and disease,phb,1st,divination,"cleric, druid, paladin, ranger"
+detect thoughts,phb,2nd,divination,"bard, sorcerer, wizard"
+dimension door,phb,4th,conjuration,"bard, sorcerer, warlock, wizard"
+disguise self,phb,1st,illusion,"artificer, bard, sorcerer, wizard"
+disintegrate,phb,6th,transmutation,"sorcerer, wizard"
+dispel evil and good,phb,5th,abjuration,"cleric, paladin"
+dispel magic,phb,3rd,abjuration,"bard, cleric, druid, paladin, sorcerer, warlock, wizard"
+dissonant whispers,phb,1st,enchantment,bard
+divination,phb,4th,divination,cleric
+divine favor,phb,1st,evocation,paladin
+divine word,phb,7th,evocation,cleric
+dominate beast,phb,4th,enchantment,"druid, sorcerer"
+dominate monster,phb,8th,enchantment,"bard, sorcerer, warlock, wizard"
+dominate person,phb,5th,enchantment,"bard, sorcerer, wizard"
+dragon's breath,xge,2nd,transmutation,"sorcerer, wizard"
+drawmij's instant summons,phb,6th,conjuration,wizard
+dream,phb,5th,illusion,"bard, warlock, wizard"
+druid grove,xge,6th,abjuration,druid
+druidcraft,phb,cantrip,transmutation,druid
+dust devil,xge,2nd,conjuration,"druid, sorcerer, wizard"
+earth tremor,xge,1st,evocation,"bard, druid, sorcerer, wizard"
+earthbind,xge,2nd,transmutation,"druid, sorcerer, warlock, wizard"
+earthquake,phb,8th,evocation,"cleric, druid, sorcerer"
+eldritch blast,phb,cantrip,evocation,warlock
+elemental bane,xge,4th,transmutation,"druid, warlock, wizard"
+elemental weapon,phb,3rd,transmutation,paladin
+enemies abound,xge,3rd,enchantment,"bard, sorcerer, warlock, wizard"
+enervation,xge,5th,necromancy,"sorcerer, warlock, wizard"
+enhance ability,phb,2nd,transmutation,"artificer, bard, cleric, druid, sorcerer"
+enlarge/reduce,phb,2nd,transmutation,"artificer, sorcerer, wizard"
+ensnaring strike,phb,1st,conjuration,ranger
+entangle,phb,1st,conjuration,druid
+enthrall,phb,2nd,enchantment,"bard, warlock"
+erupting earth,xge,3rd,transmutation,"druid, sorcerer, wizard"
+etherealness,phb,7th,transmutation,"bard, cleric, sorcerer, warlock, wizard"
+evard's black tentacles,phb,4th,conjuration,wizard
+expeditious retreat,phb,1st,transmutation,"artificer, sorcerer, warlock, wizard"
+eyebite,phb,6th,necromancy,"bard, sorcerer, warlock, wizard"
+fabricate,phb,4th,transmutation,"artificer, wizard"
+faerie fire,phb,1st,evocation,"bard, druid"
+false life,phb,1st,necromancy,"artificer, sorcerer, wizard"
+far step,xge,5th,conjuration,"sorcerer, warlock, wizard"
+fear,phb,3rd,illusion,"bard, sorcerer, warlock, wizard"
+feather fall,phb,1st,transmutation,"bard, sorcerer, wizard"
+feeblemind,phb,8th,enchantment,"bard, druid, warlock, wizard"
+feign death,phb,3rd,necromancy,"bard, cleric, druid, wizard"
+find familiar,phb,1st,conjuration,wizard
+find greater steed,xge,4th,conjuration,paladin
+find steed,phb,2nd,conjuration,paladin
+find traps,phb,2nd,divination,"cleric, druid, ranger"
+find the path,phb,6th,divination,"bard, cleric, druid"
+finger of death,phb,7th,necromancy,"sorcerer, warlock, wizard"
+fire bolt,phb,cantrip,evocation,"sorcerer, wizard"
+fire shield,phb,4th,evocation,wizard
+fire storm,phb,7th,evocation,"cleric, druid, sorcerer"
+fireball,phb,3rd,evocation,"sorcerer, wizard"
+flame arrows,xge,3rd,transmutation,"druid, ranger, sorcerer, wizard"
+flame blade,phb,2nd,evocation,druid
+flame strike,phb,5th,evocation,cleric
+flaming sphere,phb,2nd,conjuration,"druid, wizard"
+flesh to stone,phb,6th,transmutation,"warlock, wizard"
+fly,phb,3rd,transmutation,"artificer, sorcerer, warlock, wizard"
+fog cloud,phb,1st,conjuration,"druid, ranger, sorcerer, wizard"
+forbiddance,phb,6th,abjuration,cleric
+forcecage,phb,7th,evocation,"bard, warlock, wizard"
+foresight,phb,9th,divination,"bard, druid, warlock, wizard"
+freedom of movement,phb,4th,abjuration,"artificer, bard, cleric, druid, ranger"
+friends,phb,cantrip,enchantment,"bard, sorcerer, warlock, wizard"
+frostbite,xge,cantrip,evocation,"druid, sorcerer, warlock, wizard"
+gaseous form,phb,3rd,transmutation,"artificer, sorcerer, warlock, wizard"
+gate,phb,9th,conjuration,"cleric, sorcerer, wizard"
+geas,phb,5th,enchantment,"bard, cleric, druid, paladin, wizard"
+gentle repose,phb,2nd,necromancy,"cleric, wizard"
+giant insect,phb,4th,transmutation,druid
+glibness,phb,8th,transmutation,"bard, warlock"
+globe of invulnerability,phb,6th,abjuration,"sorcerer, wizard"
+glyph of warding,phb,3rd,abjuration,"artificer, bard, cleric, wizard"
+goodberry,phb,1st,transmutation,"druid, ranger"
+grasping vine,phb,4th,conjuration,"druid, ranger"
+grease,phb,1st,conjuration,wizard
+greater invisibility,phb,4th,illusion,"bard, sorcerer, wizard"
+greater restoration,phb,5th,abjuration,"bard, cleric, druid"
+green-flame blade,scag,cantrip,evocation,"sorcerer, warlock, wizard"
+guardian of faith,phb,4th,conjuration,cleric
+guardian of nature,xge,4th,transmutation,"druid, ranger"
+guards and wards,phb,6th,abjuration,"bard, wizard"
+guidance,phb,cantrip,divination,"cleric, druid"
+guiding bolt,phb,1st,evocation,cleric
+gust,xge,cantrip,transmutation,"druid, sorcerer, wizard"
+gust of wind,phb,2nd,evocation,"druid, sorcerer, wizard"
+hail of thorns,phb,1st,conjuration,ranger
+hallow,phb,5th,evocation,cleric
+hallucinatory terrain,phb,4th,illusion,"bard, druid, warlock, wizard"
+harm,phb,6th,necromancy,cleric
+haste,phb,3rd,transmutation,"artificer, sorcerer, wizard"
+heal,phb,6th,evocation,"cleric, druid"
+healing spirit,xge,2nd,conjuration,"druid, ranger"
+healing word,phb,1st,evocation,"bard, cleric, druid"
+heat metal,phb,2nd,transmutation,"bard, druid"
+hellish rebuke,phb,1st,evocation,warlock
+heroes' feast,phb,6th,conjuration,"cleric, druid"
+heroism,phb,1st,enchantment,"bard, paladin"
+hex,phb,1st,enchantment,warlock
+hold monster,phb,5th,enchantment,"bard, sorcerer, warlock, wizard"
+hold person,phb,2nd,enchantment,"bard, cleric, druid, sorcerer, warlock, wizard"
+holy aura,phb,8th,abjuration,cleric
+holy weapon,xge,5th,evocation,"cleric, paladin"
+hunger of hadar,phb,3rd,conjuration,warlock
+hunter's mark,phb,1st,divination,ranger
+hypnotic pattern,phb,3rd,illusion,"bard, sorcerer, warlock, wizard"
+ice knife,xge,1st,conjuration,"druid, sorcerer, wizard"
+ice storm,phb,4th,evocation,"druid, sorcerer, wizard"
+identify,phb,1st,divination,"bard, wizard"
+illusory dragon,xge,8th,illusion,wizard
+illusory script,phb,1st,illusion,"bard, warlock, wizard"
+immolation,xge,5th,evocation,"sorcerer, wizard"
+imprisonment,phb,9th,abjuration,"warlock, wizard"
+incendiary cloud,phb,8th,conjuration,"sorcerer, wizard"
+infernal calling,xge,5th,conjuration,"warlock, wizard"
+infestation,xge,cantrip,conjuration,"druid, sorcerer, warlock, wizard"
+inflict wounds,phb,1st,necromancy,cleric
+insect plague,phb,5th,conjuration,"cleric, druid, sorcerer"
+investiture of flame,xge,6th,transmutation,"druid, sorcerer, warlock, wizard"
+investiture of ice,xge,6th,transmutation,"druid, sorcerer, warlock, wizard"
+investiture of stone,xge,6th,transmutation,"druid, sorcerer, warlock, wizard"
+investiture of wind,xge,6th,transmutation,"druid, sorcerer, warlock, wizard"
+invisibility,phb,2nd,illusion,"artificer, bard, sorcerer, warlock, wizard"
+invulnerability,xge,9th,abjuration,wizard
+jump,phb,1st,transmutation,"artificer, druid, ranger, sorcerer, wizard"
+knock,phb,2nd,transmutation,"bard, sorcerer, wizard"
+legend lore,phb,5th,divination,"bard, cleric, wizard"
+leomund's secret chest,phb,4th,conjuration,"artificer, wizard"
+leomund's tiny hut,phb,3rd,evocation,"bard, wizard"
+lesser restoration,phb,2nd,abjuration,"artificer, bard, cleric, druid, paladin, ranger"
+levitate,phb,2nd,transmutation,"sorcerer, wizard"
+life transference,xge,3rd,necromancy,"cleric, wizard"
+light,phb,cantrip,evocation,"bard, cleric, sorcerer, wizard"
+lightning arrow,phb,3rd,transmutation,ranger
+lightning bolt,phb,3rd,evocation,"sorcerer, wizard"
+lightning lure,scag,cantrip,evocation,"sorcerer, warlock, wizard"
+locate animals or plants,phb,2nd,divination,"bard, druid, ranger"
+locate creature,phb,4th,divination,"bard, cleric, druid, paladin, ranger, wizard"
+locate object,phb,2nd,divination,"bard, cleric, druid, paladin, ranger, wizard"
+longstrider,phb,1st,transmutation,"artificer, bard, druid, ranger, wizard"
+maddening darkness,xge,8th,evocation,"warlock, wizard"
+maelstrom,xge,5th,evocation,druid
+mage armor,phb,1st,abjuration,"sorcerer, wizard"
+mage hand,phb,cantrip,conjuration,"bard, sorcerer, warlock, wizard"
+magic circle,phb,3rd,abjuration,"cleric, paladin, warlock, wizard"
+magic jar,phb,6th,necromancy,wizard
+magic missile,phb,1st,evocation,"sorcerer, wizard"
+magic mouth,phb,2nd,illusion,"bard, wizard"
+magic stone,xge,cantrip,transmutation,"druid, warlock"
+magic weapon,phb,2nd,transmutation,"artificer, paladin, wizard"
+major image,phb,3rd,illusion,"bard, sorcerer, warlock, wizard"
+mass cure wounds,phb,5th,evocation,"bard, cleric, druid"
+mass heal,phb,9th,evocation,cleric
+mass healing word,phb,3rd,evocation,cleric
+mass polymorph,xge,9th,transmutation,"bard, sorcerer, wizard"
+mass suggestion,phb,6th,enchantment,"bard, sorcerer, warlock, wizard"
+maximilian's earthen grasp,xge,2nd,transmutation,"sorcerer, wizard"
+maze,phb,8th,conjuration,wizard
+meld into stone,phb,3rd,transmutation,"cleric, druid"
+melf's acid arrow,phb,2nd,evocation,wizard
+melf's minute meteors,xge,3rd,evocation,"sorcerer, wizard"
+mending,phb,cantrip,transmutation,"bard, cleric, druid, sorcerer, wizard"
+mental prison,xge,6th,illusion,"sorcerer, warlock, wizard"
+message,phb,cantrip,transmutation,"bard, sorcerer, wizard"
+meteor swarm,phb,9th,evocation,"sorcerer, wizard"
+mighty fortress,xge,8th,conjuration,wizard
+mind blank,phb,8th,abjuration,"bard, wizard"
+mind spike,xge,2nd,divination,"sorcerer, warlock, wizard"
+minor illusion,phb,cantrip,illusion,"bard, sorcerer, warlock, wizard"
+mirage arcane,phb,7th,illusion,"bard, druid, wizard"
+mirror image,phb,2nd,illusion,"sorcerer, warlock, wizard"
+mislead,phb,5th,illusion,"bard, wizard"
+misty step,phb,2nd,conjuration,"sorcerer, warlock, wizard"
+modify memory,phb,5th,enchantment,"bard, wizard"
+mold earth,xge,cantrip,transmutation,"druid, sorcerer, wizard"
+moonbeam,phb,2nd,evocation,druid
+mordenkainen's faithful hound,phb,4th,conjuration,"artificer, wizard"
+mordenkainen's magnificent mansion,phb,7th,conjuration,"bard, wizard"
+mordenkainen's private sanctum,phb,4th,abjuration,"artificer, wizard"
+mordenkainen's sword,phb,7th,evocation,"bard, wizard"
+move earth,phb,6th,transmutation,"druid, sorcerer, wizard"
+negative energy flood,xge,5th,necromancy,"warlock, wizard"
+nondetection,phb,3rd,abjuration,"bard, ranger, wizard"
+nystul's magic aura,phb,2nd,illusion,wizard
+otiluke's freezing sphere,phb,6th,evocation,wizard
+otiluke's resilient sphere,phb,4th,evocation,"artificer, wizard"
+otto's irresistible dance,phb,6th,enchantment,"bard, wizard"
+pass without trace,phb,2nd,abjuration,"druid, ranger"
+passwall,phb,5th,transmutation,wizard
+phantasmal force,phb,2nd,illusion,"bard, sorcerer, wizard"
+phantasmal killer,phb,4th,illusion,wizard
+phantom steed,phb,3rd,illusion,wizard
+planar ally,phb,6th,conjuration,cleric
+planar binding,phb,5th,abjuration,"bard, cleric, druid, wizard"
+plane shift,phb,7th,conjuration,"cleric, druid, sorcerer, warlock, wizard"
+plant growth,phb,3rd,transmutation,"bard, druid, ranger"
+poison spray,phb,cantrip,conjuration,"druid, sorcerer, warlock, wizard"
+polymorph,phb,4th,transmutation,"bard, druid, sorcerer, wizard"
+power word heal,phb,9th,evocation,bard
+power word kill,phb,9th,enchantment,"bard, sorcerer, warlock, wizard"
+power word pain,xge,7th,enchantment,"sorcerer, warlock, wizard"
+power word stun,phb,8th,enchantment,"bard, sorcerer, warlock, wizard"
+prayer of healing,phb,2nd,evocation,cleric
+prestidigitation,phb,cantrip,transmutation,"bard, sorcerer, warlock, wizard"
+primal savagery,xge,cantrip,transmutation,druid
+primordial ward,xge,6th,abjuration,druid
+prismatic spray,phb,7th,evocation,"sorcerer, wizard"
+prismatic wall,phb,9th,abjuration,wizard
+produce flame,phb,cantrip,conjuration,druid
+programmed illusion,phb,6th,illusion,"bard, wizard"
+project image,phb,7th,illusion,"bard, wizard"
+protection from energy,phb,3rd,abjuration,"artificer, cleric, druid, ranger, sorcerer, wizard"
+protection from evil and good,phb,1st,abjuration,"cleric, paladin, warlock, wizard"
+protection from poison,phb,2nd,abjuration,"artificer, cleric, druid, paladin, ranger"
+psychic scream,xge,9th,enchantment,"bard, sorcerer, warlock, wizard"
+purify food and drink,phb,1st,transmutation,"cleric, druid, paladin"
+pyrotechnics,xge,2nd,transmutation,"bard, sorcerer, wizard"
+raise dead,phb,5th,necromancy,"bard, cleric, paladin"
+rary's telepathic bond,phb,5th,divination,wizard
+ray of enfeeblement,phb,2nd,necromancy,"warlock, wizard"
+ray of frost,phb,cantrip,evocation,"sorcerer, wizard"
+ray of sickness,phb,1st,necromancy,"sorcerer, wizard"
+regenerate,phb,7th,transmutation,"bard, cleric, druid"
+reincarnate,phb,5th,transmutation,druid
+remove curse,phb,3rd,abjuration,"cleric, paladin, warlock, wizard"
+resistance,phb,cantrip,abjuration,"cleric, druid"
+resurrection,phb,7th,necromancy,"bard, cleric"
+reverse gravity,phb,7th,transmutation,"druid, sorcerer, wizard"
+revivify,phb,3rd,necromancy,"artificer, cleric, paladin"
+rope trick,phb,2nd,transmutation,"artificer, wizard"
+sacred flame,phb,cantrip,evocation,cleric
+sanctuary,phb,1st,abjuration,"artificer, cleric"
+scatter,xge,6th,conjuration,"sorcerer, warlock, wizard"
+scorching ray,phb,2nd,evocation,"sorcerer, wizard"
+scrying,phb,5th,divination,"bard, cleric, druid, warlock, wizard"
+searing smite,phb,1st,evocation,paladin
+see invisibility,phb,2nd,divination,"bard, sorcerer, wizard"
+seeming,phb,5th,illusion,"bard, sorcerer, wizard"
+sending,phb,3rd,evocation,"bard, cleric, wizard"
+sequester,phb,7th,transmutation,wizard
+shadow blade,xge,2nd,illusion,"sorcerer, warlock, wizard"
+shadow of moil,xge,4th,necromancy,warlock
+shape water,xge,cantrip,transmutation,"druid, sorcerer, wizard"
+shapechange,phb,9th,transmutation,"druid, wizard"
+shatter,phb,2nd,evocation,"bard, sorcerer, warlock, wizard"
+shield,phb,1st,abjuration,"sorcerer, wizard"
+shield of faith,phb,1st,abjuration,"artificer, cleric, paladin"
+shillelagh,phb,cantrip,transmutation,druid
+shocking grasp,phb,cantrip,evocation,"sorcerer, wizard"
+sickening radiance,xge,4th,evocation,"sorcerer, warlock, wizard"
+silence,phb,2nd,illusion,"bard, cleric, ranger"
+silent image,phb,1st,illusion,"bard, sorcerer, wizard"
+simulacrum,phb,7th,illusion,wizard
+skill empowerment,xge,5th,transmutation,"bard, sorcerer, wizard"
+skywrite,xge,2nd,transmutation,"bard, druid, wizard"
+sleep,phb,1st,enchantment,"bard, sorcerer, wizard"
+sleet storm,phb,3rd,conjuration,"druid, sorcerer, wizard"
+slow,phb,3rd,transmutation,"sorcerer, wizard"
+snare,xge,1st,abjuration,"druid, ranger, wizard"
+snilloc's snowball swarm,xge,2nd,evocation,"sorcerer, wizard"
+soul cage,xge,6th,necromancy,"warlock, wizard"
+spare the dying,phb,cantrip,necromancy,cleric
+speak with animals,phb,1st,divination,"bard, druid, ranger"
+speak with dead,phb,3rd,necromancy,"bard, cleric"
+speak with plants,phb,3rd,transmutation,"bard, druid, ranger"
+spider climb,phb,2nd,transmutation,"artificer, sorcerer, warlock, wizard"
+spike growth,phb,2nd,transmutation,"druid, ranger"
+spirit guardians,phb,3rd,conjuration,cleric
+spiritual weapon,phb,2nd,evocation,cleric
+staggering smite,phb,4th,evocation,paladin
+steel wind strike,xge,5th,conjuration,"ranger, wizard"
+stinking cloud,phb,3rd,conjuration,"bard, sorcerer, wizard"
+stone shape,phb,4th,transmutation,"artificer, cleric, druid, wizard"
+stoneskin,phb,4th,abjuration,"artificer, druid, ranger, sorcerer, wizard"
+storm sphere,xge,4th,evocation,"sorcerer, wizard"
+storm of vengeance,phb,9th,conjuration,druid
+suggestion,phb,2nd,enchantment,"bard, sorcerer, warlock, wizard"
+summon greater demon,xge,4th,conjuration,"warlock, wizard"
+summon lesser demons,xge,3rd,conjuration,"warlock, wizard"
+sunbeam,phb,6th,evocation,"druid, sorcerer, wizard"
+sunburst,phb,8th,evocation,"druid, sorcerer, wizard"
+swift quiver,phb,5th,transmutation,ranger
+sword burst,scag,cantrip,conjuration,"sorcerer, warlock, wizard"
+symbol,phb,7th,abjuration,"bard, cleric, wizard"
+synaptic static,xge,5th,enchantment,"bard, sorcerer, warlock, wizard"
+tasha's hideous laughter,phb,1st,enchantment,"bard, wizard"
+telekinesis,phb,5th,transmutation,"sorcerer, wizard"
+telepathy,phb,8th,evocation,wizard
+teleport,phb,7th,conjuration,"bard, sorcerer, wizard"
+teleportation circle,phb,5th,conjuration,"bard, sorcerer, wizard"
+temple of the gods,xge,7th,conjuration,cleric
+tenser's floating disk,phb,1st,conjuration,wizard
+tenser's transformation,xge,6th,transmutation,wizard
+thaumaturgy,phb,cantrip,transmutation,cleric
+thorn whip,phb,cantrip,transmutation,druid
+thunder step,xge,3rd,conjuration,"sorcerer, warlock, wizard"
+thunderclap,xge,cantrip,evocation,"bard, druid, sorcerer, warlock, wizard"
+thunderous smite,phb,1st,evocation,paladin
+thunderwave,phb,1st,evocation,"bard, druid, sorcerer, wizard"
+tidal wave,xge,3rd,conjuration,"druid, sorcerer, wizard"
+time stop,phb,9th,transmutation,"sorcerer, wizard"
+tiny servant,xge,3rd,transmutation,wizard
+toll the dead,xge,cantrip,necromancy,"cleric, warlock, wizard"
+tongues,phb,3rd,divination,"bard, cleric, sorcerer, warlock, wizard"
+transmute rock,xge,5th,transmutation,"druid, wizard"
+transport via plants,phb,6th,conjuration,druid
+tree stride,phb,5th,conjuration,"druid, ranger"
+true polymorph,phb,9th,transmutation,"bard, warlock, wizard"
+true resurrection,phb,9th,necromancy,"cleric, druid"
+true seeing,phb,6th,divination,"bard, cleric, sorcerer, warlock, wizard"
+true strike,phb,cantrip,divination,"bard, sorcerer, warlock, wizard"
+tsunami,phb,8th,conjuration,druid
+unseen servant,phb,1st,conjuration,"bard, warlock, wizard"
+vampiric touch,phb,3rd,necromancy,"warlock, wizard"
+vicious mockery,phb,cantrip,enchantment,bard
+vitriolic sphere,xge,4th,evocation,"sorcerer, wizard"
+wall of fire,phb,4th,evocation,"druid, sorcerer, wizard"
+wall of force,phb,5th,evocation,wizard
+wall of ice,phb,6th,evocation,wizard
+wall of light,xge,5th,evocation,"sorcerer, warlock, wizard"
+wall of sand,xge,3rd,evocation,wizard
+wall of stone,phb,5th,evocation,"druid, sorcerer, wizard"
+wall of thorns,phb,6th,conjuration,druid
+wall of water,xge,3rd,evocation,"druid, sorcerer, wizard"
+warding bond,phb,2nd,abjuration,cleric
+warding wind,xge,2nd,evocation,"bard, druid, sorcerer, wizard"
+water breathing,phb,3rd,transmutation,"artificer, druid, ranger, sorcerer, wizard"
+water walk,phb,3rd,transmutation,"artificer, cleric, druid, ranger, sorcerer"
+watery sphere,xge,4th,conjuration,"druid, sorcerer, wizard"
+web,phb,2nd,conjuration,"sorcerer, wizard"
+weird,phb,9th,illusion,wizard
+whirlwind,xge,7th,evocation,"druid, sorcerer, wizard"
+wind walk,phb,6th,transmutation,druid
+wind wall,phb,3rd,evocation,"druid, ranger"
+wish,phb,9th,conjuration,"sorcerer, wizard"
+witch bolt,phb,1st,evocation,"sorcerer, warlock, wizard"
+word of radiance,xge,cantrip,evocation,cleric
+word of recall,phb,6th,conjuration,cleric
+wrath of nature,xge,5th,evocation,"druid, ranger"
+wrathful smite,phb,1st,evocation,paladin
+zephyr strike,xge,1st,transmutation,ranger
+zone of truth,phb,2nd,enchantment,"bard, cleric, paladin"

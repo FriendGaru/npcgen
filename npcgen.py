@@ -1,10 +1,15 @@
-import random, re
+import random
+import re
+import csv
+import traceback
+import itertools
 from npcgendata import *
 
 # -1 - Nothing at all
 # 0 - Errors only
 # 1 - Basic operations completed
 # 2 - The nitty gritty
+# 3 - Painfully Verbose
 DEBUG_LEVEL = 1
 
 def rollDie(dieSize):
@@ -37,31 +42,39 @@ def numPlusser(num):
 
 
 class NPCGenerator:
-    def __init__(self, traitsDict=TRAITS, templatesClassDict=TEMPLATES_CLASS, templatesRaceDict=TEMPLATES_RACE,
-                 armorsDict=ARMORS, weaponsDict=WEAPONS, weaponsLoadoutSetsDict=WEAPON_LOADOUT_SETS, armorLoadoutsSetsDict=ARMOR_LOADOUT_SETS,
-                 spellsFile=SPELLS_FILE, autoSpellListsDict=SPELL_LISTS_AUTO, spellListsFixedDict=SPELL_LISTS_FIXED,
-                 spellCasterProfilesDict=SPELLCASTER_PROFILES):
+    def __init__(self,
+                 weaponsLoadoutSetsDict=WEAPON_LOADOUT_SETS, armorLoadoutsSetsDict=ARMOR_LOADOUT_SETS,
+                 spellCasterProfilesDict=SPELLCASTER_PROFILES,
+                 weaponsFilename=WEAPONS_FILENAME, armorsFilename=ARMORS_FILENAME,
+                 spellsFilename=SPELLS_FILENAME, spellListsFilename=SPELLLISTS_FILENAME,
+                 loadoutPoolsFilename=LOADOUTPOOLS_FILENAME, traitsFilename=TRAITS_FILENAME,
+                 raceTemplatesFilename=RACETEMPLATES_FILENAME, classTemplatesFilename=CLASSTEMPLATES_FILENAME,
+                 ):
 
-        self.templates = {}
-        self.traits = {}
         self.weapons = {}
-        self.armors = {}
-        self.weaponLoadoutSets = {}
-        self.armorLoadoutSets = {}
+        self.buildWeaponsFromCSV(weaponsFilename)
 
-        self.buildTraits(traitsDict)
-        self.buildTemplates(templatesClassDict, 'Class')
-        self.buildTemplates(templatesRaceDict, 'Race')
-        self.buildArmors(armorsDict)
-        self.buildWeapons(weaponsDict)
-        self.weaponLoadoutSets = self.buildLoadoutSetsDict(weaponsLoadoutSetsDict)
-        self.armorLoadoutSets = self.buildLoadoutSetsDict(armorLoadoutsSetsDict)
+        self.armors = {}
+        self.buildArmorsFromCSV(armorsFilename)
+
+        self.loadoutPools = {}
+        self.buildLoadoutPoolsFromCSV(loadoutPoolsFilename)
+
+        self.traits = {}
+        self.buildTraitsFromCSV(traitsFilename)
+
+        self.raceTemplates = {}
+        self.buildRaceTemplatesFromCSV(raceTemplatesFilename)
+
+        self.classTemplates = {}
+        self.buildClassTemplatesFromCSV(classTemplatesFilename)
 
         self.spells = {}
+        self.buildSpellsFromCSV(spellsFilename)
+
         self.spellLists = {}
-        self.buildSpellsFromFile(spellsFile)
-        self.buildAutoSpellLists(autoSpellListsDict)
-        self.buildFixedSpellLists(spellListsFixedDict)
+        self.buildSpellListsFromCSV(spellListsFilename)
+
         self.spellcasterProfiles = {}
         self.buildSpellcasterProfiles(spellCasterProfilesDict)
 
@@ -109,15 +122,172 @@ class NPCGenerator:
 
             self.templates[templateName] = newTemplate
             
-    def buildArmors(self, armorsDict: dict):
-        for armorName, armorParams in armorsDict.items():
-            newArmor = Armor(armorName, *armorParams)
-            self.armors[armorName] = newArmor
-            
-    def buildWeapons(self, weaponsDict: dict):
-        for weaponName, weaponParams in weaponsDict.items():
-            newWeapon = Weapon(weaponName, *weaponParams)
-            self.weapons[weaponName] = newWeapon
+    # def buildArmors(self, armorsDict: dict):
+    #     for armorName, armorParams in armorsDict.items():
+    #         newArmor = Armor(armorName, *armorParams)
+    #         self.armors[armorName] = newArmor
+
+    def buildArmorsFromCSV(self, armorsFilename):
+        with open(armorsFilename, newline='') as armorsFile:
+            armorsFileReader = csv.DictReader(armorsFile)
+            for line in armorsFileReader:
+                newArmor = Armor()
+                newArmor.intName = line['internal_name']
+                if line['display_name']:
+                    newArmor.displayName = line['display_name']
+                else:
+                    newArmor.displayName = newArmor.intName.capitalize()
+                newArmor.baseAC = int(line['base_ac'])
+                newArmor.armorType = line['armor_type']
+                if line['min_str']:
+                    newArmor.minStr = int(line['min_str'])
+                if line['stealth_disadvantage'] == 'TRUE':
+                    newArmor.stealthDisadvantage = True
+                newArmor.tags = set(line['tags'].replace(" ", "").split(','))
+                self.armors[newArmor.intName] = newArmor
+
+
+    # def buildWeapons(self, weaponsDict: dict):
+    #     for weaponName, weaponParams in weaponsDict.items():
+    #         newWeapon = Weapon(weaponName, *weaponParams)
+    #         self.weapons[weaponName] = newWeapon
+
+    def buildWeaponsFromCSV(self, weaponsFilename):
+        with open(weaponsFilename, newline='') as weaponsFile:
+            weaponsFileReader = csv.DictReader(weaponsFile)
+            for line in weaponsFileReader:
+                newWeapon = Weapon()
+                newWeapon.intName = line['internal_name']
+                if line['display_name']:
+                    newWeapon.displayName = line['display_name']
+                else:
+                    newWeapon.displayName = line['internal_name'].capitalize()
+                newWeapon.dmgDiceNum = int(line['dmg_dice_num'])
+                newWeapon.dmgDiceSize = int(line['dmg_dice_size'])
+                newWeapon.damageType = line['damage_type']
+                newWeapon.attackType = line['attack_type']
+                if line['short_range']:
+                    newWeapon.rangeShort = int(line['short_range'])
+                if line['long_range']:
+                    newWeapon.rangeLong = int(line['long_range'])
+                newWeapon.tags = set(line['tags'].replace(" ", "").split(','))
+                self.weapons[newWeapon.intName] = newWeapon
+                dprint("Weapon Added: " + str(newWeapon), 3)
+
+    def buildTraitsFromCSV(self, traitsFilename):
+        with open(traitsFilename, newline='') as traitsFile:
+            traitsFileReader = csv.DictReader(traitsFile)
+            newTrait = Trait()
+            for line in traitsFileReader:
+                newTrait.intName = line['internal_name']
+                if line['display_name']:
+                    newTrait.displayName = line['display_name']
+                else:
+                    newTrait.displayName = line['internal_name'].capitalize()
+                newTrait.traitType = line['trait_type']
+                newTrait.text = line['text']
+                newTagsDict = {}
+                for rawTag in line['tags'].split(','):
+                    rawTag = rawTag.strip()
+                    if ':' in rawTag:
+                        tagName, tagValue = rawTag.split(':')
+                        newTagsDict[tagName] = tagValue
+                    else:
+                        newTagsDict[rawTag] = None
+                self.traits[newTrait.intName] = newTrait
+
+    def buildLoadoutPoolsFromCSV(self, loadoutPoolsFilename):
+        with open(loadoutPoolsFilename, newline="") as loadoutPoolsFile:
+            loadoutPoolsFileReader = csv.DictReader(loadoutPoolsFile)
+            newLoadoutPool = None
+            for line in loadoutPoolsFileReader:
+                if line['name']:
+                    if newLoadoutPool:
+                        self.loadoutPools[newLoadoutPool.name] = newLoadoutPool
+                    newLoadoutPool = LoadoutPool()
+                    newLoadoutPool.name = line['name']
+                if line['weight']:
+                    weight = int(line['weight'])
+                else:
+                    weight = DEFAULT_LOADOUT_POOL_WEIGHT
+                armors = line['armors'].replace(" ", "").split(',')
+                if line['shield'] == 'TRUE':
+                    shield = True
+                else:
+                    shield = False
+                weapons = line['weapons'].replace(" ", "").split(',')
+                newLoadout = Loadout(weapons=weapons, armors=armors, shield=shield)
+                newLoadoutPool.addLoadout(newLoadout, weight)
+            self.loadoutPools[newLoadoutPool.name] = newLoadoutPool
+
+    def buildRaceTemplatesFromCSV(self, raceTemplatesFilename):
+        with open(raceTemplatesFilename, newline='') as raceTemplatesFile:
+            raceTemplatesFileReader = csv.DictReader(raceTemplatesFile)
+            for line in raceTemplatesFileReader:
+                newRaceTemplate = Template()
+                newRaceTemplate.intName = line["internal_name"]
+                if line["display_name"]:
+                    newRaceTemplate.displayName = line['display_name']
+                else:
+                    newRaceTemplate.displayName = line['internal_name'].capitalize()
+
+                newAttributeBonusesDict = {}
+                if line['attribute_bonuses']:
+                    for rawAttributeBonuse in line['attribute_bonuses'].replace(' ', '').split(','):
+                        attribute, bonus = rawAttributeBonuse.split(':')
+                        bonus = int(bonus)
+                        newAttributeBonusesDict[attribute] = bonus
+                newRaceTemplate.attributeBonuses = newAttributeBonusesDict
+
+                newRaceTemplate.languages = line['languages'].replace(" ", "").split(',')
+
+                if line['size']:
+                    newRaceTemplate.size = line['size']
+                else:
+                    newRaceTemplate.size = DEFAULT_SIZE
+
+                if line['traits']:
+                    newRaceTemplate.traits = line['traits'].replace(" ", "").split(',')
+                else:
+                    newRaceTemplate.traits = None
+
+                self.raceTemplates[newRaceTemplate.intName] = newRaceTemplate
+
+    def buildClassTemplatesFromCSV(self, clasTemplatesFilename):
+        with open(clasTemplatesFilename, newline='') as classTemplatesFile:
+            classTemplatesFileReader = csv.DictReader(classTemplatesFile)
+            for line in classTemplatesFileReader:
+                newClassTemplate = Template()
+                newClassTemplate.intName = line['internal_name']
+
+                if line['display_name']:
+                    newClassTemplate.displayName = line['display_name']
+                else:
+                    newClassTemplate.displayName = line['internal_name'].capitalize()
+
+                newClassTemplate.priorityAttributes = line['priority_attributes'].replace(" ", "").split(',')
+                newClassTemplate.saves = line['saves'].replace(" ", "").split(',')
+                newClassTemplate.skillsFixed = line['skills_fixed'].replace(" ", "").split(',')
+                newClassTemplate.skillsRandom = line['skills_random'].replace(" ", "").split(',')
+                if line['num_random_skills']:
+                    newClassTemplate.numRandomSkills = int(line['num_random_skills'])
+                else:
+                    newClassTemplate.numRandomSkills = 0
+
+                if line['loadout_pool']:
+                    newClassTemplate.loadoutPool = line['loadout_pool']
+                else:
+                    newClassTemplate.loadoutPool = None
+
+                if line['traits']:
+                    newClassTemplate.traits = line['traits'].replace(" ", "").split(',')
+                else:
+                    newClassTemplate.traits = None
+
+                self.classTemplates[newClassTemplate.intName] = newClassTemplate
+
+
+
 
     def buildLoadoutSetsDict(self, rawLoadoutSetsDict: dict):
         loadoutsSetsDict = {}
@@ -134,7 +304,12 @@ class NPCGenerator:
         return loadoutsSetsDict
 
     def applyTemplate(self, character: 'Character', templateName, templateType=None):
-        template = self.templates[templateName]
+        if templateType=='race':
+            template = self.raceTemplates[templateName]
+        elif templateType=='class':
+            template = self.classTemplates[templateName]
+        else:
+            raise ValueError('!!!Must specify templateType!')
 
         if templateType == 'race':
             character.raceName = template.displayName
@@ -152,16 +327,22 @@ class NPCGenerator:
             for trait in template.traits:
                 self.giveTrait(character, trait)
 
-        if template.armors:
-            for armor in template.armors:
-                self.giveArmor(character, armor)
+
+        if template.loadoutPool:
+            loadoutPool = self.loadoutPools[template.loadoutPool]
+            loadout = loadoutPool.getRandomLoadout()
+            for armor in loadout.armors:
+                character.armors[armor] = self.armors[armor]
+            for weapon in loadout.weapons:
+                character.weapons[weapon] = self.weapons[weapon]
+            character.hasShield = loadout.shield
 
         if template.skillsFixed:
             for skill in template.skillsFixed:
                 character.skills[skill] = False
 
         if template.skillsRandom:
-            chosenSkills = random.choices(template.skillsRandom[1:], k=template.skillsRandom[0])
+            chosenSkills = random.sample(template.skillsRandom, template.numRandomSkills)
             for skill in chosenSkills:
                 character.skills[skill] = False
 
@@ -211,55 +392,136 @@ class NPCGenerator:
             character.spellCastingProfile = self.spellcasterProfiles.get(template.spellCastingProfile)
 
     # Magic Stuff
-    def addSpell(self, name, level, school, source, classes):
-        self.spells[name] = (level, school, source, classes)
+    # def addSpell(self, name, level, school, source, classes):
+    #     self.spells[name] = (level, school, source, classes)
+    #
+    # @staticmethod
+    # def buildSpellFromLine(line):
+    #     # example: "Wall of Fire","PHB","4th","Evocation","Druid, Sorcerer, Wizard"
+    #     line = line.lower()
+    #     # elements = re.search(r'^"([\w\d\s\'\-]*)","([\w\d\s]*)","([\w\d\s]*)","([\w\d\s]*)","([\w\d\s\,]*)"', line)
+    #     elements = re.match(r'^"(.*?)","(.*?)","(.*?)","(.*?)","(.*?)"', line)
+    #     name = str(elements.group(1))
+    #     source = str(elements.group(2))
+    #     level = SPELL_LEVEL_ORDINAL_TO_NUM.get(str(elements.group(3)))
+    #     school = str(elements.group(4))
+    #     classes = str(elements.group(5)).strip().split(',')
+    #     for i in range(len(classes)):
+    #         classes[i] = classes[i].strip()
+    #     return name, level, school, source, classes
 
-    @staticmethod
-    def buildSpellFromLine(line):
-        # example: "Wall of Fire","PHB","4th","Evocation","Druid, Sorcerer, Wizard"
-        line = line.lower()
-        # elements = re.search(r'^"([\w\d\s\'\-]*)","([\w\d\s]*)","([\w\d\s]*)","([\w\d\s]*)","([\w\d\s\,]*)"', line)
-        elements = re.match(r'^"(.*?)","(.*?)","(.*?)","(.*?)","(.*?)"', line)
-        name = str(elements.group(1))
-        source = str(elements.group(2))
-        level = SPELL_LEVEL_ORDINAL_TO_NUM.get(str(elements.group(3)))
-        school = str(elements.group(4))
-        classes = str(elements.group(5)).strip().split(',')
-        for i in range(len(classes)):
-            classes[i] = classes[i].strip()
-        return name, level, school, source, classes
+    # def buildSpellsFromFile(self, fileName):
+    #     file = open(fileName, 'r')
+    #     for line in file:
+    #         try:
+    #             elements = self.buildSpellFromLine(line)
+    #             self.addSpell(*elements)
+    #         except:
+    #             dprint('Error! Line: "' + line + '" is an invalid spell line.', 0)
 
-    def buildSpellsFromFile(self, fileName):
-        file = open(fileName, 'r')
-        for line in file:
-            try:
-                elements = self.buildSpellFromLine(line)
-                self.addSpell(*elements)
-            except:
-                dprint('Error! Line: "' + line + '" is an invalid spell line.', 0)
+    def buildSpellsFromCSV(self, filename):
+        with open(filename, newline='') as spellsFile:
+            spellsFileReader = csv.DictReader(spellsFile)
+            for line in spellsFileReader:
+                newSpell = Spell()
+                newSpell.name = line['name']
+                newSpell.source = line['source']
+                newSpell.level = SPELL_LEVEL_ORDINAL_TO_NUM[line['level']]
+                newSpell.school = line['school']
+                newSpell.classes = set(line['classes'].replace(" ", "").split(','))
+                self.spells[newSpell.name] = newSpell
 
-    def buildAutoSpellLists(self, autoSpellListsDict):
-        for spellListName, dictVals in autoSpellListsDict.items():
-            spellList = []
-            for spellName, spellVals in self.spells.items():
-                reqClass = dictVals.get('class')
-                if reqClass and reqClass not in spellVals[3]:
-                    continue
-                reqSchool = dictVals.get('school')
-                if reqSchool and reqSchool != spellVals[1]:
-                    continue
-                spellList.append(spellName)
-            self.spellLists[spellListName] = spellList
+    def buildSpellListsFromCSV(self, filename):
+        with open(filename, newline='') as spellListsFile:
+            spellListsFileReader = csv.DictReader(spellListsFile)
+            for line in spellListsFileReader:
+                newSpellList = SpellList()
+                newSpellList.name = line['name']
 
-    def buildFixedSpellLists(self, fixedSpellListsDict):
-        for spellListName, spellsSet in fixedSpellListsDict.items():
-            newSpellsSet = set()
-            for spell in spellsSet:
-                if spell in self.spells:
-                    newSpellsSet.add(spell)
-                else:
-                    dprint("Error! Spell: " + spell + " not in master spell list!")
-            self.spellLists[spellListName] = newSpellsSet
+                # Check for if it's an autolist
+                # If all these fields are blank, it's not an autolist
+                if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
+                        or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
+                    reqClasses = None
+                    if line['req_classes']:
+                        reqClasses = line['req_classes'].replace(" ", "").split(",")
+                    reqSchools = None
+                    if line['req_schools']:
+                        reqSchools = set(line['req_schools'].replace(" ", "").split(","))
+                    reqLevels = None
+                    if line['req_levels']:
+                        reqLevels = line['req_levels'].replace(" ", "").split(",")
+                    reqSources = None
+                    if line['req_sources']:
+                        reqSources = line['req_sources'].replace(" ", "").split(",")
+
+                    for spellName, spell in self.spells.items():
+                        if reqClasses and spell.classes.isdisjoint(reqClasses):
+                            continue
+                        if reqSchools and spell.school not in reqSchools:
+                            continue
+                        if reqLevels and spell.level not in reqLevels:
+                            continue
+                        if reqSources and spell.source not in reqSources:
+                            continue
+                        newSpellList.addSpell(spellName)
+
+                if line['fixed_include']:
+                    fixedIncludeSpells = line['fixed_include'].split(',')
+                    for spellName in fixedIncludeSpells:
+                        spellName = spellName.strip()
+                        if spellName not in self.spells:
+                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                   .format(spellName, newSpellList.name), 0)
+                        else:
+                            newSpellList.addSpell(spellName)
+
+                if line['fixed_exclude']:
+                    fixedExcludeSpells = line['fixed_exclude'].split(',')
+                    for spellName in fixedExcludeSpells:
+                        spellName = spellName.strip()
+                        if spellName not in self.spells:
+                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                   .format(spellName, newSpellList.name), 0)
+                        else:
+                            newSpellList.removeSpell(spellName)
+
+                if line['spelllists_include']:
+                    spellListsToInclude = line['spelllists_include'].replace(" ", "").split(',')
+                    for spellListToInclude in spellListsToInclude:
+                        for spellName in spellListToInclude.spells:
+                            newSpellList.addSpell(spellName)
+
+                if line['spelllists_exclude']:
+                    spellListsToExclude = line['spelllists_exclude'].replace(" ", "").split(',')
+                    for spellListToExclude in spellListsToExclude:
+                        for spellName in spellListToExclude.spells:
+                            newSpellList.removeSpell(spellName)
+
+                self.spellLists[newSpellList.name] = newSpellList
+
+    # def buildAutoSpellLists(self, autoSpellListsDict):
+    #     for spellListName, dictVals in autoSpellListsDict.items():
+    #         spellList = []
+    #         for spellName, spellVals in self.spells.items():
+    #             reqClass = dictVals.get('class')
+    #             if reqClass and reqClass not in spellVals[3]:
+    #                 continue
+    #             reqSchool = dictVals.get('school')
+    #             if reqSchool and reqSchool != spellVals[1]:
+    #                 continue
+    #             spellList.append(spellName)
+    #         self.spellLists[spellListName] = spellList
+
+    # def buildFixedSpellLists(self, fixedSpellListsDict):
+    #     for spellListName, spellsSet in fixedSpellListsDict.items():
+    #         newSpellsSet = set()
+    #         for spell in spellsSet:
+    #             if spell in self.spells:
+    #                 newSpellsSet.add(spell)
+    #             else:
+    #                 dprint("Error! Spell: " + spell + " not in master spell list!")
+    #         self.spellLists[spellListName] = newSpellsSet
 
     def buildSpellcasterProfiles(self, spellCasterProfilesDict):
         for profileName, vals in spellCasterProfilesDict.items():
@@ -283,7 +545,7 @@ class NPCGenerator:
             spellsDict = {}
             for spellListName, weight in spellListsDict.items():
                 spellList = self.spellLists.get(spellListName)
-                for spell in spellList:
+                for spell in spellList.spells:
                     if spell in spellsDict:
                         spellsDict[spell] = max(spellsDict[spell], weight)
                     else:
@@ -293,7 +555,7 @@ class NPCGenerator:
             # Organize them by level, we'll do [spell, weight] and use zip later
             spellsByLevel = [[], [], [], [], [], [], [], [], [], [], ]
             for spellName, weight in spellsDict.items():
-                spellLevel = self.spells.get(spellName)[0]
+                spellLevel = self.spells.get(spellName).level
                 spellsByLevel[spellLevel].append([spellName, weight])
 
             newProfile.spells = spellsByLevel
@@ -340,8 +602,7 @@ class Character:
         self.armors = {}
         self.chosenArmor = None
         self.extraArmors = []
-
-        self.loadout = []
+        self.weapons = {}
         self.hasShield = False
 
         self.traits = {}
@@ -553,13 +814,13 @@ class Character:
         if self.spellCastingAbility:
             outstring += self.spellCastingAbility.display(self) + '\n'
         # Attacks
-        for item in self.loadout:
-            outstring += item.sheetDisplay(self) + '\n'
+        for weaponName, weaponObj in self.weapons.items():
+            outstring += weaponObj.sheetDisplay(self) + '\n'
         return outstring
 
 
 class Trait:
-    def __init__(self, intName, displayName, traitType, text, tags={}):
+    def __init__(self, intName='', displayName='', traitType='', text='', tags={}):
         self.intName = intName
         self.displayName = displayName
         self.traitType = traitType
@@ -575,7 +836,7 @@ class Trait:
 
 
 class Template:
-    def __init__(self, intName, displayName):
+    def __init__(self, intName='', displayName=''):
         self.intName = intName
         self.displayName = displayName
         self.templateType = None
@@ -583,25 +844,42 @@ class Template:
         self.statBonuses = None
         self.baseStats = None
         self.priorityAttributes = None
+
         self.skillsFixed = None
+        self.numRandomSkills = 0
         self.skillsRandom = None
+
+        self.size = None
+
         self.saves = None
+        self.languages = []
         self.traits = None
         # self.armors = None
+        self.loadoutPool = None
         self.weaponLoadoutSet = None
         self.armorLoadoutSet = None
         self.spellCastingProfile = None
 
+    def validate(self):
+        if type(self.attributeBonuses) == Dict:
+            for attribute in self.attributeBonuses:
+                if attribute not in STATS_ATTRIBUTES:
+                    raise ValueError("!!! Template:{} has invalid attribute bonus:{}").format(self.intName, attribute)
+        else:
+            raise ValueError("!!! Template:{} attributesBonues is not a Dict type!").format(self.intName)
+        for skill in itertools.chain(self.skillsFixed, self.skillsRandom):
+            if skill not in SKILLS:
+                raise ValueError("!!! Template:{} has invalid skill:{}").format(self.intName, skill)
 
 class Armor:
-    def __init__(self, intName, displayName, baseAC, armorType, minStr, stealthDisadvantage, tags):
-        self.intName = intName
-        self.displayName = displayName
-        self.baseAC = baseAC
-        self.armorType = armorType
-        self.minStr = minStr
-        self.stealthDisadvantage = stealthDisadvantage
-        self.tags = tags
+    def __init__(self):
+        self.intName = ''
+        self.displayName = ''
+        self.baseAC = -1
+        self.armorType = ''
+        self.minStr = 0
+        self.stealthDisadvantage = False
+        self.tags = set()
 
     def isExtra(self):
         return 'extra' in self.tags
@@ -609,7 +887,7 @@ class Armor:
     def getAC(self, owner):
         baseAC = self.baseAC
         totalAC = 0
-        if self.armorType == 'light':
+        if self.armorType == 'light' or self.armorType == 'none':
             totalAC = baseAC + owner.getStat('dexMod')
         elif self.armorType == 'medium':
             # Can add case here for medium armor mastery
@@ -647,30 +925,39 @@ class Armor:
 
 
 class Weapon:
-    def __init__(self, intName, displayName, dmgDiceNum, dmgDiceSize, damageType,
-                 weaponType, shortRange, longRange, tags, numTargets=DEFAULT_NUM_TARGETS):
+    def __init__(self, intName=None, displayName=None, dmgDiceNum=None, dmgDiceSize=None, damageType=None,
+                 attackType=None, shortRange=None, longRange=None, tags=None, numTargets=DEFAULT_NUM_TARGETS):
         self.intName = intName
         self.displayName = displayName
         self.dmgDiceNum = dmgDiceNum
         self.dmgDiceSize = dmgDiceSize
         self.damageType = damageType
-        self.weaponType = weaponType
+        self.attackType = attackType
         self.rangeShort = shortRange
         self.rangeLong = longRange
         self.tags = tags
         self.numTargets = numTargets
+
+    def __repr__(self):
+        outstring = '[{},{},{},{},{},{},{},{},{},{},'\
+            .format(self.intName, self.displayName, self.dmgDiceNum,self.dmgDiceSize, self.damageType, self.attackType,
+                    str(self.rangeShort), str(self.rangeLong), str(self.tags), str(self.numTargets))
+        return outstring
+
+    def __str__(self):
+        return self.__repr__()
 
     def getToHit(self, owner):
         ownerStr = owner.getStat('strMod')
         ownerDex = owner.getStat('dexMod')
         ownerProf = owner.getStat('proficiency')
         attackStat = 0
-        if self.weaponType == 'm':
+        if self.attackType == 'melee':
             if 'finesse' in self.tags:
                 attackStat = max(ownerStr, ownerDex)
             else:
                 attackStat = ownerStr
-        elif self.weaponType == 'r':
+        elif self.attackType == 'ranged':
             if 'thrown' in self.tags:
                 attackStat = max(ownerStr, ownerDex)
             else:
@@ -681,28 +968,27 @@ class Weapon:
         ownerStr = owner.getStat('strMod')
         ownerDex = owner.getStat('dexMod')
         attackStat = 0
-        if self.weaponType == 'm':
+        if self.attackType == 'melee':
             if 'finesse' in self.tags:
                 attackStat = max(ownerStr, ownerDex)
             else:
                 attackStat = ownerStr
-        elif self.weaponType == 'r':
+        elif self.attackType == 'ranged':
             if 'thrown' in self.tags:
                 attackStat = max(ownerStr, ownerDex)
             else:
                 attackStat = ownerDex
         # (numDice, diceSize, dmgBonus, damgType, avgDmg)
+        dmgDiceNum, dmgDiceSize = self.dmgDiceNum, self.dmgDiceSize
         if useVersatile:
-            dmgDiceNum, dmgDiceSize = self.tags['versatile'][0], self.tags['versatile'][1]
-        else:
-            dmgDiceNum, dmgDiceSize = self.dmgDiceNum, self.dmgDiceSize
+            dmgDiceSize += 2
         avgDmg = dmgDiceSize / 2 * dmgDiceNum + attackStat
         return int(avgDmg), dmgDiceNum, dmgDiceSize, attackStat, self.damageType, avgDmg
 
     def sheetDisplay(self, owner):
         outstring = self.displayName + '. '
-        isMelee = self.weaponType == 'm'
-        isRanged = self.weaponType == 'r' or 'thrown' in self.tags
+        isMelee = self.attackType == 'melee'
+        isRanged = self.attackType == 'ranged' or 'thrown' in self.tags
         if isMelee and isRanged:
             outstring += 'Melee or ranged weapon attack: '
         elif isMelee:
@@ -751,6 +1037,32 @@ class Weapon:
         outstring += '.'
         return outstring
     
+
+class Spell:
+    def __init__(self):
+        self.name = ''
+        self.source = ''
+        self.level = -1
+        self.school = ''
+        self.classes = set()
+
+    def __str__(self):
+        return "[{},{},{},{},{}]".format(self.name, self.source. str(self.level), self.school. str(self.classes))
+
+class SpellList:
+    def __init__(self):
+        self.name = None
+        self.spells = set()
+
+    def __str__(self):
+        return "[{}: {}]".format(self.name, ",".join(self.spells))
+
+    def addSpell(self, spellName):
+        self.spells.add(spellName)
+
+    def removeSpell(self, spellName):
+        if spellName in self.spells:
+            self.spells.remove(spellName)
 
 class LoadoutSet:
     def __init__(self, internalName=''):
@@ -840,4 +1152,22 @@ class SpellCastingAbility:
                 outline += ', '.join(self.spellsReady[i]) + '\n'
         return outline
 
+class Loadout:
+    def __init__(self, weapons=[], armors=[], shield=False):
+        self.weapons = weapons
+        self.armors = armors
+        self.shield = shield
+
+class LoadoutPool:
+    def __init__(self):
+        self.name = ''
+        self.lodouts = []
+        self.weights = []
+
+    def addLoadout(self, loadout: Loadout, weight=DEFAULT_LOADOUT_POOL_WEIGHT):
+        self.lodouts.append(loadout)
+        self.weights.append(weight)
+
+    def getRandomLoadout(self):
+        return random.choices(self.lodouts, self.weights)[0]
 

@@ -55,76 +55,95 @@ REROLLS_CAP = 99
 DEFAULT_HITDICE_NUM = 5
 DEFAULT_HITDICE_SIZE = 8
 
-TRAITS = {
-    'breathWeapon': {
-        'displayName': 'Breath Weapon', 'traitType': 'action',
-        'traitText': 'Does {proficiency}d6 damage with DC{conDC}'
-    },
+# Data Files
+ARMORS_FILENAME = 'armors.csv'
+WEAPONS_FILENAME = 'weapons.csv'
+TRAITS_FILENAME = 'traits.csv'
+SPELLS_FILENAME = 'spells.csv'
+SPELLLISTS_FILENAME = 'spelllists.csv'
+LOADOUTPOOLS_FILENAME = 'loadoutpools.csv'
+RACETEMPLATES_FILENAME = 'racetemplates.csv'
+CLASSTEMPLATES_FILENAME = 'classtemplates.csv'
 
-    'naturalArmor': {
-        'displayName': 'Natural Armor', 'traitType': 'passive',
-        'traitText': 'Has natural AC 13 + Dex modifier',
-        'tags': {'giveArmor': 'naturalArmor'}
-    },
+TRAIT_TYPES = (
+    'passive', 'hidden', 'action', 'reaction',
+)
 
-    'lucky': {
-        'displayName': 'Lucky', 'traitType': 'passive',
-        'traitText': 'Reroll 1s.'
-    },
+# TRAITS = {
+#     'breathWeapon': {
+#         'displayName': 'Breath Weapon', 'traitType': 'action',
+#         'traitText': 'Does {proficiency}d6 damage with DC{conDC}'
+#     },
+#
+#     'naturalArmor': {
+#         'displayName': 'Natural Armor', 'traitType': 'passive',
+#         'traitText': 'Has natural AC 13 + Dex modifier',
+#         'tags': {'giveArmor': 'natural_armor'}
+#     },
+#
+#     'lucky': {
+#         'displayName': 'Lucky', 'traitType': 'passive',
+#         'traitText': 'Reroll 1s.'
+#     },
+#
+#
+# }
+VALID_SIZES = (
+    'small', 'medium', 'large',
+)
+DEFAULT_SIZE = 'medium'
 
 
-}
-
-TEMPLATES_RACE = {
-    'humanoid': {
-        'displayName': 'Humanoid (Any)',
-    },
-
-    'aaracocra': {
-        'displayName': 'Aaracocra',
-        'attributeBonuses': {'dex': 2, 'wis': 2},
-        'baseStats': {'speedWalk': 20, 'speedFly': 50},
-        'traits': ['lucky']
-    },
-
-    'halflingLightfoot': {
-        'displayName': 'Halfling (Lightfoot)',
-        'attributeBonuses': {'dex': 2, 'wis': 1},
-        'baseStats': {'speedWalk': 25, 'size': 'small'},
-        'traits': ['lucky']
-    },
-
-    'lizardFolk': {
-        'displayName': 'Lizardfolk',
-        'attributeBonuses': {'con': 2, 'wis': 1},
-        'traits': ['naturalArmor']
-    },
-}
+# TEMPLATES_RACE = {
+#     'humanoid': {
+#         'displayName': 'Humanoid (Any)',
+#     },
+#
+#     'aaracocra': {
+#         'displayName': 'Aaracocra',
+#         'attributeBonuses': {'dex': 2, 'wis': 2},
+#         'baseStats': {'speedWalk': 20, 'speedFly': 50},
+#         'traits': ['lucky']
+#     },
+#
+#     'halflingLightfoot': {
+#         'displayName': 'Halfling (Lightfoot)',
+#         'attributeBonuses': {'dex': 2, 'wis': 1},
+#         'baseStats': {'speedWalk': 25, 'size': 'small'},
+#         'traits': ['lucky']
+#     },
+#
+#     'lizardFolk': {
+#         'displayName': 'Lizardfolk',
+#         'attributeBonuses': {'con': 2, 'wis': 1},
+#         'traits': ['naturalArmor']
+#     },
+# }
 DEFAULT_RACE = 'humanoid'
 
-TEMPLATES_CLASS = {
-    # internalName: (DisplayName, statPriorities, skills, saves, traits, armors, weapons)
-    'soldier': {
-        'displayName': 'Soldier', 'priorityAttributes': ('str', 'con'),
-        'saves': ('con', ),
-        'skillsFixed': ('athletics', ),
-        'skillsRandom': (2, 'acrobatics', 'stealth', 'survival', 'intimidation', ),
-        'armorLoadoutSet': 'soldier',
-        'weaponLoadoutSet': 'soldier',
-        'tags': ('giveShield',),
-    },
-
-    'magicker': {
-        'displayName': 'Magicker', 'priorityAttributes': ('int', 'con'),
-        'saves': ('int', 'wis', ),
-        'skillsFixed': ('arcana', 'investigation'),
-        'skillsRandom': (2, 'religion', 'insight', 'nature', 'history'),
-        'armorLoadoutSet': 'mage',
-        'weaponLoadoutSet': 'mage',
-        'tags': (),
-        'spellCastingProfile': 'evoker',
-    },
-}
+# TEMPLATES_CLASS = {
+#     # internalName: (DisplayName, statPriorities, skills, saves, traits, armors, weapons)
+#     'soldier': {
+#         'displayName': 'Soldier', 'priorityAttributes': ('str', 'con'),
+#         'saves': ('con', ),
+#         'skillsFixed': ('athletics', ),
+#         'skillsRandom': (2, 'acrobatics', 'stealth', 'survival', 'intimidation', ),
+#         'armorLoadoutSet': 'soldier',
+#         'weaponLoadoutSet': 'soldier',
+#         'tags': (),
+#     },
+#
+#     'magicker': {
+#         'displayName': 'Magicker', 'priorityAttributes': ('int', 'con'),
+#         'saves': ('int', 'wis', ),
+#         'skillsFixed': ('arcana', 'investigation'),
+#         'skillsRandom': (2, 'religion', 'insight', 'nature', 'history'),
+#         'armorLoadoutSet': 'mage',
+#         'weaponLoadoutSet': 'mage',
+#         'tags': (),
+#         'spellCastingProfile': 'evoker',
+#     },
+# }
 DEFAULT_CLASS = 'soldier'
 
 ARMORS = {
@@ -173,74 +192,76 @@ ARMORS = {
 DEFAULT_WEAPON_REACH = 'reach 5 ft.'
 WEAPON_REACH_W_BONUS = 'reach 10 ft.'
 DEFAULT_NUM_TARGETS = 1
-WEAPONS = {
-    # internalName : (displayName, dmgDiceNum, dmgDiceSize, damageType,
-    #                   type (melee:'m', ranged:'r', both:'b'), shortRange, longRange,
-    #                   tags,)
+# WEAPONS = {
+#     # internalName : (displayName, dmgDiceNum, dmgDiceSize, damageType,
+#     #                   type (melee:'m', ranged:'r', both:'b'), shortRange, longRange,
+#     #                   tags,)
+#
+#     # simple melee
+#     'unarmed': (
+#         'Unarmed', 1, 1, 'bludgeoning',
+#         'm', 0, 0,
+#         {}
+#     ),
+#     'club': (
+#         'Club', 1, 4, 'bludgeoning',
+#         'm', 0, 0,
+#         {'light'}
+#     ),
+#     'dagger': (
+#         'Dagger', 1, 4, 'piercing',
+#         'm', 20, 60,
+#         {'finesse', 'light', 'thrown'}),
+#     'greatclub': (
+#         'Greatclub', 1, 8, 'bludgeoning',
+#         'm', 0, 0,
+#         {'2h'}
+#     ),
+#     'handaxe': (
+#         'Handaxe', 1, 6, 'slashing',
+#         'm', 20, 60,
+#         {'light', 'thrown'}
+#     ),
+#     ##
+#     'quarterstaff': (
+#         'Quarterstaff', 1, 6, 'bludgeoning',
+#         'm', 0, 0,
+#         {'versatile': (1, 8)}
+#     ),
+#
+#     # simple ranged
+#     'crossbowLight': (
+#         'Crossbow, Light', 1, 8, 'piercing',
+#         'r', 80, 320,
+#         {'ammunition', 'loading', '2h'}
+#     ),
+#     'dart': (
+#         'Dart', 1, 4, 'piercing',
+#         'r', 20, 60,
+#         {'finesse', 'thrown'}
+#     ),
+#
+#     # martial melee
+#     'battleaxe': (
+#         'Battleaxe', 1, 8, 'slashing',
+#         'm', 0, 0,
+#         {'versatile': (1, 10)}
+#     ),
+#
+#     'flail': (
+#         'Flail', 1, 8, 'bludgeoning',
+#         'm', 0, 0,
+#         {}
+#     ),
+#
+#     'glaive': (
+#         'Glaive', 1, 10, 'slashing',
+#         'm', 0, 0,
+#         {'heavy', 'reach', '2h'}
+#     ),
+# }
 
-    # simple melee
-    'unarmed': (
-        'Unarmed', 1, 1, 'bludgeoning',
-        'm', 0, 0,
-        {}
-    ),
-    'club': (
-        'Club', 1, 4, 'bludgeoning',
-        'm', 0, 0,
-        {'light'}
-    ),
-    'dagger': (
-        'Dagger', 1, 4, 'piercing',
-        'm', 20, 60,
-        {'finesse', 'light', 'thrown'}),
-    'greatclub': (
-        'Greatclub', 1, 8, 'bludgeoning',
-        'm', 0, 0,
-        {'2h'}
-    ),
-    'handaxe': (
-        'Handaxe', 1, 6, 'slashing',
-        'm', 20, 60,
-        {'light', 'thrown'}
-    ),
-    ##
-    'quarterstaff': (
-        'Quarterstaff', 1, 6, 'bludgeoning',
-        'm', 0, 0,
-        {'versatile': (1, 8)}
-    ),
-
-    # simple ranged
-    'crossbowLight': (
-        'Crossbow, Light', 1, 8, 'piercing',
-        'r', 80, 320,
-        {'ammunition', 'loading', '2h'}
-    ),
-    'dart': (
-        'Dart', 1, 4, 'piercing',
-        'r', 20, 60,
-        {'finesse', 'thrown'}
-    ),
-
-    # martial melee
-    'battleaxe': (
-        'Battleaxe', 1, 8, 'slashing',
-        'm', 0, 0,
-        {'versatile': (1, 10)}
-    ),
-
-    'flail': (
-        'Flail', 1, 8, 'bludgeoning',
-        'm', 0, 0,
-        {}
-    ),
-
-    'glaive': (
-        'Glaive', 1, 10, 'slashing',
-        'm', 0, 0,
-        {'heavy', 'reach', '2h'}
-    ),
-}
+DEFAULT_LOADOUT_POOL_WEIGHT = 10
 
 DEFAULT_LOADOUTSET_WEIGHT = 10
 WEAPON_LOADOUT_SETS = {
@@ -252,14 +273,14 @@ WEAPON_LOADOUT_SETS = {
         [],
         ['battleaxe'],
         ['flail', 'shield'],
-        ['handaxe', 'shield', 'crossbowLight'],
+        ['handaxe', 'shield', 'crossbow_light'],
     ),
     'mage': (
         [],
         [1, 'club'],
         [1, 'quarterstaff'],
         [1, 'club', 'shield'],
-        [100, 'club', 'dagger', 'quarterstaff', 'crossbowLight'],
+        [100, 'club', 'dagger', 'quarterstaff', 'crossbow_light'],
     ),
 }
 
@@ -268,14 +289,14 @@ ARMOR_LOADOUT_SETS = {
     'soldier': (
         ['leather', 'hide'],
         [10, ],
-        [10, 'chainShirt'],
-        [10, 'ringMail'],
-        [10, 'chainMail'],
+        [10, 'chain_shirt'],
+        [10, 'ring_mail'],
+        [10, 'chain_mail'],
     ),
     'mage': (
-        ['mageArmor'],
+        ['mage_armor'],
         [10, 'padded'],
-        [10, 'none'],
+        [10, 'unarmored'],
     ),
 }
 
@@ -375,7 +396,7 @@ CASTER_CANTRIPS_KNOWN = {
     'sorcerer': (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, ),
 }
 
-SPELLS_FILE = 'spells.txt'
+# SPELLS_FILE = 'spells.txt'
 
 SPELL_LEVEL_ORDINAL_TO_NUM = {
     'cantrip': 0,
@@ -414,28 +435,28 @@ NUM_TO_ORDINAL = {
 
 }
 
-SPELL_LISTS_AUTO = {
-    'evoker': {
-        'class': 'sorcerer',
-        'school': 'evocation',
-    },
-    'conjurer': {
-        'class': 'cleric',
-        'school': 'conjuration',
-    },
-    'wizard': {
-        'class': 'wizard',
-    },
-    'cleric': {
-        'class': 'cleric'
-    },
-}
-
-SPELL_LISTS_FIXED = {
-    'healer': (
-        'cure wounds', 'healing word', 'mass cure wounds', 'heal',
-    ),
-}
+# SPELL_LISTS_AUTO = {
+#     'evoker': {
+#         'class': 'sorcerer',
+#         'school': 'evocation',
+#     },
+#     'conjurer': {
+#         'class': 'cleric',
+#         'school': 'conjuration',
+#     },
+#     'wizard': {
+#         'class': 'wizard',
+#     },
+#     'cleric': {
+#         'class': 'cleric'
+#     },
+# }
+#
+# SPELL_LISTS_FIXED = {
+#     'healer': (
+#         'cure wounds', 'healing word', 'mass cure wounds', 'heal',
+#     ),
+# }
 
 DEFAULT_SPELL_WEIGHT = 10
 SPELLCASTER_PROFILES = {
