@@ -16,8 +16,11 @@ def rollDie(dieSize):
     return random.randint(1, dieSize)
 
 
-# numDice is the total AFTER dropping lowest and highest
 def rollDice(dieSize, numDice, dropLowest=0, dropHighest=0):
+    """
+    Rolls a number of dice and returns the total, dropping the lowest or highest dice values as specified.
+    numDice is the number of dice to add up AFTER dropping dice.
+    """
     diceToRoll = numDice + dropLowest + dropHighest
     dicePool = []
     for i in range(diceToRoll):
@@ -30,11 +33,38 @@ def rollDice(dieSize, numDice, dropLowest=0, dropHighest=0):
     return sum(dicePool)
 
 
+def weighted_sample(population, weights, k):
+    """
+    This function draws a random sample of length k
+    from the sequence 'population' according to the
+    list of weights
+    """
+    sample = set()
+    population = list(population)
+    weights = list(weights)
+    while len(sample) < k:
+        choice = random.choices(population, weights)[0]
+        sample.add(choice)
+        index = population.index(choice)
+        weights.pop(index)
+        population.remove(choice)
+        weights = [ x / sum(weights) for x in weights]
+    return list(sample)
+
+
 def dprint(message, requiredLevel=2):
+    """
+    Prints out a message for debugging purposes. Higher numbers are more verbose, uses the DEBUG_LEVEL constant.
+    """
     if DEBUG_LEVEL >= requiredLevel:
         print(message)
 
 def numPlusser(num):
+    """
+    Takes a number, returns a str with a '+' in front of it if it's 0 or more, as is standard for modifiers in DnD.
+    :param num:
+    :return:
+    """
     if num >=0:
         return '+' + str(num)
     else:
@@ -42,13 +72,20 @@ def numPlusser(num):
 
 
 class NPCGenerator:
+    """
+    NPC Generator builds all of the necessary data from external files, stores them, and builds instances of the
+    Character class based on given parameters.
+    """
     def __init__(self,
-                 weaponsLoadoutSetsDict=WEAPON_LOADOUT_SETS, armorLoadoutsSetsDict=ARMOR_LOADOUT_SETS,
-                 spellCasterProfilesDict=SPELLCASTER_PROFILES,
-                 weaponsFilename=WEAPONS_FILENAME, armorsFilename=ARMORS_FILENAME,
-                 spellsFilename=SPELLS_FILENAME, spellListsFilename=SPELLLISTS_FILENAME,
-                 loadoutPoolsFilename=LOADOUTPOOLS_FILENAME, traitsFilename=TRAITS_FILENAME,
-                 raceTemplatesFilename=RACETEMPLATES_FILENAME, classTemplatesFilename=CLASSTEMPLATES_FILENAME,
+                 weaponsFilename=WEAPONS_FILENAME,
+                 armorsFilename=ARMORS_FILENAME,
+                 spellsFilename=SPELLS_FILENAME,
+                 spellListsFilename=SPELLLISTS_FILENAME,
+                 spellcasterProfilesFilename=SPELLCASTERPROFILES_FILENAME,
+                 loadoutPoolsFilename=LOADOUTPOOLS_FILENAME,
+                 traitsFilename=TRAITS_FILENAME,
+                 raceTemplatesFilename=RACETEMPLATES_FILENAME,
+                 classTemplatesFilename=CLASSTEMPLATES_FILENAME,
                  ):
 
         self.weapons = {}
@@ -63,12 +100,6 @@ class NPCGenerator:
         self.traits = {}
         self.buildTraitsFromCSV(traitsFilename)
 
-        self.raceTemplates = {}
-        self.buildRaceTemplatesFromCSV(raceTemplatesFilename)
-
-        self.classTemplates = {}
-        self.buildClassTemplatesFromCSV(classTemplatesFilename)
-
         self.spells = {}
         self.buildSpellsFromCSV(spellsFilename)
 
@@ -76,56 +107,13 @@ class NPCGenerator:
         self.buildSpellListsFromCSV(spellListsFilename)
 
         self.spellcasterProfiles = {}
-        self.buildSpellcasterProfiles(spellCasterProfilesDict)
+        self.buildSpellcasterProfilesFromCSV(spellcasterProfilesFilename)
 
-    def buildTraits(self, traitsDict):
-        for traitName, traitDict in traitsDict.items():
-            newTrait = Trait(traitName, traitDict['displayName'], traitDict['traitType'], traitDict['traitText'],
-                             traitDict.get('tags', {}))
-            self.traits[traitName] = newTrait
+        self.raceTemplates = {}
+        self.buildRaceTemplatesFromCSV(raceTemplatesFilename)
 
-    def giveTrait(self, character: 'Character', traitName):
-        trait = self.traits[traitName]
-        character.traits[traitName] = trait
-
-        if 'giveArmor' in trait.tags:
-            self.giveArmor(character, trait.tags['giveArmor'])
-
-    def giveArmor(self, character, armorName):
-        armor = self.armors[armorName]
-        character.armors[armorName] = armor
-
-    def giveWeapon(self, character, weaponName):
-        weapon = self.weapons[weaponName]
-        character.loadout.append(weapon)
-
-    def buildTemplates(self, templatesDict, templateType=None):
-        for templateName in templatesDict:
-            templateDict = templatesDict[templateName]
-            newTemplate = Template(templateName, templateDict.get('displayName'))
-
-            newTemplate.priorityAttributes = templateDict.get('priorityAttributes')
-            newTemplate.attributeBonuses = templateDict.get('attributeBonuses')
-            newTemplate.baseStats = templateDict.get('baseStats')
-            newTemplate.statBonuses = templateDict.get('statBonuses')
-            newTemplate.skillsFixed = templateDict.get('skillsFixed')
-            newTemplate.skillsRandom = templateDict.get('skillsRandom')
-            newTemplate.saves = templateDict.get('saves')
-            newTemplate.traits = templateDict.get('traits')
-            newTemplate.armors = templateDict.get('armors')
-            newTemplate.weapons = templateDict.get('weapons')
-            newTemplate.weaponLoadoutSet = templateDict.get('weaponLoadoutSet')
-            newTemplate.armorLoadoutSet = templateDict.get('armorLoadoutSet')
-            newTemplate.spellCastingProfile = templateDict.get('spellCastingProfile')
-
-            newTemplate.templateType = templateType
-
-            self.templates[templateName] = newTemplate
-            
-    # def buildArmors(self, armorsDict: dict):
-    #     for armorName, armorParams in armorsDict.items():
-    #         newArmor = Armor(armorName, *armorParams)
-    #         self.armors[armorName] = newArmor
+        self.classTemplates = {}
+        self.buildClassTemplatesFromCSV(classTemplatesFilename)
 
     def buildArmorsFromCSV(self, armorsFilename):
         with open(armorsFilename, newline='') as armorsFile:
@@ -145,12 +133,6 @@ class NPCGenerator:
                     newArmor.stealthDisadvantage = True
                 newArmor.tags = set(line['tags'].replace(" ", "").split(','))
                 self.armors[newArmor.intName] = newArmor
-
-
-    # def buildWeapons(self, weaponsDict: dict):
-    #     for weaponName, weaponParams in weaponsDict.items():
-    #         newWeapon = Weapon(weaponName, *weaponParams)
-    #         self.weapons[weaponName] = newWeapon
 
     def buildWeaponsFromCSV(self, weaponsFilename):
         with open(weaponsFilename, newline='') as weaponsFile:
@@ -220,6 +202,139 @@ class NPCGenerator:
                 newLoadoutPool.addLoadout(newLoadout, weight)
             self.loadoutPools[newLoadoutPool.name] = newLoadoutPool
 
+
+
+    def buildSpellsFromCSV(self, filename):
+        with open(filename, newline='') as spellsFile:
+            spellsFileReader = csv.DictReader(spellsFile)
+            for line in spellsFileReader:
+                newSpell = Spell()
+                newSpell.name = line['name']
+                newSpell.source = line['source']
+                newSpell.level = SPELL_LEVEL_ORDINAL_TO_NUM[line['level']]
+                newSpell.school = line['school']
+                newSpell.classes = set(line['classes'].replace(" ", "").split(','))
+                self.spells[newSpell.name] = newSpell
+
+    def buildSpellListsFromCSV(self, filename):
+        with open(filename, newline='') as spellListsFile:
+            spellListsFileReader = csv.DictReader(spellListsFile)
+            for line in spellListsFileReader:
+                newSpellList = SpellList()
+                newSpellList.name = line['name']
+
+                # Check for if it's an autolist
+                # If all these fields are blank, it's not an autolist
+                if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
+                        or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
+                    reqClasses = None
+                    if line['req_classes']:
+                        reqClasses = line['req_classes'].replace(" ", "").split(",")
+                    reqSchools = None
+                    if line['req_schools']:
+                        reqSchools = set(line['req_schools'].replace(" ", "").split(","))
+                    reqLevels = None
+                    if line['req_levels']:
+                        reqLevels = line['req_levels'].replace(" ", "").split(",")
+                    reqSources = None
+                    if line['req_sources']:
+                        reqSources = line['req_sources'].replace(" ", "").split(",")
+
+                    for spellName, spell in self.spells.items():
+                        if reqClasses and spell.classes.isdisjoint(reqClasses):
+                            continue
+                        if reqSchools and spell.school not in reqSchools:
+                            continue
+                        if reqLevels and spell.level not in reqLevels:
+                            continue
+                        if reqSources and spell.source not in reqSources:
+                            continue
+                        newSpellList.addSpell(spell)
+
+                if line['fixed_include']:
+                    fixedIncludeSpells = line['fixed_include'].split(',')
+                    for spellName in fixedIncludeSpells:
+                        spellName = spellName.strip()
+                        if spellName not in self.spells:
+                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                   .format(spellName, newSpellList.name), 0)
+                        else:
+                            newSpellList.addSpell(self.spells[spellName])
+
+                if line['fixed_exclude']:
+                    fixedExcludeSpells = line['fixed_exclude'].split(',')
+                    for spellName in fixedExcludeSpells:
+                        spellName = spellName.strip()
+                        if spellName not in self.spells:
+                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                   .format(spellName, newSpellList.name), 0)
+                        else:
+                            newSpellList.removeSpell(spellName)
+
+                if line['spelllists_include']:
+                    spellListsToInclude = line['spelllists_include'].replace(" ", "").split(',')
+                    for spellListToInclude in spellListsToInclude:
+                        for spellName, spell in spellListToInclude.spells.items():
+                            newSpellList.addSpell(spell)
+
+                if line['spelllists_exclude']:
+                    spellListsToExclude = line['spelllists_exclude'].replace(" ", "").split(',')
+                    for spellListToExclude in spellListsToExclude:
+                        spellList = self.spellLists[spellListToExclude]
+                        for spellName, spell in spellList.spells.items():
+                            newSpellList.removeSpell(spell)
+
+                self.spellLists[newSpellList.name] = newSpellList
+
+    def buildSpellcasterProfilesFromCSV(self, spellcasterProfilesFilename):
+        with open(spellcasterProfilesFilename, newline="") as spellcasterProfilesFile:
+            spellcasterProfilesFileReader = csv.DictReader(spellcasterProfilesFile)
+            for line in spellcasterProfilesFileReader:
+                newSpellcasterProfile = SpellCasterProfile()
+                newSpellcasterProfile.intName = line['internal_name']
+                newSpellcasterProfile.castingStat = line['casting_stat']
+                newSpellcasterProfile.readyStyle = line['ready_style']
+
+                # Alternative slots progressions not implemented
+                # Probably not needed, since all casters currently in the game derive their slots from the standard
+                newSpellcasterProfile.slotsProgression = DEFAULT_SPELLCASTER_SLOTS
+
+                if line["hd_per_casting_level"]:
+                    newSpellcasterProfile.hdPerCastingLevel = int(line['hd_per_casting_level'])
+                else:
+                    newSpellcasterProfile.hdPerCastingLevel = 1
+
+                newSpellcasterProfile.cantripsProgression = CASTER_CANTRIPS_KNOWN[line['cantrips_progression']]
+
+                if line['fixed_spells_known_by_level']:
+                    newSpellcasterProfile.fixedSpellsKnownByLevel = CASTER_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
+                else:
+                    newSpellcasterProfile.fixedSpellsKnownByLevel = None
+
+                if line['spells_known_modifier']:
+                    newSpellcasterProfile.spellsKnownModifier = int(line['spells_known_modifier'])
+                else:
+                    newSpellcasterProfile.spellsKnownModifier = 0
+
+                if line['free_spell_lists']:
+                    newSpellcasterProfile.freeSpellLists = line['free_spell_lists'].replace(" ", "").split(',')
+                else:
+                    newSpellcasterProfile.freeSpellLists = None
+
+                newSpelllistsDict = {}
+                for rawEntry in line['spell_lists'].replace(" ", "").split(','):
+                    if ':' in rawEntry:
+                        spelllistName, weight = rawEntry.split(':')
+                        newSpelllistsDict[self.spellLists[spelllistName]] = weight
+                    else:
+                        newSpelllistsDict[self.spellLists[rawEntry]] = DEFAULT_SPELL_WEIGHT
+                newSpellcasterProfile.spellLists = newSpelllistsDict
+
+                # For now, only standard slots progression
+                newSpellcasterProfile.slotsProgression = DEFAULT_SPELLCASTER_SLOTS
+
+                self.spellcasterProfiles[newSpellcasterProfile.intName] = newSpellcasterProfile
+
     def buildRaceTemplatesFromCSV(self, raceTemplatesFilename):
         with open(raceTemplatesFilename, newline='') as raceTemplatesFile:
             raceTemplatesFileReader = csv.DictReader(raceTemplatesFile)
@@ -284,24 +399,25 @@ class NPCGenerator:
                 else:
                     newClassTemplate.traits = None
 
+                if line['spellcasting_profile']:
+                    newClassTemplate.spellCastingProfile = self.spellcasterProfiles[line['spellcasting_profile']]
+
                 self.classTemplates[newClassTemplate.intName] = newClassTemplate
 
+    def giveTrait(self, character: 'Character', traitName):
+        trait = self.traits[traitName]
+        character.traits[traitName] = trait
 
+        if 'giveArmor' in trait.tags:
+            self.giveArmor(character, trait.tags['giveArmor'])
 
+    def giveArmor(self, character, armorName):
+        armor = self.armors[armorName]
+        character.armors[armorName] = armor
 
-    def buildLoadoutSetsDict(self, rawLoadoutSetsDict: dict):
-        loadoutsSetsDict = {}
-        for loadoutSetName, loadouts in rawLoadoutSetsDict.items():
-            newLoadoutSet = LoadoutSet(loadoutSetName)
-            newLoadoutSet.guaranteedLoadoutItems = loadouts[0]
-            for loadout in loadouts[1:]:
-                if type(loadout[0]) == int:
-                    weight = loadout.pop(0)
-                else:
-                    weight = DEFAULT_LOADOUTSET_WEIGHT
-                newLoadoutSet.addLoadout(loadout, weight)
-            loadoutsSetsDict[loadoutSetName] = newLoadoutSet
-        return loadoutsSetsDict
+    def giveWeapon(self, character, weaponName):
+        weapon = self.weapons[weaponName]
+        character.loadout.append(weapon)
 
     def applyTemplate(self, character: 'Character', templateName, templateType=None):
         if templateType=='race':
@@ -326,7 +442,6 @@ class NPCGenerator:
         if template.traits:
             for trait in template.traits:
                 self.giveTrait(character, trait)
-
 
         if template.loadoutPool:
             loadoutPool = self.loadoutPools[template.loadoutPool]
@@ -389,177 +504,9 @@ class NPCGenerator:
                 character.stats[baseStatName] = statVal
 
         if template.spellCastingProfile:
-            character.spellCastingProfile = self.spellcasterProfiles.get(template.spellCastingProfile)
+            character.spellCastingAbility = template.spellCastingProfile.generateSpellCastingAbility()
 
-    # Magic Stuff
-    # def addSpell(self, name, level, school, source, classes):
-    #     self.spells[name] = (level, school, source, classes)
-    #
-    # @staticmethod
-    # def buildSpellFromLine(line):
-    #     # example: "Wall of Fire","PHB","4th","Evocation","Druid, Sorcerer, Wizard"
-    #     line = line.lower()
-    #     # elements = re.search(r'^"([\w\d\s\'\-]*)","([\w\d\s]*)","([\w\d\s]*)","([\w\d\s]*)","([\w\d\s\,]*)"', line)
-    #     elements = re.match(r'^"(.*?)","(.*?)","(.*?)","(.*?)","(.*?)"', line)
-    #     name = str(elements.group(1))
-    #     source = str(elements.group(2))
-    #     level = SPELL_LEVEL_ORDINAL_TO_NUM.get(str(elements.group(3)))
-    #     school = str(elements.group(4))
-    #     classes = str(elements.group(5)).strip().split(',')
-    #     for i in range(len(classes)):
-    #         classes[i] = classes[i].strip()
-    #     return name, level, school, source, classes
 
-    # def buildSpellsFromFile(self, fileName):
-    #     file = open(fileName, 'r')
-    #     for line in file:
-    #         try:
-    #             elements = self.buildSpellFromLine(line)
-    #             self.addSpell(*elements)
-    #         except:
-    #             dprint('Error! Line: "' + line + '" is an invalid spell line.', 0)
-
-    def buildSpellsFromCSV(self, filename):
-        with open(filename, newline='') as spellsFile:
-            spellsFileReader = csv.DictReader(spellsFile)
-            for line in spellsFileReader:
-                newSpell = Spell()
-                newSpell.name = line['name']
-                newSpell.source = line['source']
-                newSpell.level = SPELL_LEVEL_ORDINAL_TO_NUM[line['level']]
-                newSpell.school = line['school']
-                newSpell.classes = set(line['classes'].replace(" ", "").split(','))
-                self.spells[newSpell.name] = newSpell
-
-    def buildSpellListsFromCSV(self, filename):
-        with open(filename, newline='') as spellListsFile:
-            spellListsFileReader = csv.DictReader(spellListsFile)
-            for line in spellListsFileReader:
-                newSpellList = SpellList()
-                newSpellList.name = line['name']
-
-                # Check for if it's an autolist
-                # If all these fields are blank, it's not an autolist
-                if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
-                        or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
-                    reqClasses = None
-                    if line['req_classes']:
-                        reqClasses = line['req_classes'].replace(" ", "").split(",")
-                    reqSchools = None
-                    if line['req_schools']:
-                        reqSchools = set(line['req_schools'].replace(" ", "").split(","))
-                    reqLevels = None
-                    if line['req_levels']:
-                        reqLevels = line['req_levels'].replace(" ", "").split(",")
-                    reqSources = None
-                    if line['req_sources']:
-                        reqSources = line['req_sources'].replace(" ", "").split(",")
-
-                    for spellName, spell in self.spells.items():
-                        if reqClasses and spell.classes.isdisjoint(reqClasses):
-                            continue
-                        if reqSchools and spell.school not in reqSchools:
-                            continue
-                        if reqLevels and spell.level not in reqLevels:
-                            continue
-                        if reqSources and spell.source not in reqSources:
-                            continue
-                        newSpellList.addSpell(spellName)
-
-                if line['fixed_include']:
-                    fixedIncludeSpells = line['fixed_include'].split(',')
-                    for spellName in fixedIncludeSpells:
-                        spellName = spellName.strip()
-                        if spellName not in self.spells:
-                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                   .format(spellName, newSpellList.name), 0)
-                        else:
-                            newSpellList.addSpell(spellName)
-
-                if line['fixed_exclude']:
-                    fixedExcludeSpells = line['fixed_exclude'].split(',')
-                    for spellName in fixedExcludeSpells:
-                        spellName = spellName.strip()
-                        if spellName not in self.spells:
-                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                   .format(spellName, newSpellList.name), 0)
-                        else:
-                            newSpellList.removeSpell(spellName)
-
-                if line['spelllists_include']:
-                    spellListsToInclude = line['spelllists_include'].replace(" ", "").split(',')
-                    for spellListToInclude in spellListsToInclude:
-                        for spellName in spellListToInclude.spells:
-                            newSpellList.addSpell(spellName)
-
-                if line['spelllists_exclude']:
-                    spellListsToExclude = line['spelllists_exclude'].replace(" ", "").split(',')
-                    for spellListToExclude in spellListsToExclude:
-                        for spellName in spellListToExclude.spells:
-                            newSpellList.removeSpell(spellName)
-
-                self.spellLists[newSpellList.name] = newSpellList
-
-    # def buildAutoSpellLists(self, autoSpellListsDict):
-    #     for spellListName, dictVals in autoSpellListsDict.items():
-    #         spellList = []
-    #         for spellName, spellVals in self.spells.items():
-    #             reqClass = dictVals.get('class')
-    #             if reqClass and reqClass not in spellVals[3]:
-    #                 continue
-    #             reqSchool = dictVals.get('school')
-    #             if reqSchool and reqSchool != spellVals[1]:
-    #                 continue
-    #             spellList.append(spellName)
-    #         self.spellLists[spellListName] = spellList
-
-    # def buildFixedSpellLists(self, fixedSpellListsDict):
-    #     for spellListName, spellsSet in fixedSpellListsDict.items():
-    #         newSpellsSet = set()
-    #         for spell in spellsSet:
-    #             if spell in self.spells:
-    #                 newSpellsSet.add(spell)
-    #             else:
-    #                 dprint("Error! Spell: " + spell + " not in master spell list!")
-    #         self.spellLists[spellListName] = newSpellsSet
-
-    def buildSpellcasterProfiles(self, spellCasterProfilesDict):
-        for profileName, vals in spellCasterProfilesDict.items():
-            newProfile = SpellCasterProfile()
-            slotsType = vals.get('slots')
-            slots = CASTER_SPELL_SLOTS.get(slotsType)
-            newProfile.slots = slots
-            newProfile.cantrips = vals.get('cantrips')
-            newProfile.readyStyle = vals.get('readyStyle')
-            newProfile.castingStat = vals.get('castStat')
-
-            # Val of spellLists dict is the weight
-            spellListsDict = {}
-            for entry in vals.get('spellLists'):
-                if type(entry) == tuple or type(entry) == list:
-                    spellListsDict[entry[1]] = entry[0]
-                else:
-                    spellListsDict[entry] = DEFAULT_SPELL_WEIGHT
-
-            # Now, go through each list and give each spell its highest weight
-            spellsDict = {}
-            for spellListName, weight in spellListsDict.items():
-                spellList = self.spellLists.get(spellListName)
-                for spell in spellList.spells:
-                    if spell in spellsDict:
-                        spellsDict[spell] = max(spellsDict[spell], weight)
-                    else:
-                        spellsDict[spell] = weight
-
-            # Now we've got spells each with their profile specific weights
-            # Organize them by level, we'll do [spell, weight] and use zip later
-            spellsByLevel = [[], [], [], [], [], [], [], [], [], [], ]
-            for spellName, weight in spellsDict.items():
-                spellLevel = self.spells.get(spellName).level
-                spellsByLevel[spellLevel].append([spellName, weight])
-
-            newProfile.spells = spellsByLevel
-            self.spellcasterProfiles[profileName] = newProfile
 
 
     def newCharacter(self, attributeRollMethod=DEFAULT_ROLL_METHOD, rerollsAllowed=0, minTotal=0,
@@ -607,7 +554,6 @@ class Character:
 
         self.traits = {}
 
-        self.spellCastingProfile = None
         self.spellCastingAbility = None
 
         self.updateDerivedStats()
@@ -682,9 +628,6 @@ class Character:
         # Attack bonus
         for attribute in STATS_ATTRIBUTES:
             self.stats[attribute + 'Attack'] = self.stats['proficiency'] + self.stats[attribute + 'Mod']
-        # SpellCasting
-        if self.spellCastingProfile:
-            self.spellCastingAbility = self.spellCastingProfile.generateSpellCastingAbility(self.getStat('hitDiceNum'))
         # Speed
         self.stats['speedWalkFinal'] = self.stats['speedWalk']
         self.stats['speedFlyFinal'] = self.stats['speedFly']
@@ -997,9 +940,7 @@ class Weapon:
             outstring += 'Ranged weapon attack: '
 
         toHit = self.getToHit(owner)
-        if toHit >= 0 : outstring += '+'
-        if toHit < 0 : outstring += '-'
-        outstring += str(toHit) + ' to hit, '
+        outstring += numPlusser(toHit) + ' to hit, '
 
         if isMelee and isRanged:
             if 'reach' in self.tags:
@@ -1036,33 +977,7 @@ class Weapon:
                 outstring += ' or {}({}d{} + {}) {} damage if used with two hands'.format(*dmgTup)
         outstring += '.'
         return outstring
-    
 
-class Spell:
-    def __init__(self):
-        self.name = ''
-        self.source = ''
-        self.level = -1
-        self.school = ''
-        self.classes = set()
-
-    def __str__(self):
-        return "[{},{},{},{},{}]".format(self.name, self.source. str(self.level), self.school. str(self.classes))
-
-class SpellList:
-    def __init__(self):
-        self.name = None
-        self.spells = set()
-
-    def __str__(self):
-        return "[{}: {}]".format(self.name, ",".join(self.spells))
-
-    def addSpell(self, spellName):
-        self.spells.add(spellName)
-
-    def removeSpell(self, spellName):
-        if spellName in self.spells:
-            self.spells.remove(spellName)
 
 class LoadoutSet:
     def __init__(self, internalName=''):
@@ -1082,74 +997,239 @@ class LoadoutSet:
         return self.guaranteedLoadoutItems + random.choices(self.loadouts, self.weights)[0]
 
 
-class SpellCasterProfile:
-    def __init__(self, slots=None, cantrips=None, readyStle='prepared', castingStat='int'):
-        self.slots = slots
-        self.cantrips = cantrips
-        self.spells = [[], [], [], [], [], [], [], [], [], [], ]
-        self.readyStyle = readyStle
-        self.castingStat = castingStat
+class Spell:
+    def __init__(self):
+        self.name = ''
+        self.source = ''
+        self.level = -1
+        self.school = ''
+        self.classes = set()
 
-    def addSpell(self, spellName, spellLevel, weight):
-        if spellName in self.spells[spellLevel]:
-            self.spells[spellLevel][spellName] = max(weight, self.spells[spellLevel][spellName])
-        else:
-            self.spells[spellLevel][spellName] = weight
+    def __str__(self):
+        return "[{},{},{},{},{}]".format(self.name, self.source. str(self.level), self.school. str(self.classes))
 
-    def getRandomSpells(self, spellLevel, num):
-        spellsWeights = zip(*self.spells[spellLevel])
-        spells = list(next(spellsWeights))
-        weights = list(next(spellsWeights))
-        if num > len(spells):
-            return spells
-        outSpells = []
-        while len(outSpells) < num:
-            choiceIndex = random.choices(range(len(spells)), weights)[0]
-            outSpells.append(spells[choiceIndex])
-            del(spells[choiceIndex])
-            del(weights[choiceIndex])
+class SpellList:
+    def __init__(self):
+        self.name = None
+        self.spells = {}
+
+    def __str__(self):
+        return "[{}: {}]".format(self.name, ",".join(self.spells))
+
+    def addSpell(self, spellObj):
+        self.spells[spellObj.name] = spellObj
+
+    def removeSpell(self, spell):
+        if type(spell) == Spell:
+            spell = spell.name
+        if spell in self.spells:
+            self.spells.pop(spell)
+
+    def getSpellnamesByLevel(self):
+        outSpells = [set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), ]
+        for spell in self.spells.values():
+            outSpells[spell.level].add(spell.name)
         return outSpells
 
-    def generateSpellCastingAbility(self, casterLevel, useSlotsForReadiedSpells=True):
-        casterLevel = min(casterLevel, 20)
-        newAbility = SpellCastingAbility(self.readyStyle, self.castingStat, casterLevel)
-        newAbility.slots = self.slots[casterLevel]
-        for spellLevel in range(0, 10):
-            newAbility.spellsReady[spellLevel] = self.getRandomSpells(spellLevel, newAbility.slots[spellLevel])
-        return newAbility
+    def getSpellSetOfLevel(self, level):
+        outset = set()
+        for spell in self.spells.values():
+            if spell.level == level:
+                outset.add(spell.name)
+        return outset
+
+    def numSpellsOfLevel(self, level):
+        count = 0
+        for spell in self.spells.values():
+            if spell.level == level:
+                count += 1
+        return count
+
+
+class SpellCasterProfile:
+    def __init__(self):
+        self.intName = ''
+        self.hdPerCastingLevel = 1
+        self.cantripsProgression = None
+        self.spellsKnownModifier = 0
+        self.spellLists = {}
+        self.freeSpellLists = []
+        self.readyStyle = ''
+        self.castingStat = ''
+        self.fixedSpellsKnownByLevel = None
+        # For now, only the standard slots progression is supported
+        self.slotsProgression = None
+
+    # def addSpell(self, spellName, spellLevel, weight):
+    #     if spellName in self.spells[spellLevel]:
+    #         self.spells[spellLevel][spellName] = max(weight, self.spells[spellLevel][spellName])
+    #     else:
+    #         self.spells[spellLevel][spellName] = weight
+    #
+    # def getSpellSlotsByLevel(self, casterLevel, spellLevel):
+    #     return self.slotsProgression[casterLevel][spellLevel]
+
+    def getRandomSpells(self):
+        freeSpells = set()
+        if self.freeSpellLists:
+            for spellList in self.freeSpellLists:
+                for spellName in spellList.spells.keys():
+                    freeSpells.add(spellName)
+
+        spellSelections = []
+
+        # We do this for every spell level
+        for i in range(0, 10):
+            totalSpellCount = 0
+            for spellList in self.spellLists.keys():
+                totalSpellCount += spellList.numSpellsOfLevel(i)
+
+            spellOptions = []
+            spellWeights = []
+
+            for spellList, weight in self.spellLists.items():
+                numSpellsofLevel = spellList.numSpellsOfLevel(i)
+                if numSpellsofLevel == 0:
+                    continue
+                weightPerSpell = float(weight) / numSpellsofLevel
+                for spellName in spellList.getSpellSetOfLevel(i):
+                    spellOptions.append(spellName)
+                    spellWeights.append(weightPerSpell)
+
+            spellSelectionsForLevel = []
+            spellSelectionsRemaining = MAX_SPELL_CHOICES_PER_LEVEL
+            while spellSelectionsRemaining > 0:
+                # First, check that we still have options
+                if len(spellOptions) == 0:
+                    break
+
+                choiceByIndex = random.choices(range(len(spellWeights)), spellWeights)[0]
+                spellChoice = spellOptions[choiceByIndex]
+
+                spellOptions.pop(choiceByIndex)
+                spellWeights.pop(choiceByIndex)
+
+                if spellChoice in spellSelections:
+                    continue
+                elif spellChoice in freeSpells:
+                    continue
+                else:
+                    spellSelectionsForLevel.append(spellChoice)
+                    spellSelectionsRemaining -=1
+
+            spellSelections.append(spellSelectionsForLevel)
+        return spellSelections
+
+
+    # def getRandomSpells(self, spellLevel, num):
+    #     spellsWeights = zip(*self.spells[spellLevel])
+    #     spells = list(next(spellsWeights))
+    #     weights = list(next(spellsWeights))
+    #     if num > len(spells):
+    #         return spells
+    #     outSpells = []
+    #     while len(outSpells) < num:
+    #         choiceIndex = random.choices(range(len(spells)), weights)[0]
+    #         outSpells.append(spells[choiceIndex])
+    #         del(spells[choiceIndex])
+    #         del(weights[choiceIndex])
+    #     return outSpells
+
+    def generateSpellCastingAbility(self):
+        newSpellCastingAbility = SpellCastingAbility(
+            readyStyle=self.readyStyle, castingStat=self.castingStat,
+            hdPerCastingLevel=self.hdPerCastingLevel, spellsReadiedProgression=DEFAULT_SPELLS_READIED_PROGRESSION,
+            fixedSpellsKnownByLevel=self.fixedSpellsKnownByLevel,
+            cantripsProgression=self.cantripsProgression,
+            slotsProgression=self.slotsProgression,
+        )
+        newSpellCastingAbility.spellChoices = self.getRandomSpells()
+        return newSpellCastingAbility
 
 
 class SpellCastingAbility:
-    def __init__(self, readyStyle='known', castStat='int', casterLevel=1):
+    """
+    SpellcastingAbility is the personalized ability that gets assigned to a character.
+    When created, it is level agnostic, and when it comes time to spit out the statblock it needs to be told for what
+    level. This way, potentially you could tweak a character's level and not have to get an entirely new randomized
+    statblock entry.
+    """
+    def __init__(self, readyStyle='known', castingStat='int', hdPerCastingLevel=1,
+                 spellsReadiedProgression=DEFAULT_SPELLS_READIED_PROGRESSION,
+                 fixedSpellsKnownByLevel=None,
+                 cantripsProgression=CASTER_CANTRIPS_KNOWN['none'],
+                 slotsProgression=DEFAULT_SPELLCASTER_SLOTS):
         # NPCs generally either have spells 'prepared' or 'known'
         self.readyStyle = readyStyle
-        # A list with the index corresponding to the spell level, 0 is a dummy for cantrips
-        self.slots = [-1, 2, 1, 0, 0, 0, 0, 0, 0, 0, ]
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
-        self.spellsReady = [[], [], [], [], [], [], [], [], [], [], ]
+        self.spellChoices = None
         # Which stat is used for casting
-        self.castStat = castStat
-        self.casterLevel = casterLevel
+        self.castingStat = castingStat
+        self.hdPerCastingLevel = hdPerCastingLevel
+        self.spellsReadiedProgression = spellsReadiedProgression
+        self.cantripsProgression = cantripsProgression
+        self.fixedSpellsKnownByLevel = fixedSpellsKnownByLevel
+        self.slotsProgression = slotsProgression
+
+    def getCasterLevel(self,owner):
+        hitDice = owner.getStat('hitDiceNum')
+        casterLevel = hitDice // self.hdPerCastingLevel
+        return casterLevel
+
+    def getSpellsReadied(self, owner):
+        casterLevel = self.getCasterLevel(owner)
+
+        if self.fixedSpellsKnownByLevel:
+            spellsKnown = self.fixedSpellsKnownByLevel[casterLevel]
+        else:
+            spellsKnown = owner.getStat(self.castingStat + "Mod") + casterLevel
+
+        spellSlots = self.slotsProgression
+        maxSpellLevel = 9
+        for spellLevel in range(1, 10):
+            if spellSlots[casterLevel][spellLevel] == 0:
+                maxSpellLevel = spellLevel - 1
+                break
+
+
+        cantripsReadied = self.cantripsProgression[casterLevel]
+        numSpellsReadiedByLevel = [cantripsReadied, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]
+
+        for spellLevelChoice in self.spellsReadiedProgression:
+            if spellLevelChoice > maxSpellLevel:
+                continue
+            numSpellsReadiedByLevel[spellLevelChoice] += 1
+            spellsKnown -= 1
+            if spellsKnown <= 0:
+                break
+
+        spellsReadied = [[], [], [], [], [], [], [], [], [], [], ]
+        for i in range(0, 10):
+            spellsReadied[i] = self.spellChoices[i][0:numSpellsReadiedByLevel[i]]
+
+        return spellsReadied
 
     def display(self, owner):
+        casterLevel = self.getCasterLevel(owner)
+        spellsReady = self.getSpellsReadied(owner)
         # Header part
         outline = "Spellcasting. This character is a {}-level spellcaster. " \
                   "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
                   "It has the following spells {}:"\
-                .format(NUM_TO_ORDINAL[self.casterLevel],
-                        ATTRIBUTES_FULL[self.castStat], owner.getStat(self.castStat + 'DC'),
-                        numPlusser(owner.getStat(self.castStat + "Attack")), self.readyStyle) + '\n'
+                .format(NUM_TO_ORDINAL[casterLevel],
+                        ATTRIBUTES_FULL[self.castingStat], owner.getStat(self.castingStat + 'DC'),
+                        numPlusser(owner.getStat(self.castingStat + "Attack")), self.readyStyle) + '\n'
         # Cantrips
-        if len(self.spellsReady[0]) > 0:
-            outline += 'Cantrips (at-will): ' + ', '.join(self.spellsReady[0]) + '\n'
-        for i in range(1, 9):
-            if len(self.spellsReady[i]) > 0:
+        if len(spellsReady[0]) > 0:
+            outline += 'Cantrips (at-will): ' + ', '.join(spellsReady[0]) + '\n'
+        for i in range(1, 10):
+            if len(spellsReady[i]) > 0:
                 # Pluralize 'slot' or not
-                if self.slots[i] == 1:
-                    outline += '{} level ({} slot): '.format(NUM_TO_ORDINAL[i], self.slots[i])
+                if self.slotsProgression[casterLevel][i] == 1:
+                    outline += '{} level ({} slot): '.format(NUM_TO_ORDINAL[i], self.slotsProgression[casterLevel][i])
                 else:
-                    outline += '{} level ({} slots): '.format(NUM_TO_ORDINAL[i], self.slots[i])
-                outline += ', '.join(self.spellsReady[i]) + '\n'
+                    outline += '{} level ({} slots): '.format(NUM_TO_ORDINAL[i], self.slotsProgression[casterLevel][i])
+                outline += ', '.join(spellsReady[i]) + '\n'
         return outline
 
 class Loadout:

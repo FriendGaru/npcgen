@@ -1,7 +1,8 @@
 name,req_classes,req_schools,req_levels,req_sources,fixed_include,fixed_exclude,spelllists_include,spelllists_exclude
-wizard,wizard,,,,,,,
-cleric,cleric,,,,,,,
-evoker,wizard,evocation,,,,,,
-conjurer,wizard,conjuration,,,,,,
+restricted,,,,,"healing spirit, find familiar",,,
+wizard,wizard,,,,,,,restricted
+cleric,cleric,,,,,,,restricted
+evoker,wizard,evocation,,,,,,restricted
+conjurer,wizard,conjuration,,,,,,restricted
+enchanter,"wizard,cleric",enchantment,,,,,,restricted
 healer,,,,,"cure wounds,healing word,mass cure wounds,heal",,,
-bogus,,,,,,healing spirit,,
