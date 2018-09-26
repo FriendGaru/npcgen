@@ -62,8 +62,6 @@ def dprint(message, requiredLevel=2):
 def numPlusser(num):
     """
     Takes a number, returns a str with a '+' in front of it if it's 0 or more, as is standard for modifiers in DnD.
-    :param num:
-    :return:
     """
     if num >=0:
         return '+' + str(num)
@@ -317,7 +315,8 @@ class NPCGenerator:
                     newSpellcasterProfile.spellsKnownModifier = 0
 
                 if line['free_spell_lists']:
-                    newSpellcasterProfile.freeSpellLists = line['free_spell_lists'].replace(" ", "").split(',')
+                    for spelllistName in line['free_spell_lists'].replace(" ", "").split(','):
+                        newSpellcasterProfile.freeSpellLists.append(self.spellLists[spelllistName])
                 else:
                     newSpellcasterProfile.freeSpellLists = None
 
@@ -465,47 +464,12 @@ class NPCGenerator:
             for save in template.saves:
                 character.saves.add(save)
 
-        if template.weaponLoadoutSet:
-            try:
-                loadoutSet = self.weaponLoadoutSets[template.weaponLoadoutSet]
-            except ValueError:
-                dprint("Error! Couldn't find loadout " + template.weaponLoadoutSet, 0)
-                return
-
-            loadout = loadoutSet.getRandomLoadout()
-            if 'shield' in loadout:
-                character.hasShield = True
-                loadout.remove('shield')
-            else:
-                character.hasShield = False
-
-            for item in loadout:
-                self.giveWeapon(character, item)
-                
-        if template.armorLoadoutSet:
-            try:
-                loadoutSet = self.armorLoadoutSets[template.armorLoadoutSet]
-            except ValueError:
-                dprint("Error! Couldn't find loadout " + template.armorLoadoutSet, 0)
-                return
-
-            loadout = loadoutSet.getRandomLoadout()
-            if 'shield' in loadout:
-                character.hasShield = True
-                loadout.remove('shield')
-            else:
-                character.hasShield = False
-
-            for item in loadout:
-                self.giveArmor(character, item)
-
         if template.baseStats:
             for baseStatName, statVal in template.baseStats.items():
                 character.stats[baseStatName] = statVal
 
         if template.spellCastingProfile:
             character.spellCastingAbility = template.spellCastingProfile.generateSpellCastingAbility()
-
 
 
 
@@ -784,7 +748,6 @@ class Template:
         self.displayName = displayName
         self.templateType = None
         self.attributeBonuses = None
-        self.statBonuses = None
         self.baseStats = None
         self.priorityAttributes = None
 
@@ -797,10 +760,7 @@ class Template:
         self.saves = None
         self.languages = []
         self.traits = None
-        # self.armors = None
         self.loadoutPool = None
-        self.weaponLoadoutSet = None
-        self.armorLoadoutSet = None
         self.spellCastingProfile = None
 
     def validate(self):
@@ -1060,14 +1020,13 @@ class SpellCasterProfile:
         # For now, only the standard slots progression is supported
         self.slotsProgression = None
 
-    # def addSpell(self, spellName, spellLevel, weight):
-    #     if spellName in self.spells[spellLevel]:
-    #         self.spells[spellLevel][spellName] = max(weight, self.spells[spellLevel][spellName])
-    #     else:
-    #         self.spells[spellLevel][spellName] = weight
-    #
-    # def getSpellSlotsByLevel(self, casterLevel, spellLevel):
-    #     return self.slotsProgression[casterLevel][spellLevel]
+    def getFreeSpells(self):
+        freeSpells = [[], [], [], [], [], [], [], [], [], [], ]
+        if self.freeSpellLists:
+            for freeSpellList in self.freeSpellLists:
+                for spell in freeSpellList.spells.values():
+                    freeSpells[spell.level].append(spell.name)
+        return freeSpells
 
     def getRandomSpells(self):
         freeSpells = set()
@@ -1120,21 +1079,6 @@ class SpellCasterProfile:
             spellSelections.append(spellSelectionsForLevel)
         return spellSelections
 
-
-    # def getRandomSpells(self, spellLevel, num):
-    #     spellsWeights = zip(*self.spells[spellLevel])
-    #     spells = list(next(spellsWeights))
-    #     weights = list(next(spellsWeights))
-    #     if num > len(spells):
-    #         return spells
-    #     outSpells = []
-    #     while len(outSpells) < num:
-    #         choiceIndex = random.choices(range(len(spells)), weights)[0]
-    #         outSpells.append(spells[choiceIndex])
-    #         del(spells[choiceIndex])
-    #         del(weights[choiceIndex])
-    #     return outSpells
-
     def generateSpellCastingAbility(self):
         newSpellCastingAbility = SpellCastingAbility(
             readyStyle=self.readyStyle, castingStat=self.castingStat,
@@ -1142,8 +1086,10 @@ class SpellCasterProfile:
             fixedSpellsKnownByLevel=self.fixedSpellsKnownByLevel,
             cantripsProgression=self.cantripsProgression,
             slotsProgression=self.slotsProgression,
+            spellsKnownModifier=self.spellsKnownModifier,
         )
         newSpellCastingAbility.spellChoices = self.getRandomSpells()
+        newSpellCastingAbility.freeSpells = self.getFreeSpells()
         return newSpellCastingAbility
 
 
@@ -1158,11 +1104,14 @@ class SpellCastingAbility:
                  spellsReadiedProgression=DEFAULT_SPELLS_READIED_PROGRESSION,
                  fixedSpellsKnownByLevel=None,
                  cantripsProgression=CASTER_CANTRIPS_KNOWN['none'],
-                 slotsProgression=DEFAULT_SPELLCASTER_SLOTS):
+                 slotsProgression=DEFAULT_SPELLCASTER_SLOTS,
+                 spellsKnownModifier=0,
+                 ):
         # NPCs generally either have spells 'prepared' or 'known'
         self.readyStyle = readyStyle
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
         self.spellChoices = None
+        self.freeSpells = [[], [], [], [], [], [], [], [], [], [], ]
         # Which stat is used for casting
         self.castingStat = castingStat
         self.hdPerCastingLevel = hdPerCastingLevel
@@ -1170,6 +1119,7 @@ class SpellCastingAbility:
         self.cantripsProgression = cantripsProgression
         self.fixedSpellsKnownByLevel = fixedSpellsKnownByLevel
         self.slotsProgression = slotsProgression
+        self.spellsKnownModifier = spellsKnownModifier
 
     def getCasterLevel(self,owner):
         hitDice = owner.getStat('hitDiceNum')
@@ -1183,6 +1133,8 @@ class SpellCastingAbility:
             spellsKnown = self.fixedSpellsKnownByLevel[casterLevel]
         else:
             spellsKnown = owner.getStat(self.castingStat + "Mod") + casterLevel
+
+        spellsKnown += self.spellsKnownModifier
 
         spellSlots = self.slotsProgression
         maxSpellLevel = 9
@@ -1204,8 +1156,9 @@ class SpellCastingAbility:
                 break
 
         spellsReadied = [[], [], [], [], [], [], [], [], [], [], ]
-        for i in range(0, 10):
-            spellsReadied[i] = self.spellChoices[i][0:numSpellsReadiedByLevel[i]]
+        for spellLevel in range(0, 10):
+            spellsReadied[spellLevel] = list(itertools.chain(
+                self.freeSpells[spellLevel], self.spellChoices[spellLevel][0:numSpellsReadiedByLevel[spellLevel]]))
 
         return spellsReadied
 
@@ -1223,7 +1176,7 @@ class SpellCastingAbility:
         if len(spellsReady[0]) > 0:
             outline += 'Cantrips (at-will): ' + ', '.join(spellsReady[0]) + '\n'
         for i in range(1, 10):
-            if len(spellsReady[i]) > 0:
+            if len(spellsReady[i]) > 0 and self.slotsProgression[casterLevel][i] > 0:
                 # Pluralize 'slot' or not
                 if self.slotsProgression[casterLevel][i] == 1:
                     outline += '{} level ({} slot): '.format(NUM_TO_ORDINAL[i], self.slotsProgression[casterLevel][i])

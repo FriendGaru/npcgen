@@ -1,4 +1,4 @@
 internal_name,display_name,priority_attributes,saves,skills_fixed,skills_random,num_random_skills,loadout_pool,spellcasting_profile,traits
 soldier,,"str,con",con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,,
 magicker,,"int,wis",int,arcana,"religion,insight,nature,history",2,mage,evoker,
-helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,priest,
+helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,doofus,

@@ -3,4 +3,4 @@ wizard,int,prepared,,wizard,,,,wizard
 evoker,int,prepared,,wizard,,,,"evoker:50,wizard"
 priest,wis,prepared,,sorcerer,,,,"healer:200,cleric"
 sorcerer,cha,known,,sorcerer,sorcerer,,,"enchanter:50,wizard"
-doofus,cha,known,,wizard,,,,"healer:1,evoker:1.5"
+doofus,cha,known,2,wizard,,,healer,"evoker:1.5,cleric"
