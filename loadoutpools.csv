@@ -6,4 +6,10 @@ soldier,,"leather,hide",TRUE,"handaxe,crossbow_light"
 mage,,unarmored,,quarterstaff
 ,,padded,,quarterstaff
 ,,padded,,dagger
-monk,,unarmored_defense_monk,,unarmed
+monk,3,unarmored_defense_monk,,
+,,unarmored_defense_monk,,quarterstaff
+,,unarmored_defense_monk,,shortsword
+rogue,,"leather,hide",,"shortsword,crossbow_light"
+,,"leather,hide",,"dagger,sling"
+,,"studded_leather,chain_shirt",,"shortsword,crossbow_light"
+,,"studded_leather,chain_shirt",,"dagger,sling"

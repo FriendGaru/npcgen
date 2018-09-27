@@ -1,5 +1,4 @@
-spellsmini.txt
-
 npcgentest.py
 
 __pycache__/*
+.idea/*

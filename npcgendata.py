@@ -10,16 +10,15 @@ ATTRIBUTES_FULL: Dict[str, str] = {
 }
 
 STATS_BASE = {
-    'hitDiceNum': 1, 'hitDiceSize': 8, 'hitPointsExtra': 0, 'proficiencyExtra': 0,
-    'speedWalk': 30, 'speedFly': 0, 'speedBurrow': 0, 'speedSwim': 0,
-    'randomStatPoints': 0,
+    'hit_dice_num': 1, 'hit_dice_size': 8, 'hit_points_extra': 0, 'proficiency_extra': 0,
+    'speed_walk': 30, 'speed_fly': 0, 'speed_burrow': 0, 'speed_swim': 0,
+    'random_stat_points': 0,
     'size': 'medium',
     # Armor AC Bonus is granted to some fighters
     'armorACBonus': 0,
 }
 STATS_DERIVED = (
-    'hitPoints', 'proficiency',
-    'moveWalkFinal', 'moveFlyFinal', 'moveBurrowFinal', 'moveSwimFinal'
+    'hit_points', 'proficiency',
 )
 
 SKILLS = {

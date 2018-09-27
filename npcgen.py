@@ -1,36 +1,35 @@
 import random
-import re
 import csv
-import traceback
 import itertools
 from npcgendata import *
 
 # -1 - Nothing at all
 # 0 - Errors only
 # 1 - Basic operations completed
-# 2 - The nitty gritty
+# 2 - Minor operations completed
 # 3 - Painfully Verbose
 DEBUG_LEVEL = 0
 
-def rollDie(dieSize):
-    return random.randint(1, dieSize)
+
+def roll_die(die_size):
+    return random.randint(1, die_size)
 
 
-def rollDice(dieSize, numDice, dropLowest=0, dropHighest=0):
+def roll_dice(die_size, num_dice, drop_lowest=0, drop_highest=0):
     """
     Rolls a number of dice and returns the total, dropping the lowest or highest dice values as specified.
     numDice is the number of dice to add up AFTER dropping dice.
     """
-    diceToRoll = numDice + dropLowest + dropHighest
-    dicePool = []
-    for i in range(diceToRoll):
-        dicePool.append(rollDie(dieSize))
-    dicePool.sort()
-    if dropHighest > 0:
-        dicePool = dicePool[dropLowest:-dropHighest]
+    dice_to_roll = num_dice + drop_lowest + drop_highest
+    dice_pool = []
+    for i in range(dice_to_roll):
+        dice_pool.append(roll_die(die_size))
+    dice_pool.sort()
+    if drop_highest > 0:
+        dice_pool = dice_pool[drop_lowest:-drop_highest]
     else:
-        dicePool = dicePool[dropLowest:]
-    return sum(dicePool)
+        dice_pool = dice_pool[drop_lowest:]
+    return sum(dice_pool)
 
 
 def weighted_sample(population, weights, k):
@@ -48,25 +47,33 @@ def weighted_sample(population, weights, k):
         index = population.index(choice)
         weights.pop(index)
         population.remove(choice)
-        weights = [ x / sum(weights) for x in weights]
+        weights = [x / sum(weights) for x in weights]
     return list(sample)
 
 
-def dprint(message, requiredLevel=2):
+def debug_print(message, required_level=2):
     """
     Prints out a message for debugging purposes. Higher numbers are more verbose, uses the DEBUG_LEVEL constant.
     """
-    if DEBUG_LEVEL >= requiredLevel:
+    if DEBUG_LEVEL >= required_level:
         print(message)
 
-def numPlusser(num):
+
+def num_plusser(num, add_space=False):
     """
     Takes a number, returns a str with a '+' in front of it if it's 0 or more, as is standard for modifiers in DnD.
+    If add_space == true, a space is included between the sign and the number
     """
-    if num >=0:
-        return '+' + str(num)
+    if num >= 0:
+        if add_space:
+            return '+ ' + str(num)
+        else:
+            return '+' + str(num)
     else:
-        return str(num)
+        if add_space:
+            return '- ' + str(abs(num))
+        else:
+            return str(num)
 
 
 class NPCGenerator:
@@ -75,437 +82,449 @@ class NPCGenerator:
     Character class based on given parameters.
     """
     def __init__(self,
-                 weaponsFilename=WEAPONS_FILENAME,
-                 armorsFilename=ARMORS_FILENAME,
-                 spellsFilename=SPELLS_FILENAME,
-                 spellListsFilename=SPELLLISTS_FILENAME,
-                 spellcasterProfilesFilename=SPELLCASTERPROFILES_FILENAME,
-                 loadoutPoolsFilename=LOADOUTPOOLS_FILENAME,
-                 traitsFilename=TRAITS_FILENAME,
-                 raceTemplatesFilename=RACETEMPLATES_FILENAME,
-                 classTemplatesFilename=CLASSTEMPLATES_FILENAME,
+                 weapons_filename=WEAPONS_FILENAME,
+                 armors_filename=ARMORS_FILENAME,
+                 spells_filename=SPELLS_FILENAME,
+                 spell_lists_filename=SPELLLISTS_FILENAME,
+                 spellcaster_profiles_filename=SPELLCASTERPROFILES_FILENAME,
+                 loadout_pools_filename=LOADOUTPOOLS_FILENAME,
+                 traits_filename=TRAITS_FILENAME,
+                 race_templates_filename=RACETEMPLATES_FILENAME,
+                 class_templates_filename=CLASSTEMPLATES_FILENAME,
                  ):
 
         self.weapons = {}
-        self.buildWeaponsFromCSV(weaponsFilename)
+        self.build_weapons_from_csv(weapons_filename)
 
         self.armors = {}
-        self.buildArmorsFromCSV(armorsFilename)
+        self.build_armors_from_csv(armors_filename)
 
-        self.loadoutPools = {}
-        self.buildLoadoutPoolsFromCSV(loadoutPoolsFilename)
+        self.loadout_pools = {}
+        self.build_loadout_pools_from_csv(loadout_pools_filename)
 
         self.traits = {}
-        self.buildTraitsFromCSV(traitsFilename)
+        self.build_traits_from_csv(traits_filename)
 
         self.spells = {}
-        self.buildSpellsFromCSV(spellsFilename)
+        self.build_spells_from_csv(spells_filename)
 
-        self.spellLists = {}
-        self.buildSpellListsFromCSV(spellListsFilename)
+        self.spell_lists = {}
+        self.build_spell_lists_from_csv(spell_lists_filename)
 
-        self.spellcasterProfiles = {}
-        self.buildSpellcasterProfilesFromCSV(spellcasterProfilesFilename)
+        self.spellcaster_profiles = {}
+        self.build_spellcaster_profiles_from_csv(spellcaster_profiles_filename)
 
-        self.raceTemplates = {}
-        self.buildRaceTemplatesFromCSV(raceTemplatesFilename)
+        self.race_templates = {}
+        self.build_race_templates_from_csv(race_templates_filename)
 
-        self.classTemplates = {}
-        self.buildClassTemplatesFromCSV(classTemplatesFilename)
+        self.class_templates = {}
+        self.build_class_templates_from_csv(class_templates_filename)
 
-    def buildArmorsFromCSV(self, armorsFilename):
-        with open(armorsFilename, newline='') as armorsFile:
-            armorsFileReader = csv.DictReader(armorsFile)
-            for line in armorsFileReader:
-                newArmor = Armor()
-                newArmor.intName = line['internal_name']
+    def build_armors_from_csv(self, armors_filename):
+        with open(armors_filename, newline='') as armorsFile:
+            armors_file_reader = csv.DictReader(armorsFile)
+            for line in armors_file_reader:
+                new_armor = Armor()
+                new_armor.int_name = line['internal_name']
                 if line['display_name']:
-                    newArmor.displayName = line['display_name']
+                    new_armor.display_name = line['display_name']
                 else:
-                    newArmor.displayName = newArmor.intName.capitalize()
-                newArmor.baseAC = int(line['base_ac'])
-                newArmor.armorType = line['armor_type']
+                    new_armor.display_name = new_armor.int_name.capitalize()
+                new_armor.base_ac = int(line['base_ac'])
+                new_armor.armor_type = line['armor_type']
                 if line['min_str']:
-                    newArmor.minStr = int(line['min_str'])
+                    new_armor.min_str = int(line['min_str'])
                 if line['stealth_disadvantage'] == 'TRUE':
-                    newArmor.stealthDisadvantage = True
-                newArmor.tags = set(line['tags'].replace(" ", "").split(','))
-                self.armors[newArmor.intName] = newArmor
+                    new_armor.stealth_disadvantage = True
+                new_armor.tags = set(line['tags'].replace(" ", "").split(','))
+                self.armors[new_armor.int_name] = new_armor
 
-    def buildWeaponsFromCSV(self, weaponsFilename):
-        with open(weaponsFilename, newline='') as weaponsFile:
-            weaponsFileReader = csv.DictReader(weaponsFile)
-            for line in weaponsFileReader:
+    def build_weapons_from_csv(self, weapons_filename):
+        with open(weapons_filename, newline='') as weaponsFile:
+            weapons_file_reader = csv.DictReader(weaponsFile)
+            for line in weapons_file_reader:
 
                 if line['internal_name'] == '':
                     continue
 
-                newWeapon = Weapon()
-                newWeapon.intName = line['internal_name']
+                new_weapon = Weapon()
+                new_weapon.int_name = line['internal_name']
                 if line['display_name']:
-                    newWeapon.displayName = line['display_name']
+                    new_weapon.display_name = line['display_name']
                 else:
-                    newWeapon.displayName = line['internal_name'].capitalize()
-                newWeapon.dmgDiceNum = int(line['dmg_dice_num'])
-                newWeapon.dmgDiceSize = int(line['dmg_dice_size'])
-                newWeapon.damageType = line['damage_type']
-                newWeapon.attackType = line['attack_type']
+                    new_weapon.display_name = line['internal_name'].capitalize()
+                new_weapon.dmg_dice_num = int(line['dmg_dice_num'])
+                new_weapon.dmg_dice_size = int(line['dmg_dice_size'])
+                new_weapon.damage_type = line['damage_type']
+                new_weapon.attack_type = line['attack_type']
                 if line['short_range']:
-                    newWeapon.rangeShort = int(line['short_range'])
+                    new_weapon.range_short = int(line['short_range'])
                 if line['long_range']:
-                    newWeapon.rangeLong = int(line['long_range'])
-                newWeapon.tags = set(line['tags'].replace(" ", "").split(','))
-                self.weapons[newWeapon.intName] = newWeapon
-                dprint("Weapon Added: " + str(newWeapon), 3)
+                    new_weapon.range_long = int(line['long_range'])
+                new_weapon.tags = set(line['tags'].replace(" ", "").split(','))
+                self.weapons[new_weapon.int_name] = new_weapon
+                debug_print("Weapon Added: " + str(new_weapon), 3)
 
-    def buildTraitsFromCSV(self, traitsFilename):
-        with open(traitsFilename, newline='') as traitsFile:
-            traitsFileReader = csv.DictReader(traitsFile)
-            newTrait = Trait()
-            for line in traitsFileReader:
-                newTrait.intName = line['internal_name']
+    def build_traits_from_csv(self, traits_filename):
+        with open(traits_filename, newline='') as traitsFile:
+            traits_file_reader = csv.DictReader(traitsFile)
+            for line in traits_file_reader:
+                new_trait = Trait()
+                new_trait.int_name = line['internal_name']
                 if line['display_name']:
-                    newTrait.displayName = line['display_name']
+                    new_trait.display_name = line['display_name']
                 else:
-                    newTrait.displayName = line['internal_name'].capitalize()
-                newTrait.traitType = line['trait_type']
-                newTrait.text = line['text']
-                newTagsDict = {}
-                for rawTag in line['tags'].split(','):
-                    rawTag = rawTag.strip()
-                    if ':' in rawTag:
-                        tagName, tagValue = rawTag.split(':')
-                        newTagsDict[tagName] = tagValue
-                    else:
-                        newTagsDict[rawTag] = None
-                self.traits[newTrait.intName] = newTrait
+                    new_trait.display_name = line['internal_name'].capitalize()
+                new_trait.trait_type = line['trait_type']
+                new_trait.text = line['text'].replace('\\n', '\n\t')
 
-    def buildLoadoutPoolsFromCSV(self, loadoutPoolsFilename):
-        with open(loadoutPoolsFilename, newline="") as loadoutPoolsFile:
-            loadoutPoolsFileReader = csv.DictReader(loadoutPoolsFile)
-            newLoadoutPool = None
-            for line in loadoutPoolsFileReader:
+                if line['tags']:
+                    new_tags_dict = {}
+                    for raw_tag in line['tags'].replace(' ', '').split(','):
+                        if ':' in raw_tag:
+                            tag_name, tag_value = raw_tag.split(':')
+                            new_tags_dict[tag_name] = tag_value
+                        else:
+                            new_tags_dict[raw_tag] = None
+                    new_trait.tags = new_tags_dict
+
+                self.traits[new_trait.int_name] = new_trait
+
+    def build_loadout_pools_from_csv(self, loadout_pools_filename):
+        with open(loadout_pools_filename, newline="") as loadoutPoolsFile:
+            loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
+            new_loadout_pool = None
+            for line in loadout_pools_file_reader:
                 if line['name']:
-                    if newLoadoutPool:
-                        self.loadoutPools[newLoadoutPool.name] = newLoadoutPool
-                    newLoadoutPool = LoadoutPool()
-                    newLoadoutPool.name = line['name']
+                    if new_loadout_pool:
+                        self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
+                    new_loadout_pool = LoadoutPool()
+                    new_loadout_pool.name = line['name']
                 if line['weight']:
                     weight = int(line['weight'])
                 else:
                     weight = DEFAULT_LOADOUT_POOL_WEIGHT
-                armors = line['armors'].replace(" ", "").split(',')
+
+                if line['armors']:
+                    armors = line['armors'].replace(" ", "").split(',')
+                else:
+                    armors = None
+
                 if line['shield'] == 'TRUE':
                     shield = True
                 else:
                     shield = False
-                weapons = line['weapons'].replace(" ", "").split(',')
-                newLoadout = Loadout(weapons=weapons, armors=armors, shield=shield)
-                newLoadoutPool.addLoadout(newLoadout, weight)
-            self.loadoutPools[newLoadoutPool.name] = newLoadoutPool
 
+                if line['weapons']:
+                    weapons = line['weapons'].replace(" ", "").split(',')
+                else:
+                    weapons = None
 
+                new_loadout = Loadout(weapons=weapons, armors=armors, shield=shield)
+                new_loadout_pool.add_loadout(new_loadout, weight)
+            self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
-    def buildSpellsFromCSV(self, filename):
-        with open(filename, newline='') as spellsFile:
-            spellsFileReader = csv.DictReader(spellsFile)
-            for line in spellsFileReader:
-                newSpell = Spell()
-                newSpell.name = line['name']
-                newSpell.source = line['source']
-                newSpell.level = SPELL_LEVEL_ORDINAL_TO_NUM[line['level']]
-                newSpell.school = line['school']
-                newSpell.classes = set(line['classes'].replace(" ", "").split(','))
-                self.spells[newSpell.name] = newSpell
+    def build_spells_from_csv(self, spells_filename):
+        with open(spells_filename, newline='') as spellsFile:
+            spells_file_reader = csv.DictReader(spellsFile)
+            for line in spells_file_reader:
+                new_spell = Spell()
+                new_spell.name = line['name']
+                new_spell.source = line['source']
+                new_spell.level = SPELL_LEVEL_ORDINAL_TO_NUM[line['level']]
+                new_spell.school = line['school']
+                new_spell.classes = set(line['classes'].replace(" ", "").split(','))
+                self.spells[new_spell.name] = new_spell
 
-    def buildSpellListsFromCSV(self, filename):
-        with open(filename, newline='') as spellListsFile:
-            spellListsFileReader = csv.DictReader(spellListsFile)
-            for line in spellListsFileReader:
-                newSpellList = SpellList()
-                newSpellList.name = line['name']
+    def build_spell_lists_from_csv(self, spell_lists_filename):
+        with open(spell_lists_filename, newline='') as spellListsFile:
+            spell_lists_file_reader = csv.DictReader(spellListsFile)
+            for line in spell_lists_file_reader:
+                new_spell_list = SpellList()
+                new_spell_list.name = line['name']
 
                 # Check for if it's an autolist
                 # If all these fields are blank, it's not an autolist
                 if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
                         or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
-                    reqClasses = None
+                    req_classes = None
                     if line['req_classes']:
-                        reqClasses = line['req_classes'].replace(" ", "").split(",")
-                    reqSchools = None
+                        req_classes = line['req_classes'].replace(" ", "").split(",")
+                    req_schools = None
                     if line['req_schools']:
-                        reqSchools = set(line['req_schools'].replace(" ", "").split(","))
-                    reqLevels = None
+                        req_schools = set(line['req_schools'].replace(" ", "").split(","))
+                    req_levels = None
                     if line['req_levels']:
-                        reqLevels = line['req_levels'].replace(" ", "").split(",")
-                    reqSources = None
+                        req_levels = line['req_levels'].replace(" ", "").split(",")
+                    req_sources = None
                     if line['req_sources']:
-                        reqSources = line['req_sources'].replace(" ", "").split(",")
+                        req_sources = line['req_sources'].replace(" ", "").split(",")
 
-                    for spellName, spell in self.spells.items():
-                        if reqClasses and spell.classes.isdisjoint(reqClasses):
+                    for spell_name, spell in self.spells.items():
+                        if req_classes and spell.classes.isdisjoint(req_classes):
                             continue
-                        if reqSchools and spell.school not in reqSchools:
+                        if req_schools and spell.school not in req_schools:
                             continue
-                        if reqLevels and spell.level not in reqLevels:
+                        if req_levels and spell.level not in req_levels:
                             continue
-                        if reqSources and spell.source not in reqSources:
+                        if req_sources and spell.source not in req_sources:
                             continue
-                        newSpellList.addSpell(spell)
+                        new_spell_list.add_spell(spell)
 
                 if line['fixed_include']:
-                    fixedIncludeSpells = line['fixed_include'].split(',')
-                    for spellName in fixedIncludeSpells:
-                        spellName = spellName.strip()
-                        if spellName not in self.spells:
-                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                   .format(spellName, newSpellList.name), 0)
+                    fixed_include_spells = line['fixed_include'].split(',')
+                    for spell_name in fixed_include_spells:
+                        spell_name = spell_name.strip()
+                        if spell_name not in self.spells:
+                            debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                        .format(spell_name, new_spell_list.name), 0)
                         else:
-                            newSpellList.addSpell(self.spells[spellName])
+                            new_spell_list.add_spell(self.spells[spell_name])
 
                 if line['fixed_exclude']:
-                    fixedExcludeSpells = line['fixed_exclude'].split(',')
-                    for spellName in fixedExcludeSpells:
-                        spellName = spellName.strip()
-                        if spellName not in self.spells:
-                            dprint("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                   .format(spellName, newSpellList.name), 0)
+                    fixed_exclude_spells = line['fixed_exclude'].split(',')
+                    for spell_name in fixed_exclude_spells:
+                        spell_name = spell_name.strip()
+                        if spell_name not in self.spells:
+                            debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                        .format(spell_name, new_spell_list.name), 0)
                         else:
-                            newSpellList.removeSpell(spellName)
+                            new_spell_list.remove_spell(spell_name)
 
                 if line['spelllists_include']:
-                    spellListsToInclude = line['spelllists_include'].replace(" ", "").split(',')
-                    for spellListToInclude in spellListsToInclude:
-                        for spellName, spell in spellListToInclude.spells.items():
-                            newSpellList.addSpell(spell)
+                    spell_lists_to_include = line['spelllists_include'].replace(" ", "").split(',')
+                    for spellListToInclude in spell_lists_to_include:
+                        for spell_name, spell in spellListToInclude.spells.items():
+                            new_spell_list.add_spell(spell)
 
                 if line['spelllists_exclude']:
-                    spellListsToExclude = line['spelllists_exclude'].replace(" ", "").split(',')
-                    for spellListToExclude in spellListsToExclude:
-                        spellList = self.spellLists[spellListToExclude]
-                        for spellName, spell in spellList.spells.items():
-                            newSpellList.removeSpell(spell)
+                    spell_lists_to_exclude = line['spelllists_exclude'].replace(" ", "").split(',')
+                    for spellListToExclude in spell_lists_to_exclude:
+                        spell_list = self.spell_lists[spellListToExclude]
+                        for spell_name, spell in spell_list.spells.items():
+                            new_spell_list.remove_spell(spell)
 
-                self.spellLists[newSpellList.name] = newSpellList
+                self.spell_lists[new_spell_list.name] = new_spell_list
 
-    def buildSpellcasterProfilesFromCSV(self, spellcasterProfilesFilename):
-        with open(spellcasterProfilesFilename, newline="") as spellcasterProfilesFile:
-            spellcasterProfilesFileReader = csv.DictReader(spellcasterProfilesFile)
-            for line in spellcasterProfilesFileReader:
-                newSpellcasterProfile = SpellCasterProfile()
-                newSpellcasterProfile.intName = line['internal_name']
-                newSpellcasterProfile.castingStat = line['casting_stat']
-                newSpellcasterProfile.readyStyle = line['ready_style']
+    def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_filename):
+        with open(spellcaster_profiles_filename, newline="") as spellcaster_profiles_file:
+            spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
+            for line in spellcaster_profiles_file_reader:
+                new_spellcaster_profile = SpellCasterProfile()
+                new_spellcaster_profile.intName = line['internal_name']
+                new_spellcaster_profile.casting_stat = line['casting_stat']
+                new_spellcaster_profile.ready_style = line['ready_style']
 
                 # Alternative slots progressions not implemented
                 # Probably not needed, since all casters currently in the game derive their slots from the standard
-                newSpellcasterProfile.slotsProgression = DEFAULT_SPELLCASTER_SLOTS
+                new_spellcaster_profile.spell_slots_table = DEFAULT_SPELLCASTER_SLOTS
 
                 if line["hd_per_casting_level"]:
-                    newSpellcasterProfile.hdPerCastingLevel = int(line['hd_per_casting_level'])
+                    new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
                 else:
-                    newSpellcasterProfile.hdPerCastingLevel = 1
+                    new_spellcaster_profile.hd_per_casting_level = 1
 
-                newSpellcasterProfile.cantripsProgression = CASTER_CANTRIPS_KNOWN[line['cantrips_progression']]
+                new_spellcaster_profile.cantrips_per_level = CASTER_CANTRIPS_KNOWN[line['cantrips_per_level']]
 
                 if line['fixed_spells_known_by_level']:
-                    newSpellcasterProfile.fixedSpellsKnownByLevel = CASTER_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
+                    new_spellcaster_profile.fixed_spells_known_by_level = \
+                        CASTER_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
                 else:
-                    newSpellcasterProfile.fixedSpellsKnownByLevel = None
+                    new_spellcaster_profile.fixed_spells_known_by_level = None
 
                 if line['spells_known_modifier']:
-                    newSpellcasterProfile.spellsKnownModifier = int(line['spells_known_modifier'])
+                    new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
                 else:
-                    newSpellcasterProfile.spellsKnownModifier = 0
+                    new_spellcaster_profile.spells_known_modifier = 0
 
                 if line['free_spell_lists']:
-                    for spelllistName in line['free_spell_lists'].replace(" ", "").split(','):
-                        newSpellcasterProfile.freeSpellLists.append(self.spellLists[spelllistName])
+                    for spell_list_name in line['free_spell_lists'].replace(" ", "").split(','):
+                        new_spellcaster_profile.free_spell_lists.append(self.spell_lists[spell_list_name])
                 else:
-                    newSpellcasterProfile.freeSpellLists = None
+                    new_spellcaster_profile.free_spell_lists = None
 
-                newSpelllistsDict = {}
+                new_spell_lists_dict = {}
                 for rawEntry in line['spell_lists'].replace(" ", "").split(','):
                     if ':' in rawEntry:
-                        spelllistName, weight = rawEntry.split(':')
-                        newSpelllistsDict[self.spellLists[spelllistName]] = weight
+                        spell_list_name, weight = rawEntry.split(':')
+                        new_spell_lists_dict[self.spell_lists[spell_list_name]] = weight
                     else:
-                        newSpelllistsDict[self.spellLists[rawEntry]] = DEFAULT_SPELL_WEIGHT
-                newSpellcasterProfile.spellLists = newSpelllistsDict
+                        new_spell_lists_dict[self.spell_lists[rawEntry]] = DEFAULT_SPELL_WEIGHT
+                new_spellcaster_profile.spell_lists = new_spell_lists_dict
 
                 # For now, only standard slots progression
-                newSpellcasterProfile.slotsProgression = DEFAULT_SPELLCASTER_SLOTS
+                new_spellcaster_profile.spell_slots_table = DEFAULT_SPELLCASTER_SLOTS
 
-                self.spellcasterProfiles[newSpellcasterProfile.intName] = newSpellcasterProfile
+                self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
 
-    def buildRaceTemplatesFromCSV(self, raceTemplatesFilename):
-        with open(raceTemplatesFilename, newline='') as raceTemplatesFile:
-            raceTemplatesFileReader = csv.DictReader(raceTemplatesFile)
-            for line in raceTemplatesFileReader:
-                newRaceTemplate = Template()
-                newRaceTemplate.intName = line["internal_name"]
+    def build_race_templates_from_csv(self, race_templates_filename):
+        with open(race_templates_filename, newline='') as race_templates_file:
+            race_templates_file_reader = csv.DictReader(race_templates_file)
+            for line in race_templates_file_reader:
+                new_race_template = Template()
+                new_race_template.int_name = line["internal_name"]
                 if line["display_name"]:
-                    newRaceTemplate.displayName = line['display_name']
+                    new_race_template.display_name = line['display_name']
                 else:
-                    newRaceTemplate.displayName = line['internal_name'].capitalize()
+                    new_race_template.display_name = line['internal_name'].capitalize()
 
-                newAttributeBonusesDict = {}
+                new_attribute_bonuses_dict = {}
                 if line['attribute_bonuses']:
-                    for rawAttributeBonuse in line['attribute_bonuses'].replace(' ', '').split(','):
-                        attribute, bonus = rawAttributeBonuse.split(':')
+                    for raw_attribute_bonus in line['attribute_bonuses'].replace(' ', '').split(','):
+                        attribute, bonus = raw_attribute_bonus.split(':')
                         bonus = int(bonus)
-                        newAttributeBonusesDict[attribute] = bonus
-                newRaceTemplate.attributeBonuses = newAttributeBonusesDict
+                        new_attribute_bonuses_dict[attribute] = bonus
+                new_race_template.attribute_bonuses = new_attribute_bonuses_dict
 
-                newRaceTemplate.languages = line['languages'].replace(" ", "").split(',')
+                new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
                 if line['size']:
-                    newRaceTemplate.size = line['size']
+                    new_race_template.size = line['size']
                 else:
-                    newRaceTemplate.size = DEFAULT_SIZE
+                    new_race_template.size = DEFAULT_SIZE
 
                 if line['traits']:
-                    newRaceTemplate.traits = line['traits'].replace(" ", "").split(',')
+                    new_race_template.traits = line['traits'].replace(" ", "").split(',')
                 else:
-                    newRaceTemplate.traits = None
+                    new_race_template.traits = None
 
-                self.raceTemplates[newRaceTemplate.intName] = newRaceTemplate
+                self.race_templates[new_race_template.int_name] = new_race_template
 
-    def buildClassTemplatesFromCSV(self, clasTemplatesFilename):
-        with open(clasTemplatesFilename, newline='') as classTemplatesFile:
-            classTemplatesFileReader = csv.DictReader(classTemplatesFile)
-            for line in classTemplatesFileReader:
-                newClassTemplate = Template()
-                newClassTemplate.intName = line['internal_name']
+    def build_class_templates_from_csv(self, class_templates_filename):
+        with open(class_templates_filename, newline='') as class_templates_file:
+            class_templates_file_reader = csv.DictReader(class_templates_file)
+            for line in class_templates_file_reader:
+                new_class_template = Template()
+                new_class_template.int_name = line['internal_name']
 
                 if line['display_name']:
-                    newClassTemplate.displayName = line['display_name']
+                    new_class_template.display_name = line['display_name']
                 else:
-                    newClassTemplate.displayName = line['internal_name'].capitalize()
+                    new_class_template.display_name = line['internal_name'].capitalize()
 
-                newClassTemplate.priorityAttributes = line['priority_attributes'].replace(" ", "").split(',')
-                newClassTemplate.saves = line['saves'].replace(" ", "").split(',')
-                newClassTemplate.skillsFixed = line['skills_fixed'].replace(" ", "").split(',')
-                newClassTemplate.skillsRandom = line['skills_random'].replace(" ", "").split(',')
+                new_class_template.priority_attributes = line['priority_attributes'].replace(" ", "").split(',')
+                new_class_template.saves = line['saves'].replace(" ", "").split(',')
+                new_class_template.skills_fixed = line['skills_fixed'].replace(" ", "").split(',')
+                new_class_template.skills_random = line['skills_random'].replace(" ", "").split(',')
                 if line['num_random_skills']:
-                    newClassTemplate.numRandomSkills = int(line['num_random_skills'])
+                    new_class_template.num_random_skills = int(line['num_random_skills'])
                 else:
-                    newClassTemplate.numRandomSkills = 0
+                    new_class_template.num_random_skills = 0
 
                 if line['loadout_pool']:
-                    newClassTemplate.loadoutPool = line['loadout_pool']
+                    new_class_template.loadout_pool = line['loadout_pool']
                 else:
-                    newClassTemplate.loadoutPool = None
+                    new_class_template.loadout_pool = None
 
                 if line['traits']:
-                    newClassTemplate.traits = line['traits'].replace(" ", "").split(',')
+                    new_class_template.traits = line['traits'].replace(" ", "").split(',')
                 else:
-                    newClassTemplate.traits = None
+                    new_class_template.traits = None
 
                 if line['spellcasting_profile']:
-                    newClassTemplate.spellCastingProfile = self.spellcasterProfiles[line['spellcasting_profile']]
+                    new_class_template.spell_casting_profile = self.spellcaster_profiles[line['spellcasting_profile']]
 
-                self.classTemplates[newClassTemplate.intName] = newClassTemplate
+                self.class_templates[new_class_template.int_name] = new_class_template
 
-    def giveTrait(self, character: 'Character', traitName):
-        trait = self.traits[traitName]
-        character.traits[traitName] = trait
+    def give_trait(self, character: 'Character', trait_name):
+        trait = self.traits[trait_name]
+        character.traits[trait_name] = trait
 
         if 'give_armor' in trait.tags:
-            self.giveArmor(character, trait.tags['give_armor'])
+            self.give_armor(character, trait.tags['give_armor'])
 
         if 'give_weapon' in trait.tags:
-            self.giveWeapon(character, trait.tags['give_weapon'])
+            self.give_weapon(character, trait.tags['give_weapon'])
 
-    def giveArmor(self, character, armorName):
-        armor = self.armors[armorName]
-        character.armors[armorName] = armor
+    def give_armor(self, character, armor_name):
+        armor = self.armors[armor_name]
+        character.armors[armor_name] = armor
 
-    def giveWeapon(self, character, weaponName):
-        weapon = self.weapons[weaponName]
-        character.loadout.append(weapon)
+    def give_weapon(self, character, weapon_name):
+        weapon = self.weapons[weapon_name]
+        character.weapons[weapon_name] = weapon
 
-    def applyTemplate(self, character: 'Character', templateName, templateType=None):
-        if templateType=='race':
-            template = self.raceTemplates[templateName]
-        elif templateType=='class':
-            template = self.classTemplates[templateName]
-        else:
-            raise ValueError('!!!Must specify templateType!')
+    def apply_template(self, character: 'Character', template: 'Template', template_type=None):
 
-        if templateType == 'race':
-            character.raceName = template.displayName
-        elif templateType == 'class':
-            character.className = template.displayName
+        if template_type == 'race':
+            character.race_name = template.display_name
+        elif template_type == 'class':
+            character.class_name = template.display_name
 
-        if template.priorityAttributes:
-            character.priorityAttributes = template.priorityAttributes
+        if template.priority_attributes:
+            character.priority_attributes = template.priority_attributes
 
-        if template.attributeBonuses:
-            for k, v in template.attributeBonuses.items():
-                character.attributeBonuses[k] = v
+        if template.attribute_bonuses:
+            for k, v in template.attribute_bonuses.items():
+                character.attribute_bonuses[k] = v
 
         if template.traits:
-            for trait in template.traits:
-                self.giveTrait(character, trait)
+            for trait_name in template.traits:
+                self.give_trait(character, trait_name)
 
-        if template.loadoutPool:
-            loadoutPool = self.loadoutPools[template.loadoutPool]
-            loadout = loadoutPool.getRandomLoadout()
-            for armor in loadout.armors:
-                character.armors[armor] = self.armors[armor]
-            for weapon in loadout.weapons:
-                character.weapons[weapon] = self.weapons[weapon]
-            character.hasShield = loadout.shield
+        if template.loadout_pool:
+            loadout_pool = self.loadout_pools[template.loadout_pool]
+            loadout = loadout_pool.get_random_loadout()
+            if loadout.armors:
+                for armor in loadout.armors:
+                    self.give_armor(character, armor)
+            if loadout.weapons:
+                for weapon in loadout.weapons:
+                    self.give_weapon(character, weapon)
+            character.has_shield = loadout.shield
 
-        if template.skillsFixed:
-            for skill in template.skillsFixed:
+        if template.skills_fixed:
+            for skill in template.skills_fixed:
                 character.skills[skill] = False
 
-        if template.skillsRandom:
-            chosenSkills = random.sample(template.skillsRandom, template.numRandomSkills)
-            for skill in chosenSkills:
+        if template.skills_random:
+            chosen_skills = random.sample(template.skills_random, template.num_random_skills)
+            for skill in chosen_skills:
                 character.skills[skill] = False
 
         if template.saves:
             for save in template.saves:
                 character.saves.add(save)
 
-        if template.baseStats:
-            for baseStatName, statVal in template.baseStats.items():
+        if template.base_stats:
+            for baseStatName, statVal in template.base_stats.items():
                 character.stats[baseStatName] = statVal
 
-        if template.spellCastingProfile:
-            character.spellCastingAbility = template.spellCastingProfile.generateSpellCastingAbility()
+        if template.spell_casting_profile:
+            character.spell_casting_ability = template.spell_casting_profile.generate_spell_casting_ability()
 
+    def new_character(self, attribute_roll_method=DEFAULT_ROLL_METHOD, rerolls_allowed=0, min_total=0,
+                      allow_swapping=True, force_optimize=False,
+                      fixed_rolls=(),
+                      class_template_name=DEFAULT_CLASS, race_template_name=DEFAULT_RACE,
+                      hit_dice_num=DEFAULT_HITDICE_NUM, hit_dice_size=DEFAULT_HITDICE_SIZE,
+                      give_asi=True,
+                      seed=None):
 
-
-    def newCharacter(self, attributeRollMethod=DEFAULT_ROLL_METHOD, rerollsAllowed=0, minTotal=0,
-                     allowSwapping=True, forceOptimize=False,
-                     fixedRolls=[],
-                     classTemplate=DEFAULT_CLASS, raceTemplate=DEFAULT_RACE,
-                     hitDiceNum=DEFAULT_HITDICE_NUM, hitDiceSize=DEFAULT_HITDICE_SIZE,
-                     giveASI=True,
-                     seed=None):
         random.seed(seed)
-        newCharacter = Character()
-        newCharacter.seed = seed
-        self.applyTemplate(newCharacter, raceTemplate, 'race')
-        self.applyTemplate(newCharacter, classTemplate, 'class')
-        newCharacter.rollAttributes(*ROLL_METHODS[attributeRollMethod],
-                                    rerollsAllowed=rerollsAllowed, minTotal=minTotal,
-                                    allowSwapping=allowSwapping, forceOptimize=forceOptimize,
-                                    fixedRolls=fixedRolls)
-        newCharacter.stats['hitDiceSize'] = hitDiceSize
-        newCharacter.stats['hitDiceNum'] = hitDiceNum
-        if giveASI:
-            newCharacter.generateASIProgression(priorityAttributeWeight=ASI_PROGRESSION_PRIORITY_WEIGHT,
-                                                otherAttributeWeight=ASI_PROGRESSION_OTHER_WEIGHT)
-            newCharacter.applyASIProgression(hdPerIncrease=ASI_HD_PER_INCREASE,
-                                             pointsPerIncrease=ASI_POINTS_PER_INCREASE)
-        newCharacter.updateDerivedStats()
-        newCharacter.chooseArmors()
-        return newCharacter
+        new_character = Character()
+        new_character.seed = seed
+
+        race_template = self.race_templates[race_template_name]
+        self.apply_template(new_character, race_template, 'race')
+
+        class_template = self.class_templates[class_template_name]
+        self.apply_template(new_character, class_template, 'class')
+
+        new_character.roll_attributes(*ROLL_METHODS[attribute_roll_method],
+                                      rerolls_allowed=rerolls_allowed, min_total=min_total,
+                                      allow_swapping=allow_swapping, force_optimize=force_optimize,
+                                      fixed_rolls=fixed_rolls)
+        new_character.stats['hit_dice_size'] = hit_dice_size
+        new_character.stats['hit_dice_num'] = hit_dice_num
+        if give_asi:
+            new_character.generate_asi_progression(priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
+                                                   other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT)
+            new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
+                                                points_per_increase=ASI_POINTS_PER_INCREASE)
+        new_character.update_derived_stats()
+        new_character.choose_armors()
+        return new_character
 
 
 class Character:
@@ -513,521 +532,545 @@ class Character:
         self.seed = None
 
         self.stats = {}
-        # for attr in STATS_ATTRIBUTES:
-        #     self.stats[attr] = DEFAULT_ATTRIBUTE_VALUE
+        for attr in STATS_ATTRIBUTES:
+            self.stats[attr] = DEFAULT_ATTRIBUTE_VALUE
         for stat in STATS_BASE:
             self.stats[stat] = STATS_BASE[stat]
 
-        self.attributeBonuses = {}
-        self.priorityAttributes = []
-        self.asiProgression = []
+        self.attribute_bonuses = {}
+        self.priority_attributes = []
+        self.asi_progression = []
 
-        self.raceName = ''
-        self.className = ''
+        self.race_name = ''
+        self.class_name = ''
 
         # Skills are stored as a dictionary, if the value is true that means the character has expertise
         self.skills = {}
         self.saves = set()
 
         self.armors = {}
-        self.chosenArmor = None
-        self.extraArmors = []
+        self.chosen_armor = None
+        self.extra_armors = []
         self.weapons = {}
-        self.hasShield = False
+        self.has_shield = False
 
         self.traits = {}
 
-        self.spellCastingAbility = None
+        self.spell_casting_ability = None
 
         # self.updateDerivedStats()
 
-    def rollAttributes(self, dieSize=6, numDice=3, dropLowest=0, dropHighest=0,
-                       rerollsAllowed=0, minTotal=0, fixedRolls=[],
-                       allowSwapping=True, forceOptimize=False,
-                       applyAttributeBonuses=True,):
+    def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
+                        rerolls_allowed=0, min_total=0, fixed_rolls=(),
+                        allow_swapping=True, force_optimize=False,
+                        apply_attribute_bonuses=True, ):
 
-        attributeDict = {}
+        attribute_dict = {}
 
         # Apply reroll cap, so wacky high numbers aren't allowed
-        rerollsAllowed = min(rerollsAllowed, REROLLS_CAP)
+        rerolls_allowed = min(rerolls_allowed, REROLLS_CAP)
         rolls = []
 
         # Make initial rolls, reroll if the total is too low
-        while rerollsAllowed >= 0:
-            rerollsAllowed -= 1
-            rolls = fixedRolls[:]
-            totalRolled = sum(rolls)
+        while rerolls_allowed >= 0:
+            rerolls_allowed -= 1
+            rolls = list(fixed_rolls[:])
+            total_rolled = sum(rolls)
             while len(rolls) < len(STATS_ATTRIBUTES):
-                roll = rollDice(dieSize, numDice, dropLowest, dropHighest)
+                roll = roll_dice(die_size, num_dice, drop_lowest, drop_highest)
                 rolls.append(roll)
-                totalRolled += roll
-            if totalRolled >= minTotal:
+                total_rolled += roll
+            if total_rolled >= min_total:
                 break
 
         random.shuffle(rolls)
         for attribute in STATS_ATTRIBUTES:
-            attributeDict[attribute] = rolls.pop()
-        dprint(attributeDict)
+            attribute_dict[attribute] = rolls.pop()
+        debug_print(attribute_dict)
 
         # forcedOptimize means the highest attributes will ALWAYS be the
-        if allowSwapping:
-            finalizedAttributes = set()
-            for priorityAttribute in self.priorityAttributes:
-                swapOptions = set(STATS_ATTRIBUTES)
-                swapOptions.remove(priorityAttribute)
-                swapOptions -= finalizedAttributes
-                if not forceOptimize:
-                    swapOptions -= set(self.priorityAttributes)
-                dprint(swapOptions, 2)
-                highestVal = max(*[attributeDict[x] for x in swapOptions], attributeDict[priorityAttribute])
-                if highestVal > attributeDict[priorityAttribute]:
-                    validSwaps = ([k for k, v in attributeDict.items() if k in swapOptions and v == highestVal])
-                    swapChoice = random.choice(validSwaps)
-                    attributeDict[priorityAttribute], attributeDict[swapChoice] = attributeDict[swapChoice], attributeDict[priorityAttribute]
-                    dprint('Swapped: ' + priorityAttribute + ', ' + swapChoice, 2)
-                finalizedAttributes.add(priorityAttribute)
+        if allow_swapping:
+            finalized_attributes = set()
+            for priorityAttribute in self.priority_attributes:
+                swap_options = set(STATS_ATTRIBUTES)
+                swap_options.remove(priorityAttribute)
+                swap_options -= finalized_attributes
+                if not force_optimize:
+                    swap_options -= set(self.priority_attributes)
+                debug_print(swap_options, 2)
+                highest_val = max(*[attribute_dict[x] for x in swap_options], attribute_dict[priorityAttribute])
+                if highest_val > attribute_dict[priorityAttribute]:
+                    valid_swaps = ([k for k, v in attribute_dict.items() if k in swap_options and v == highest_val])
+                    swap_choice = random.choice(valid_swaps)
+                    attribute_dict[priorityAttribute], attribute_dict[swap_choice] = \
+                        attribute_dict[swap_choice], attribute_dict[priorityAttribute]
+                    debug_print('Swapped: ' + priorityAttribute + ', ' + swap_choice, 2)
+                finalized_attributes.add(priorityAttribute)
 
-        if applyAttributeBonuses:
-            for attribute, bonus in self.attributeBonuses.items():
-                attributeDict[attribute] += bonus
+        if apply_attribute_bonuses:
+            for attribute, bonus in self.attribute_bonuses.items():
+                attribute_dict[attribute] += bonus
 
         # Set stats
-        for attribute, val in attributeDict.items():
+        for attribute, val in attribute_dict.items():
             self.stats[attribute] = val
 
-    def generateASIProgression(self, priorityAttributeWeight=ASI_PROGRESSION_PRIORITY_WEIGHT,
-                               otherAttributeWeight=ASI_PROGRESSION_OTHER_WEIGHT):
-        asiProgression = []
-        attributeChoices = STATS_ATTRIBUTES[:]
-        attributeWeights = []
-        for attribute in attributeChoices:
-            if attribute in self.priorityAttributes:
-                attributeWeights.append(priorityAttributeWeight)
+    def generate_asi_progression(self, priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
+                                 other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT):
+        asi_progression = []
+        attribute_choices = list(STATS_ATTRIBUTES[:])
+        attribute_weights = []
+        for attribute in attribute_choices:
+            if attribute in self.priority_attributes:
+                attribute_weights.append(priority_attribute_weight)
             else:
-                attributeWeights.append(otherAttributeWeight)
+                attribute_weights.append(other_attribute_weight)
 
-        while len(asiProgression) < 10:
-            if len(attributeChoices) == 0:
+        while len(asi_progression) < 10:
+            if len(attribute_choices) == 0:
                 break
-            choiceIndex = random.choices(range(len(attributeChoices)), attributeWeights)[0]
-            attribute = attributeChoices[choiceIndex]
-            if (asiProgression.count(attribute) + self.getStat(attribute)) > 20:
-                attributeChoices.pop(choiceIndex)
-                attributeWeights.pop(choiceIndex)
+            choice_index = random.choices(range(len(attribute_choices)), attribute_weights)[0]
+            attribute = attribute_choices[choice_index]
+            if (asi_progression.count(attribute) + self.get_stat(attribute)) > 20:
+                attribute_choices.pop(choice_index)
+                attribute_weights.pop(choice_index)
             else:
-                asiProgression.append(attribute)
+                asi_progression.append(attribute)
 
-        self.asiProgression = asiProgression
+        self.asi_progression = asi_progression
 
-    def applyASIProgression(self, asiProgression=None, hdPerIncrease=4, pointsPerIncrease=2):
-        if not asiProgression:
-            asiProgression = self.asiProgression[:]
+    def apply_asi_progression(self, asi_progression=None,
+                              hd_per_increase=ASI_HD_PER_INCREASE, points_per_increase=ASI_POINTS_PER_INCREASE):
+        if not asi_progression:
+            asi_progression = self.asi_progression[:]
 
-        asiPointsRemaining = (self.getStat('hitDiceNum') // hdPerIncrease) * pointsPerIncrease
+        asi_points_remaining = (self.get_stat('hit_dice_num') // hd_per_increase) * points_per_increase
 
-        while asiPointsRemaining > 0:
-            if len(asiProgression) == 0:
+        while asi_points_remaining > 0:
+            if len(asi_progression) == 0:
                 break
 
-            attributeChoice = asiProgression.pop(0)
-            if self.getStat(attributeChoice) < 20:
-                dprint('{}: {} -> {}'.format(attributeChoice,
-                                             str(self.getStat(attributeChoice)),
-                                             str(self.getStat(attributeChoice)+1),), 3)
-                self.setStat(attributeChoice, self.getStat(attributeChoice) + 1)
-                asiPointsRemaining -= 1
+            attribute_choice = asi_progression.pop(0)
+            if self.get_stat(attribute_choice) < 20:
+                debug_print('{}: {} -> {}'.format(attribute_choice,
+                                                  str(self.get_stat(attribute_choice)),
+                                                  str(self.get_stat(attribute_choice) + 1), ), 3)
+                self.set_stat(attribute_choice, self.get_stat(attribute_choice) + 1)
+                asi_points_remaining -= 1
 
-    def updateDerivedStats(self):
+    def update_derived_stats(self):
         # stat mods
         for attribute in STATS_ATTRIBUTES:
             # stat modifiers = stat // 2 - 5
-            self.stats[attribute + 'Mod'] = self.stats[attribute] // 2 - 5
+            self.stats[attribute + '_mod'] = self.stats[attribute] // 2 - 5
         # Hit Points
-        self.stats['hitPoints'] = (self.stats['hitDiceNum'] * self.stats['hitDiceSize']) // 2 + self.stats[
-            'hitDiceNum'] * self.stats['conMod'] + self.stats['hitPointsExtra']
+        self.stats['hit_points'] = (self.stats['hit_dice_num'] * self.stats['hit_dice_size']) // 2 + self.stats[
+            'hit_dice_num'] * self.stats['con_mod'] + self.stats['hit_points_extra']
         # Proficiency
-        self.stats['proficiency'] = self.stats['hitDiceNum'] // 5 + 2 + self.stats['proficiencyExtra']
+        self.stats['proficiency'] = self.stats['hit_dice_num'] // 5 + 2 + self.stats['proficiency_extra']
         # DCs (all DCs are 8 + statMod + proficiency)
         for attribute in STATS_ATTRIBUTES:
-            self.stats[attribute + 'DC'] = 8 + self.stats[attribute + 'Mod'] + self.stats['proficiency']
+            self.stats[attribute + '_dc'] = 8 + self.stats[attribute + '_mod'] + self.stats['proficiency']
         # Attack bonus
         for attribute in STATS_ATTRIBUTES:
-            self.stats[attribute + 'Attack'] = self.stats['proficiency'] + self.stats[attribute + 'Mod']
+            self.stats[attribute + '_attack'] = self.stats['proficiency'] + self.stats[attribute + '_mod']
         # Speed
-        self.stats['speedWalkFinal'] = self.stats['speedWalk']
-        self.stats['speedFlyFinal'] = self.stats['speedFly']
-        self.stats['speedSwimFinal'] = self.stats['speedSwim']
-        self.stats['speedBurrowFinal'] = self.stats['speedBurrow']
+        self.stats['speed_walk_final'] = self.stats['speed_walk']
+        self.stats['speed_fly_final'] = self.stats['speed_fly']
+        self.stats['speed_swim_final'] = self.stats['speed_swim']
+        self.stats['speed_burrow_final'] = self.stats['speed_burrow']
 
-    def getStat(self, stat):
+    def get_stat(self, stat):
         return self.stats[stat]
 
-    def setStat(self, stat, value):
+    def set_stat(self, stat, value):
         self.stats[stat] = value
 
-    def chooseArmors(self):
-        allArmors = list(self.armors.values())
-        regularArmors = []
-        extraArmors = []
+    def choose_armors(self):
+        all_armors = list(self.armors.values())
+        regular_armors = []
+        extra_armors = []
         # Separate armors into regular and extras
-        for armor in allArmors:
+        for armor in all_armors:
             if 'extra' in armor.tags:
-                extraArmors.append(armor)
+                extra_armors.append(armor)
             else:
-                regularArmors.append(armor)
-        validChoices = []
-        bestAC = 0
-        for armor in regularArmors:
-            armorAC = armor.getAC(self)
-            if armorAC > bestAC:
-                validChoices = [armor, ]
-                bestAC = armorAC
-            elif armorAC == bestAC:
-                validChoices.append(armor)
+                regular_armors.append(armor)
+        valid_choices = []
+        best_ac = 0
+        for armor in regular_armors:
+            armor_ac = armor.get_ac(self)
+            if armor_ac > best_ac:
+                valid_choices = [armor, ]
+                best_ac = armor_ac
+            elif armor_ac == best_ac:
+                valid_choices.append(armor)
         # Need to know the regular armor AC before determining if any extras are worthwhile
-        validExtras = []
-        for armor in extraArmors:
-            armorAC = armor.getAC(self)
-            if armorAC > bestAC:
-                validExtras.append(armor)
-        if len(validExtras) == 0:
-            validExtras = None
+        valid_extras = []
+        for armor in extra_armors:
+            armor_ac = armor.get_ac(self)
+            if armor_ac > best_ac:
+                valid_extras.append(armor)
+        if len(valid_extras) == 0:
+            valid_extras = None
 
-        #check for preferred armor
-        preferredArmorFound = False
-        for armor in validChoices:
+        # check for preferred armor
+        preferred_armor_found = False
+        for armor in valid_choices:
             if 'preferred' in armor.tags:
-                preferredArmorFound = True
-        if preferredArmorFound:
-            newValidChoices = []
-            for armor in validChoices:
+                preferred_armor_found = True
+        if preferred_armor_found:
+            new_valid_choices = []
+            for armor in valid_choices:
                 if 'preferred' in armor.tags:
-                    newValidChoices.append(armor)
-            validChoices = newValidChoices
+                    new_valid_choices.append(armor)
+            valid_choices = new_valid_choices
 
-        self.chosenArmor = random.choice(validChoices)
-        self.extraArmors = validExtras
+        self.chosen_armor = random.choice(valid_choices)
+        self.extra_armors = valid_extras
 
     def display(self):
         outstring = ''
         # Race and Class
-        outstring += '{} {}\n'.format(self.raceName, self.className)
+        outstring += '{} {}\n'.format(self.race_name, self.class_name)
         # Armor
-        outstring += 'AC: ' + self.chosenArmor.sheetDisplay(self)
-        if self.extraArmors:
-            for armor in self.extraArmors:
-                outstring += ', ' + armor.sheetDisplay(self)
+        outstring += 'AC: ' + self.chosen_armor.sheet_display(self)
+        if self.extra_armors:
+            for armor in self.extra_armors:
+                outstring += ', ' + armor.sheet_display(self)
         outstring += '\n'
 
         # HP
-        outstring += 'Hit Points: {}({}d{}{})\n'.format(self.getStat('hitPoints'), self.getStat('hitDiceNum'),
-                                                         self.getStat('hitDiceSize'),
-                                                         numPlusser(self.getStat('hitDiceNum') * self.getStat('conMod')))
+        outstring += 'Hit Points: {}({}d{}{})\n' \
+            .format(self.get_stat('hit_points'), self.get_stat('hit_dice_num'),
+                    self.get_stat('hit_dice_size'),
+                    num_plusser(self.get_stat('hit_dice_num') * self.get_stat('con_mod'))
+                    )
         # Size
-        outstring += 'Size: {}\n'.format(self.getStat('size'))
+        outstring += 'Size: {}\n'.format(self.get_stat('size'))
         # Speed
-        outstring += 'Speed: {}ft.'.format(self.getStat('speedWalkFinal'))
-        if self.getStat('speedFlyFinal') > 0:
-            outstring += ', fly {}ft.'.format(self.getStat('speedFlyFinal'))
-        if self.getStat('speedSwimFinal') > 0:
-            outstring += ', swim {}ft.'.format(self.getStat('speedSwimFinal'))
-        if self.getStat('speedBurrowFinal') > 0:
-            outstring += ', burrow {}ft.'.format(self.getStat('speedBurrowFinal'))
+        outstring += 'Speed: {}ft.'.format(self.get_stat('speed_walk_final'))
+        if self.get_stat('speed_fly_final') > 0:
+            outstring += ', fly {}ft.'.format(self.get_stat('speed_fly_final'))
+        if self.get_stat('speed_swim_final') > 0:
+            outstring += ', swim {}ft.'.format(self.get_stat('speed_swim_final'))
+        if self.get_stat('speed_burrow_final') > 0:
+            outstring += ', burrow {}ft.'.format(self.get_stat('speed_burrow_final'))
         outstring += '\n'
         # Proficiency
-        outstring += 'Proficiency: +{}\n'.format(self.getStat('proficiency'))
+        outstring += 'Proficiency: +{}\n'.format(self.get_stat('proficiency'))
         # Attributes
         for attr in STATS_ATTRIBUTES:
-            outstring += '{} {}({}) '.format(attr.upper(), self.getStat(attr),
-                                             '{0:+d}'.format(self.getStat(attr + 'Mod')))
+            outstring += '{} {}({}) '.format(attr.upper(), self.get_stat(attr),
+                                             '{0:+d}'.format(self.get_stat(attr + '_mod')))
         outstring += '\n'
         # Saves
         if len(self.saves) > 0:
             outstring += 'Saves: '
             # A little more complicated, but this will put saves in the same order as attributes
-            savesList = []
+            saves_list = []
             for attribute in STATS_ATTRIBUTES:
                 if attribute in self.saves:
-                    saveVal = self.stats[attribute + 'Mod'] + self.stats['proficiency']
-                    valStr = ''
-                    if saveVal >= 0:
-                        valStr = ' +' + str(saveVal)
-                    else:
-                        valStr = ' ' + str(saveVal)
-                    savesList.append(ATTRIBUTES_FULL[attribute] + valStr)
-            outstring += ', '.join(savesList) + '\n'
+                    save_val = self.stats[attribute + '_mod'] + self.stats['proficiency']
+                    val_str = num_plusser(save_val)
+                    saves_list.append(ATTRIBUTES_FULL[attribute] + ' ' + val_str)
+            outstring += ', '.join(saves_list) + '\n'
 
         # Skills
         if len(self.skills) > 0:
             outstring += 'Skills: '
-            skillsList = []
+            skills_list = []
             for skill in SKILLS_ORDERED:
                 if skill in self.skills:
-                    skillAttribute = SKILLS[skill]
-                    skillVal = self.stats[skillAttribute + 'Mod'] + self.stats['proficiency']
+                    skill_attribute = SKILLS[skill]
+                    skill_val = self.stats[skill_attribute + '_mod'] + self.stats['proficiency']
                     # check for expertise
                     if self.skills[skill]:
-                        skillVal += self.stats['proficiency']
-                    if skillVal >= 0:
-                        valStr = ' +' + str(skillVal)
+                        skill_val += self.stats['proficiency']
+                    if skill_val >= 0:
+                        val_str = ' +' + str(skill_val)
                     else:
-                        valStr = ' ' + str(skillVal)
-                    skillsList.append(skill.capitalize() + valStr)
-            outstring += ', '.join(skillsList) + '\n'
+                        val_str = ' ' + str(skill_val)
+                    skills_list.append(skill.capitalize() + val_str)
+            outstring += ', '.join(skills_list) + '\n'
         # CR
         # Languages
         # Traits
-        for traitName in self.traits:
-            trait = self.traits[traitName]
-            traitstring = trait.display(self) + "\n"
-            outstring += traitstring
+        for trait_name in self.traits:
+            trait = self.traits[trait_name]
+            if trait.trait_type == 'hidden':
+                continue
+            trait_string = trait.display(self) + "\n"
+            outstring += trait_string
         # Spellcasting
-        if self.spellCastingAbility:
-            outstring += self.spellCastingAbility.display(self) + '\n'
+        if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
+            outstring += self.spell_casting_ability.display(self) + '\n'
         # Attacks
         for weaponName, weaponObj in self.weapons.items():
-            outstring += weaponObj.sheetDisplay(self) + '\n'
+            outstring += weaponObj.sheet_display(self) + '\n'
         return outstring
 
 
 class Trait:
-    def __init__(self, intName='', displayName='', traitType='', text='', tags={}):
-        self.intName = intName
-        self.displayName = displayName
-        self.traitType = traitType
+    def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
+        self.int_name = int_name
+        self.display_name = display_name
+        self.trait_type = trait_type
         self.text = text
-        self.tags = tags
+        if not tags:
+            self.tags = {}
+        else:
+            self.tags = tags
 
-    def toString(self):
-        return self.traitType + self.displayName + self.text
+    def __str__(self):
+        return '<{}:{},{},{},{}>'.format(self.int_name, self.display_name, self.trait_type, self.text, str(self.tags))
 
     def display(self, owner):
-        outstring = self.displayName + '. ' + self.text.format(**owner.stats)
+        outstring = self.display_name + '. ' + self.text.format(**owner.stats)
         return outstring
 
 
 class Template:
-    def __init__(self, intName='', displayName=''):
-        self.intName = intName
-        self.displayName = displayName
-        self.templateType = None
-        self.attributeBonuses = None
-        self.baseStats = None
-        self.priorityAttributes = None
+    def __init__(self, int_name='', display_name=''):
+        self.int_name = int_name
+        self.display_name = display_name
+        self.template_type = None
+        self.attribute_bonuses = None
+        self.base_stats = None
+        self.priority_attributes = None
 
-        self.skillsFixed = None
-        self.numRandomSkills = 0
-        self.skillsRandom = None
+        self.skills_fixed = None
+        self.num_random_skills = 0
+        self.skills_random = None
 
         self.size = None
 
         self.saves = None
         self.languages = []
         self.traits = None
-        self.loadoutPool = None
-        self.spellCastingProfile = None
+        self.loadout_pool = None
+        self.spell_casting_profile = None
+
+    def __repr__(self):
+        return '<Template: {}>'.format(self.int_name)
+
+    def __str__(self):
+        outstring = '<Template: {},{},{},{},{},{},{},{},{},{},{},{},{},{},{}>' \
+            .format(self.int_name, self.display_name, str(self.template_type), str(self.attribute_bonuses),
+                    str(self.base_stats), str(self.priority_attributes), str(self.skills_fixed),
+                    str(self.num_random_skills), str(self.skills_random), str(self.size), str(self.saves),
+                    str(self.languages), str(self.traits), str(self.loadout_pool), str(self.spell_casting_profile))
+        return outstring
 
     def validate(self):
-        if type(self.attributeBonuses) == Dict:
-            for attribute in self.attributeBonuses:
+        if type(self.attribute_bonuses) == Dict:
+            for attribute in self.attribute_bonuses:
                 if attribute not in STATS_ATTRIBUTES:
-                    raise ValueError("!!! Template:{} has invalid attribute bonus:{}").format(self.intName, attribute)
+                    raise ValueError("!!! Template:{} has invalid attribute bonus:{}".format(self.int_name, attribute))
         else:
-            raise ValueError("!!! Template:{} attributesBonues is not a Dict type!").format(self.intName)
-        for skill in itertools.chain(self.skillsFixed, self.skillsRandom):
+            raise ValueError("!!! Template:{} attributesBonues is not a Dict type!".format(self.int_name))
+        for skill in itertools.chain(self.skills_fixed, self.skills_random):
             if skill not in SKILLS:
-                raise ValueError("!!! Template:{} has invalid skill:{}").format(self.intName, skill)
+                raise ValueError("!!! Template:{} has invalid skill:{}".format(self.int_name, skill))
+
 
 class Armor:
     def __init__(self):
-        self.intName = ''
-        self.displayName = ''
-        self.baseAC = -1
-        self.armorType = ''
-        self.minStr = 0
-        self.stealthDisadvantage = False
+        self.int_name = ''
+        self.display_name = ''
+        self.base_ac = -1
+        self.armor_type = ''
+        self.min_str = 0
+        self.stealth_disadvantage = False
         self.tags = set()
 
-    def isExtra(self):
+    def is_extra(self):
         return 'extra' in self.tags
 
-    def getAC(self, owner):
-        baseAC = self.baseAC
-        totalAC = 0
-        if self.armorType == 'light' or self.armorType == 'none':
-            totalAC = baseAC + owner.getStat('dexMod')
-        elif self.armorType == 'medium':
+    def get_ac(self, owner):
+        base_ac = self.base_ac
+        total_ac = 0
+        if self.armor_type == 'light' or self.armor_type == 'none':
+            total_ac = base_ac + owner.get_stat('dex_mod')
+        elif self.armor_type == 'medium':
+            max_dex_bonus = 2
+            if 'medium_armor_master' in owner.traits:
+                max_dex_bonus = 3
             # Can add case here for medium armor mastery
-            totalAC = baseAC + min(2, owner.getStat('dexMod'))
-        elif self.armorType == 'heavy':
-            totalAC = baseAC
+            total_ac = base_ac + min(max_dex_bonus, owner.get_stat('dex_mod'))
+        elif self.armor_type == 'heavy':
+            total_ac = base_ac
         else:
-            dprint('Armor: ' + self.intName + ' has invalid armor type: ' + self.armorType, 0)
+            debug_print('Armor: ' + self.int_name + ' has invalid armor type: ' + self.armor_type, 0)
 
-        if owner.hasShield and 'noShield' not in self.tags:
-            totalAC += 2
+        if owner.has_shield and 'noShield' not in self.tags:
+            total_ac += 2
 
-        return totalAC
+        return total_ac
 
-    def speedPenalty(self, owner):
-        # can add case for dwarf
-        if self.armorType == 'heavy' and self.minStr < owner.getStat('str'):
+    def speed_penalty(self, owner):
+
+        # Special case for dwarfs
+        if 'heavy_armor_training' in owner.traits:
+            return 0
+
+        if self.armor_type == 'heavy' and self.min_str < owner.get_stat('str'):
             return -10
         else:
             return 0
 
-    def stealthPenalty(self, owner):
-        # can add case for medium armor mastery
-        return self.stealthDisadvantage
+    def stealth_penalty(self, owner):
+
+        # Special case for medium armor master
+        if self.armor_type == 'medium' and 'medium_armor_master' in owner.traits:
+            return False
+
+        return self.stealth_disadvantage
 
     def __repr__(self):
-        return self.intName
+        return self.int_name
 
-    def sheetDisplay(self, owner):
-        outstring = str(self.getAC(owner)) + ' (' + self.displayName
-        if owner.hasShield:
+    def sheet_display(self, owner):
+        outstring = str(self.get_ac(owner)) + ' (' + self.display_name
+        if owner.has_shield:
             outstring += ', with shield'
         outstring += ')'
         return outstring
 
 
 class Weapon:
-    def __init__(self, intName=None, displayName=None, dmgDiceNum=None, dmgDiceSize=None, damageType=None,
-                 attackType=None, shortRange=None, longRange=None, tags=None, numTargets=DEFAULT_NUM_TARGETS):
-        self.intName = intName
-        self.displayName = displayName
-        self.dmgDiceNum = dmgDiceNum
-        self.dmgDiceSize = dmgDiceSize
-        self.damageType = damageType
-        self.attackType = attackType
-        self.rangeShort = shortRange
-        self.rangeLong = longRange
+    def __init__(self, int_name=None, display_name=None, dmg_dice_num=None, dmg_dice_size=None, damage_type=None,
+                 attack_type=None, short_range=None, long_range=None, tags=None, num_targets=DEFAULT_NUM_TARGETS):
+        self.int_name = int_name
+        self.display_name = display_name
+        self.dmg_dice_num = dmg_dice_num
+        self.dmg_dice_size = dmg_dice_size
+        self.damage_type = damage_type
+        self.attack_type = attack_type
+        self.range_short = short_range
+        self.range_long = long_range
         self.tags = tags
-        self.numTargets = numTargets
+        self.num_targets = num_targets
 
     def __repr__(self):
         outstring = '[{},{},{},{},{},{},{},{},{},{},'\
-            .format(self.intName, self.displayName, self.dmgDiceNum, self.dmgDiceSize, self.damageType, self.attackType,
-                    str(self.rangeShort), str(self.rangeLong), str(self.tags), str(self.numTargets))
+            .format(self.int_name, self.display_name, self.dmg_dice_num, self.dmg_dice_size, self.damage_type,
+                    self.attack_type, str(self.range_short), str(self.range_long), str(self.tags),
+                    str(self.num_targets))
         return outstring
 
     def __str__(self):
         return self.__repr__()
 
-    def getToHit(self, owner):
-        ownerStr = owner.getStat('strMod')
-        ownerDex = owner.getStat('dexMod')
-        ownerProf = owner.getStat('proficiency')
-        attackStat = 0
-        if self.attackType == 'melee':
+    def get_to_hit(self, owner):
+        owner_str = owner.get_stat('str_mod')
+        owner_dex = owner.get_stat('dex_mod')
+        owner_prof = owner.get_stat('proficiency')
+        attack_stat = 0
+        if self.attack_type == 'melee':
             if 'finesse' in self.tags:
-                attackStat = max(ownerStr, ownerDex)
+                attack_stat = max(owner_str, owner_dex)
             else:
-                attackStat = ownerStr
-        elif self.attackType == 'ranged':
+                attack_stat = owner_str
+        elif self.attack_type == 'ranged':
             if 'thrown' in self.tags:
-                attackStat = max(ownerStr, ownerDex)
+                attack_stat = max(owner_str, owner_dex)
             else:
-                attackStat = ownerDex
-        return attackStat + ownerProf
+                attack_stat = owner_dex
+        return attack_stat + owner_prof
 
-    def getDamage(self, owner, useVersatile=False):
-        ownerStr = owner.getStat('strMod')
-        ownerDex = owner.getStat('dexMod')
-        attackStat = 0
-        if self.attackType == 'melee':
+    def get_damage(self, owner, use_versatile=False):
+        owner_str = owner.get_stat('str_mod')
+        owner_dex = owner.get_stat('dex_mod')
+        attack_stat = 0
+        if self.attack_type == 'melee':
             if 'finesse' in self.tags:
-                attackStat = max(ownerStr, ownerDex)
+                attack_stat = max(owner_str, owner_dex)
             else:
-                attackStat = ownerStr
-        elif self.attackType == 'ranged':
+                attack_stat = owner_str
+        elif self.attack_type == 'ranged':
             if 'thrown' in self.tags:
-                attackStat = max(ownerStr, ownerDex)
+                attack_stat = max(owner_str, owner_dex)
             else:
-                attackStat = ownerDex
-        # (numDice, diceSize, dmgBonus, damgType, avgDmg)
-        dmgDiceNum, dmgDiceSize = self.dmgDiceNum, self.dmgDiceSize
-        if useVersatile:
-            dmgDiceSize += 2
+                attack_stat = owner_dex
+        # (num_dice, dice_size, dmg_bonus, dmg_type, avg_dmg)
+        dmg_dice_num, dmg_dice_size = self.dmg_dice_num, self.dmg_dice_size
+        if use_versatile:
+            dmg_dice_size += 2
 
         # Check for Martial Arts special case
         if 'martial_arts' in owner.traits:
             if ('monk' in self.tags) or \
-                (self.attackType == 'melee' and 'simple' in self.tags \
+                (self.attack_type == 'melee' and 'simple' in self.tags
                  and 'heavy' not in self.tags and '2h' not in self.tags):
-                if dmgDiceNum == 1 and dmgDiceSize < MARTIAL_ARTS_DAMAGE[owner.getStat('hitDiceNum')]:
-                    dmgDiceSize = MARTIAL_ARTS_DAMAGE[owner.getStat('hitDiceNum')]
+                if dmg_dice_num == 1 and dmg_dice_size < MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]:
+                    dmg_dice_size = MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]
 
-        avgDmg = dmgDiceSize / 2 * dmgDiceNum + attackStat
-        return int(avgDmg), dmgDiceNum, dmgDiceSize, attackStat, self.damageType, avgDmg
+        avg_dmg = dmg_dice_size / 2 * dmg_dice_num + attack_stat
+        return int(avg_dmg), dmg_dice_num, dmg_dice_size, attack_stat, self.damage_type, avg_dmg
 
-    def sheetDisplay(self, owner):
-        outstring = self.displayName + '. '
-        isMelee = self.attackType == 'melee'
-        isRanged = self.attackType == 'ranged' or 'thrown' in self.tags
-        if isMelee and isRanged:
+    def sheet_display(self, owner):
+        outstring = self.display_name + '. '
+        is_melee = self.attack_type == 'melee'
+        is_ranged = self.attack_type == 'ranged' or 'thrown' in self.tags
+        if is_melee and is_ranged:
             outstring += 'Melee or ranged weapon attack: '
-        elif isMelee:
+        elif is_melee:
             outstring += 'Melee weapon attack: '
-        elif isRanged:
+        elif is_ranged:
             outstring += 'Ranged weapon attack: '
 
-        toHit = self.getToHit(owner)
-        outstring += numPlusser(toHit) + ' to hit, '
+        to_hit = self.get_to_hit(owner)
+        outstring += num_plusser(to_hit) + ' to hit, '
 
-        if isMelee and isRanged:
+        if is_melee and is_ranged:
             if 'reach' in self.tags:
-                outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_W_BONUS, self.rangeShort, self.rangeLong)
+                outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_W_BONUS, self.range_short, self.range_long)
             else:
-                outstring += '{} or range {}/{} ft., '.format(DEFAULT_WEAPON_REACH, self.rangeShort, self.rangeLong)
-        elif isMelee:
+                outstring += '{} or range {}/{} ft., '.format(DEFAULT_WEAPON_REACH, self.range_short, self.range_long)
+        elif is_melee:
             if 'reach' in self.tags:
                 outstring += WEAPON_REACH_W_BONUS + ', '
             else:
                 outstring += DEFAULT_WEAPON_REACH + ', '
-        elif isRanged:
-            outstring += 'range {}/{} ft., '.format(self.rangeShort, self.rangeLong)
+        elif is_ranged:
+            outstring += 'range {}/{} ft., '.format(self.range_short, self.range_long)
 
-        if self.numTargets == 1:
+        if self.num_targets == 1:
             outstring += 'one target. '
         else:
-            outstring += NUM2WORD.get(self.numTargets) + ' targets. '
+            outstring += NUM2WORD.get(self.num_targets) + ' targets. '
         ##
-        dmgTup = self.getDamage(owner)
-        if dmgTup[3] < 0:
-            outstring += 'Hit: {}({}d{} - {}) {} damage'.format(dmgTup[0], dmgTup[1], dmgTup[2],
-                                                                abs(dmgTup[3]), dmgTup[4])
-        else:
-            outstring += 'Hit: {}({}d{} + {}) {} damage'.format(*dmgTup)
+        avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = self.get_damage(owner)
+        outstring += 'Hit: {}({}d{} {}) {} damage'\
+            .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
 
         # Check for versatile, which increases damage with two hands.
-        if isMelee and 'versatile' in self.tags:
-            dmgTup = self.getDamage(owner, useVersatile=True)
-            if dmgTup[3] < 0:
-                outstring += ' or {}({}d{} - {}) {} damage if used with two hands'.format(dmgTup[0], dmgTup[1], dmgTup[2],
-                                                                    abs(dmgTup[3]), dmgTup[4])
-            else:
-                outstring += ' or {}({}d{} + {}) {} damage if used with two hands'.format(*dmgTup)
+        if is_melee and 'versatile' in self.tags:
+            avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = \
+                self.get_damage(owner, use_versatile=True)
+            outstring += ' or {}({}d{} - {}) {} damage if used with two hands'\
+                .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
         outstring += '.'
         return outstring
 
 
-class LoadoutSet:
-    def __init__(self, internalName=''):
-        self.internalName = internalName
-        self.guaranteedLoadoutItems = []
-        self.loadouts = []
-        self.weights = []
-
-    def __repr__(self):
-        return '<' + self.internalName + ', ' + str(self.loadouts) + ', ' + str(self.weights) + '>'
-
-    def addLoadout(self, loadout, weight=DEFAULT_LOADOUTSET_WEIGHT):
-        self.loadouts.append(loadout)
-        self.weights.append(weight)
-
-    def getRandomLoadout(self):
-        return self.guaranteedLoadoutItems + random.choices(self.loadouts, self.weights)[0]
+# class LoadoutSet:
+#     def __init__(self, internal_name=''):
+#         self.internal_name = internal_name
+#         self.guaranteed_loadout_items = []
+#         self.loadouts = []
+#         self.weights = []
+#
+#     def __repr__(self):
+#         return '<' + self.internal_name + ', ' + str(self.loadouts) + ', ' + str(self.weights) + '>'
+#
+#     def addLoadout(self, loadout, weight=DEFAULT_LOADOUTSET_WEIGHT):
+#         self.loadouts.append(loadout)
+#         self.weights.append(weight)
+#
+#     def getRandomLoadout(self):
+#         return self.guaranteed_loadout_items + random.choices(self.loadouts, self.weights)[0]
 
 
 class Spell:
@@ -1038,8 +1081,12 @@ class Spell:
         self.school = ''
         self.classes = set()
 
+    def __repr__(self):
+        return '<Spell: {}>'.format(self.name)
+
     def __str__(self):
-        return "[{},{},{},{},{}]".format(self.name, self.source. str(self.level), self.school. str(self.classes))
+        return "[{},{},{},{},{}]".format(self.name, self.source, str(self.level), self.school, str(self.classes))
+
 
 class SpellList:
     def __init__(self):
@@ -1049,29 +1096,29 @@ class SpellList:
     def __str__(self):
         return "[{}: {}]".format(self.name, ",".join(self.spells))
 
-    def addSpell(self, spellObj):
-        self.spells[spellObj.name] = spellObj
+    def add_spell(self, spell_obj):
+        self.spells[spell_obj.name] = spell_obj
 
-    def removeSpell(self, spell):
+    def remove_spell(self, spell):
         if type(spell) == Spell:
             spell = spell.name
         if spell in self.spells:
             self.spells.pop(spell)
 
-    def getSpellnamesByLevel(self):
-        outSpells = [set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), ]
+    def get_spellnames_by_level(self):
+        out_spells = [set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), ]
         for spell in self.spells.values():
-            outSpells[spell.level].add(spell.name)
-        return outSpells
+            out_spells[spell.level].add(spell.name)
+        return out_spells
 
-    def getSpellSetOfLevel(self, level):
+    def get_spell_set_of_level(self, level):
         outset = set()
         for spell in self.spells.values():
             if spell.level == level:
                 outset.add(spell.name)
         return outset
 
-    def numSpellsOfLevel(self, level):
+    def num_spells_of_level(self, level):
         count = 0
         for spell in self.spells.values():
             if spell.level == level:
@@ -1082,88 +1129,91 @@ class SpellList:
 class SpellCasterProfile:
     def __init__(self):
         self.intName = ''
-        self.hdPerCastingLevel = 1
-        self.cantripsProgression = None
-        self.spellsKnownModifier = 0
-        self.spellLists = {}
-        self.freeSpellLists = []
-        self.readyStyle = ''
-        self.castingStat = ''
-        self.fixedSpellsKnownByLevel = None
-        # For now, only the standard slots progression is supported
-        self.slotsProgression = None
+        self.hd_per_casting_level = 1
+        self.cantrips_per_level = None
+        self.spells_known_modifier = 0
+        # spell_lists = {spell_list : weight}
+        self.spell_lists = {}
+        self.free_spell_lists = []
+        self.ready_style = ''
+        self.casting_stat = ''
+        self.fixed_spells_known_by_level = None
+        # For now, only the standard slots table is supported
+        # spell_slots_table[caster_level][spell_level]
+        self.spell_slots_table = None
 
-    def getFreeSpells(self):
-        freeSpells = [[], [], [], [], [], [], [], [], [], [], ]
-        if self.freeSpellLists:
-            for freeSpellList in self.freeSpellLists:
-                for spell in freeSpellList.spells.values():
-                    freeSpells[spell.level].append(spell.name)
-        return freeSpells
+    def get_free_spells(self):
+        free_spells = [[], [], [], [], [], [], [], [], [], [], ]
+        if self.free_spell_lists:
+            for free_spell_list in self.free_spell_lists:
+                for spell in free_spell_list.spells.values():
+                    free_spells[spell.level].append(spell.name)
+        return free_spells
 
-    def getRandomSpells(self):
-        freeSpells = set()
-        if self.freeSpellLists:
-            for spellList in self.freeSpellLists:
-                for spellName in spellList.spells.keys():
-                    freeSpells.add(spellName)
+    def get_random_spells(self):
+        free_spells = set()
+        if self.free_spell_lists:
+            for spell_list in self.free_spell_lists:
+                for spell_name in spell_list.spells.keys():
+                    free_spells.add(spell_name)
 
-        spellSelections = []
+        spell_selections = []
 
         # We do this for every spell level
-        for i in range(0, 10):
-            totalSpellCount = 0
-            for spellList in self.spellLists.keys():
-                totalSpellCount += spellList.numSpellsOfLevel(i)
+        for spell_level in range(0, 10):
+            total_spell_count = 0
+            for spell_list in self.spell_lists.keys():
+                total_spell_count += spell_list.num_spells_of_level(spell_level)
 
-            spellOptions = []
-            spellWeights = []
+            spell_options = []
+            spell_weights = []
 
-            for spellList, weight in self.spellLists.items():
-                numSpellsofLevel = spellList.numSpellsOfLevel(i)
-                if numSpellsofLevel == 0:
+            for spell_list, weight in self.spell_lists.items():
+                num_spells_of_level = spell_list.num_spells_of_level(spell_level)
+                if num_spells_of_level == 0:
                     continue
-                weightPerSpell = float(weight) / numSpellsofLevel
-                for spellName in spellList.getSpellSetOfLevel(i):
-                    spellOptions.append(spellName)
-                    spellWeights.append(weightPerSpell)
+                weight_per_spell = float(weight) / num_spells_of_level
+                for spell_name in spell_list.get_spell_set_of_level(spell_level):
+                    spell_options.append(spell_name)
+                    spell_weights.append(weight_per_spell)
 
-            spellSelectionsForLevel = []
-            spellSelectionsRemaining = MAX_SPELL_CHOICES_PER_LEVEL
-            while spellSelectionsRemaining > 0:
+            spell_selections_for_level = []
+            spell_selections_remaining = MAX_SPELL_CHOICES_PER_LEVEL
+            while spell_selections_remaining > 0:
                 # First, check that we still have options
-                if len(spellOptions) == 0:
+                if len(spell_options) == 0:
                     break
 
-                choiceByIndex = random.choices(range(len(spellWeights)), spellWeights)[0]
-                spellChoice = spellOptions[choiceByIndex]
+                choice_by_index = random.choices(range(len(spell_weights)), spell_weights)[0]
+                spell_choice = spell_options[choice_by_index]
 
-                spellOptions.pop(choiceByIndex)
-                spellWeights.pop(choiceByIndex)
+                spell_options.pop(choice_by_index)
+                spell_weights.pop(choice_by_index)
 
-                if spellChoice in spellSelections:
+                if spell_choice in spell_selections:
                     continue
-                elif spellChoice in freeSpells:
+                elif spell_choice in free_spells:
                     continue
                 else:
-                    spellSelectionsForLevel.append(spellChoice)
-                    spellSelectionsRemaining -=1
+                    spell_selections_for_level.append(spell_choice)
+                    spell_selections_remaining -= 1
 
-            spellSelections.append(spellSelectionsForLevel)
-        return spellSelections
+            spell_selections.append(spell_selections_for_level)
+        return spell_selections
 
-    def generateSpellCastingAbility(self):
-        newSpellCastingAbility = SpellCastingAbility(
-            readyStyle=self.readyStyle, castingStat=self.castingStat,
-            hdPerCastingLevel=self.hdPerCastingLevel, spellsReadiedProgression=DEFAULT_SPELLS_READIED_PROGRESSION,
-            fixedSpellsKnownByLevel=self.fixedSpellsKnownByLevel,
-            cantripsProgression=self.cantripsProgression,
-            slotsProgression=self.slotsProgression,
-            spellsKnownModifier=self.spellsKnownModifier,
+    def generate_spell_casting_ability(self):
+        new_spell_casting_ability = SpellCastingAbility(
+            ready_style=self.ready_style, casting_stat=self.casting_stat,
+            hd_per_casting_level=self.hd_per_casting_level,
+            spells_readied_progression=DEFAULT_SPELLS_READIED_PROGRESSION,
+            fixed_spells_known_by_level=self.fixed_spells_known_by_level,
+            cantrips_progression=self.cantrips_per_level,
+            slots_progression=self.spell_slots_table,
+            spells_known_modifier=self.spells_known_modifier,
         )
-        newSpellCastingAbility.spellChoices = self.getRandomSpells()
-        newSpellCastingAbility.freeSpells = self.getFreeSpells()
-        return newSpellCastingAbility
+        new_spell_casting_ability.spell_choices = self.get_random_spells()
+        new_spell_casting_ability.free_spells = self.get_free_spells()
+        return new_spell_casting_ability
 
 
 class SpellCastingAbility:
@@ -1173,107 +1223,114 @@ class SpellCastingAbility:
     level. This way, potentially you could tweak a character's level and not have to get an entirely new randomized
     statblock entry.
     """
-    def __init__(self, readyStyle='known', castingStat='int', hdPerCastingLevel=1,
-                 spellsReadiedProgression=DEFAULT_SPELLS_READIED_PROGRESSION,
-                 fixedSpellsKnownByLevel=None,
-                 cantripsProgression=CASTER_CANTRIPS_KNOWN['none'],
-                 slotsProgression=DEFAULT_SPELLCASTER_SLOTS,
-                 spellsKnownModifier=0,
+    def __init__(self, ready_style='known', casting_stat='int', hd_per_casting_level=1,
+                 spells_readied_progression=DEFAULT_SPELLS_READIED_PROGRESSION,
+                 fixed_spells_known_by_level=None,
+                 cantrips_progression=CASTER_CANTRIPS_KNOWN['none'],
+                 slots_progression=DEFAULT_SPELLCASTER_SLOTS,
+                 spells_known_modifier=0,
                  ):
         # NPCs generally either have spells 'prepared' or 'known'
-        self.readyStyle = readyStyle
+        self.ready_style = ready_style
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
-        self.spellChoices = None
-        self.freeSpells = [[], [], [], [], [], [], [], [], [], [], ]
+        self.spell_choices = None
+        self.free_spells = [[], [], [], [], [], [], [], [], [], [], ]
         # Which stat is used for casting
-        self.castingStat = castingStat
-        self.hdPerCastingLevel = hdPerCastingLevel
-        self.spellsReadiedProgression = spellsReadiedProgression
-        self.cantripsProgression = cantripsProgression
-        self.fixedSpellsKnownByLevel = fixedSpellsKnownByLevel
-        self.slotsProgression = slotsProgression
-        self.spellsKnownModifier = spellsKnownModifier
+        self.casting_stat = casting_stat
+        self.hd_per_casting_level = hd_per_casting_level
+        self.spells_readied_progression = spells_readied_progression
+        self.cantrips_progression = cantrips_progression
+        self.fixed_spells_known_by_level = fixed_spells_known_by_level
+        self.slots_progression = slots_progression
+        self.spells_known_modifier = spells_known_modifier
 
-    def getCasterLevel(self,owner):
-        hitDice = owner.getStat('hitDiceNum')
-        casterLevel = hitDice // self.hdPerCastingLevel
-        return casterLevel
+    def get_caster_level(self, owner):
+        hit_dice = owner.get_stat('hit_dice_num')
+        caster_level = hit_dice // self.hd_per_casting_level
+        return caster_level
 
-    def getSpellsReadied(self, owner):
-        casterLevel = self.getCasterLevel(owner)
+    def get_spells_readied(self, owner):
+        caster_level = self.get_caster_level(owner)
+        if caster_level == 0:
+            return None
 
-        if self.fixedSpellsKnownByLevel:
-            spellsKnown = self.fixedSpellsKnownByLevel[casterLevel]
+        if self.fixed_spells_known_by_level:
+            spells_known = self.fixed_spells_known_by_level[caster_level]
         else:
-            spellsKnown = owner.getStat(self.castingStat + "Mod") + casterLevel
+            spells_known = owner.get_stat(self.casting_stat + '_mod') + caster_level
 
-        spellsKnown += self.spellsKnownModifier
+        spells_known += self.spells_known_modifier
 
-        spellSlots = self.slotsProgression
-        maxSpellLevel = 9
+        spell_slots = self.slots_progression
+        max_spell_level = 9
         for spellLevel in range(1, 10):
-            if spellSlots[casterLevel][spellLevel] == 0:
-                maxSpellLevel = spellLevel - 1
+            if spell_slots[caster_level][spellLevel] == 0:
+                max_spell_level = spellLevel - 1
                 break
 
+        cantrips_readied = self.cantrips_progression[caster_level]
+        num_spells_readied_by_level = [cantrips_readied, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]
 
-        cantripsReadied = self.cantripsProgression[casterLevel]
-        numSpellsReadiedByLevel = [cantripsReadied, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]
-
-        for spellLevelChoice in self.spellsReadiedProgression:
-            if spellLevelChoice > maxSpellLevel:
+        for spellLevelChoice in self.spells_readied_progression:
+            if spellLevelChoice > max_spell_level:
                 continue
-            numSpellsReadiedByLevel[spellLevelChoice] += 1
-            spellsKnown -= 1
-            if spellsKnown <= 0:
+            num_spells_readied_by_level[spellLevelChoice] += 1
+            spells_known -= 1
+            if spells_known <= 0:
                 break
 
-        spellsReadied = [[], [], [], [], [], [], [], [], [], [], ]
+        spells_readied = [[], [], [], [], [], [], [], [], [], [], ]
         for spellLevel in range(0, 10):
-            spellsReadied[spellLevel] = list(itertools.chain(
-                self.freeSpells[spellLevel], self.spellChoices[spellLevel][0:numSpellsReadiedByLevel[spellLevel]]))
+            spells_readied[spellLevel] = list(itertools.chain(
+                self.free_spells[spellLevel],
+                self.spell_choices[spellLevel][0:num_spells_readied_by_level[spellLevel]]))
 
-        return spellsReadied
+        return spells_readied
 
     def display(self, owner):
-        casterLevel = self.getCasterLevel(owner)
-        spellsReady = self.getSpellsReadied(owner)
+        caster_level = self.get_caster_level(owner)
+        if caster_level == 0:
+            return None
+        spells_ready = self.get_spells_readied(owner)
         # Header part
         outline = "Spellcasting. This character is a {}-level spellcaster. " \
                   "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
                   "It has the following spells {}:"\
-                .format(NUM_TO_ORDINAL[casterLevel],
-                        ATTRIBUTES_FULL[self.castingStat], owner.getStat(self.castingStat + 'DC'),
-                        numPlusser(owner.getStat(self.castingStat + "Attack")), self.readyStyle) + '\n'
+            .format(NUM_TO_ORDINAL[caster_level],
+                    ATTRIBUTES_FULL[self.casting_stat], owner.get_stat(self.casting_stat + '_dc'),
+                    num_plusser(owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'
         # Cantrips
-        if len(spellsReady[0]) > 0:
-            outline += 'Cantrips (at-will): ' + ', '.join(spellsReady[0]) + '\n'
+        if len(spells_ready[0]) > 0:
+            outline += 'Cantrips (at-will): ' + ', '.join(spells_ready[0]) + '\n'
         for i in range(1, 10):
-            if len(spellsReady[i]) > 0 and self.slotsProgression[casterLevel][i] > 0:
+            if len(spells_ready[i]) > 0 and self.slots_progression[caster_level][i] > 0:
                 # Pluralize 'slot' or not
-                if self.slotsProgression[casterLevel][i] == 1:
-                    outline += '{} level ({} slot): '.format(NUM_TO_ORDINAL[i], self.slotsProgression[casterLevel][i])
+                if self.slots_progression[caster_level][i] == 1:
+                    outline += '{} level ({} slot): '\
+                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
                 else:
-                    outline += '{} level ({} slots): '.format(NUM_TO_ORDINAL[i], self.slotsProgression[casterLevel][i])
-                outline += ', '.join(spellsReady[i]) + '\n'
+                    outline += '{} level ({} slots): '\
+                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
+                outline += ', '.join(spells_ready[i]) + '\n'
         return outline
 
+
 class Loadout:
-    def __init__(self, weapons=[], armors=[], shield=False):
+    def __init__(self, weapons=None, armors=None, shield=False):
         self.weapons = weapons
         self.armors = armors
         self.shield = shield
 
+
 class LoadoutPool:
     def __init__(self):
         self.name = ''
-        self.lodouts = []
+        self.loadouts = []
         self.weights = []
 
-    def addLoadout(self, loadout: Loadout, weight=DEFAULT_LOADOUT_POOL_WEIGHT):
-        self.lodouts.append(loadout)
+    def add_loadout(self, loadout: Loadout, weight=DEFAULT_LOADOUT_POOL_WEIGHT):
+        self.loadouts.append(loadout)
         self.weights.append(weight)
 
-    def getRandomLoadout(self):
-        return random.choices(self.lodouts, self.weights)[0]
-
+    def get_random_loadout(self):
+        return random.choices(self.loadouts, self.weights)[0]

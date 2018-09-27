@@ -2,4 +2,5 @@ internal_name,display_name,priority_attributes,saves,skills_fixed,skills_random,
 soldier,,"str,con",con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,,
 magicker,,"int,wis",int,arcana,"religion,insight,nature,history",2,mage,evoker,
 helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,doofus,
-monk,,"dex,wis","dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,martial_arts
+monk,,"dex,wis","dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,"martial_arts,monk_defense"
+sneaker,,"dex,int","dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,medium_armor_master

@@ -20,3 +20,4 @@ shortsword,,1,6,slashing,melee,,,"martial,finesse,light,monk"
 ,,,,,,,,
 talons,,1,4,slashing,melee,,,"simple,light"
 improved_unarmed,,1,4,bludgeoning,melee,,,"simple,light"
+monk_unarmed,Unarmed (Martial Arts),1,4,bludgeoning,melee,,,"simple,finesse,monk"

@@ -1,4 +1,4 @@
-internal_name,casting_stat,ready_style,hd_per_casting_level,cantrips_progression,fixed_spells_known_by_level,spells_known_modifier,free_spell_lists,spell_lists
+internal_name,casting_stat,ready_style,hd_per_casting_level,cantrips_per_level,fixed_spells_known_by_level,spells_known_modifier,free_spell_lists,spell_lists
 wizard,int,prepared,,wizard,,,,wizard
 evoker,int,prepared,,wizard,,,,"evoker:50,wizard"
 priest,wis,prepared,,sorcerer,,,,"healer:200,cleric"
