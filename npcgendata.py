@@ -85,8 +85,13 @@ DEFAULT_NUM_TARGETS = 1
 
 
 DEFAULT_LOADOUT_POOL_WEIGHT = 10
-
 DEFAULT_LOADOUTSET_WEIGHT = 1
+
+ASI_HD_PER_INCREASE = 4
+ASI_POINTS_PER_INCREASE = 2
+
+ASI_PROGRESSION_PRIORITY_WEIGHT = 3
+ASI_PROGRESSION_OTHER_WEIGHT = 1
 
 MAX_SPELL_CHOICES_PER_LEVEL = 10
 DEFAULT_SPELLS_READIED_PROGRESSION = (
@@ -258,31 +263,8 @@ NUM_TO_ORDINAL = {
 
 
 DEFAULT_SPELL_WEIGHT = 10
-SPELLCASTER_PROFILES = {
-    'wizard': {
-        'castStat': 'int',
-        'readyStyle': 'prepared',
-        'slots': 'full',
-        'spellsKnown': None,
-        'cantrips': 'wizard',
-        'spellLists': ('wizard',),
-    },
 
-    'evoker': {
-        'castStat': 'int',
-        'readyStyle': 'prepared',
-        'slots': 'full',
-        'spellsKnown': None,
-        'cantrips': 'wizard',
-        'spellLists': ((50, 'evoker'), 'wizard',),
-    },
-
-    'priest': {
-        'castStat': 'wis',
-        'readyStyle': 'known',
-        'slots': 'half',
-        'spellsKnown': None,
-        'cantrips': 'sorcerer',
-        'spellLists': ((200, 'healer'), 'cleric',),
-    }
-}
+# Data for special traits
+MARTIAL_ARTS_DAMAGE = (
+    (-1, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10, )
+)

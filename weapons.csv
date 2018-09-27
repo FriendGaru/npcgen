@@ -1,15 +1,22 @@
 internal_name,display_name,dmg_dice_num,dmg_dice_size,damage_type,attack_type,short_range,long_range,tags
-unarmed,,1,1,bludgeoning,melee,,,
-club,,1,4,bludgeoning,melee,,,light
-dagger,,1,4,piercing,melee,20,60,"finesse,light,thrown"
-greatclub,,1,8,bludgeoning,melee,,,2h
-handaxe,,1,6,slashing,melee,20,60,"light,thrown"
-quarterstaff,,1,6,bludgeoning,melee,,,versatile
-crossbow_light,"Crossbow, Light",1,8,piercing,ranged,80,320,"ammunition,loading,2h"
-dart,,1,4,piercing,ranged,20,60,"finesse,thrown"
-shortbow,,1,6,piercing,ranged,80,320,"ammunition,2h"
-sling,,1,4,bludgeoning,ranged,30,120,ammunition
-battleaxe,,1,8,slashing,melee,,,versatile
-flail,,1,8,bludgeoning,melee,,,
-glaive,,1,10,slashing,melee,,,"heavy,reach,2h"
-greatsword,,2,6,slashing,melee,,,"heavy,2h"
+unarmed,,1,1,bludgeoning,melee,,,"simple,monk"
+club,,1,4,bludgeoning,melee,,,"simple,light"
+dagger,,1,4,piercing,melee,20,60,"simple,finesse,light,thrown"
+greatclub,,1,8,bludgeoning,melee,,,"simple,2h"
+handaxe,,1,6,slashing,melee,20,60,"simple,light,thrown"
+quarterstaff,,1,6,bludgeoning,melee,,,"simple,versatile"
+,,,,,,,,
+crossbow_light,"Crossbow, Light",1,8,piercing,ranged,80,320,"simple,ammunition,loading,2h"
+dart,,1,4,piercing,ranged,20,60,"simple,finesse,thrown"
+shortbow,,1,6,piercing,ranged,80,320,"simple,ammunition,2h"
+sling,,1,4,bludgeoning,ranged,30,120,"simple,ammunition"
+,,,,,,,,
+battleaxe,,1,8,slashing,melee,,,"martial,versatile"
+flail,,1,8,bludgeoning,melee,,,"martial,"
+glaive,,1,10,slashing,melee,,,"martial,heavy,reach,2h"
+greatsword,,2,6,slashing,melee,,,"martial,heavy,2h"
+,,,,,,,,
+shortsword,,1,6,slashing,melee,,,"martial,finesse,light,monk"
+,,,,,,,,
+talons,,1,4,slashing,melee,,,"simple,light"
+improved_unarmed,,1,4,bludgeoning,melee,,,"simple,light"

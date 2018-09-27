@@ -1,4 +1,6 @@
-internal_name,display_name,trait_type,text,tags
-breath_weapon,Breath Weapon,action,Does {proficiency}d6 damage with DC{conDC},
-natural_armor,Natural Armor,passive,Has natural AC 13 + Dex modifier,giveArmor:natural_armor
-lucky,,passive,Reroll 1s.,
+internal_name,display_name,trait_type,text,special,tags
+breath_weapon,Breath Weapon,action,Does {proficiency}d6 damage with DC{conDC},,
+natural_armor,Natural Armor,passive,Has natural AC 13 + Dex modifier,,give_armor:natural_armor
+lucky,,passive,Reroll 1s.,,
+talons,,hidden,,,give_weapon:talons
+martial_arts,Martial Arts,passive,Do monk damage with monk weapons.,TRUE,

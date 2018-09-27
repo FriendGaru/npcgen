@@ -10,7 +10,7 @@ from npcgendata import *
 # 1 - Basic operations completed
 # 2 - The nitty gritty
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 1
+DEBUG_LEVEL = 0
 
 def rollDie(dieSize):
     return random.randint(1, dieSize)
@@ -136,6 +136,10 @@ class NPCGenerator:
         with open(weaponsFilename, newline='') as weaponsFile:
             weaponsFileReader = csv.DictReader(weaponsFile)
             for line in weaponsFileReader:
+
+                if line['internal_name'] == '':
+                    continue
+
                 newWeapon = Weapon()
                 newWeapon.intName = line['internal_name']
                 if line['display_name']:
@@ -407,8 +411,11 @@ class NPCGenerator:
         trait = self.traits[traitName]
         character.traits[traitName] = trait
 
-        if 'giveArmor' in trait.tags:
-            self.giveArmor(character, trait.tags['giveArmor'])
+        if 'give_armor' in trait.tags:
+            self.giveArmor(character, trait.tags['give_armor'])
+
+        if 'give_weapon' in trait.tags:
+            self.giveWeapon(character, trait.tags['give_weapon'])
 
     def giveArmor(self, character, armorName):
         armor = self.armors[armorName]
@@ -477,8 +484,12 @@ class NPCGenerator:
                      allowSwapping=True, forceOptimize=False,
                      fixedRolls=[],
                      classTemplate=DEFAULT_CLASS, raceTemplate=DEFAULT_RACE,
-                     hitDiceNum=DEFAULT_HITDICE_NUM, hitDiceSize=DEFAULT_HITDICE_SIZE,):
+                     hitDiceNum=DEFAULT_HITDICE_NUM, hitDiceSize=DEFAULT_HITDICE_SIZE,
+                     giveASI=True,
+                     seed=None):
+        random.seed(seed)
         newCharacter = Character()
+        newCharacter.seed = seed
         self.applyTemplate(newCharacter, raceTemplate, 'race')
         self.applyTemplate(newCharacter, classTemplate, 'class')
         newCharacter.rollAttributes(*ROLL_METHODS[attributeRollMethod],
@@ -487,6 +498,11 @@ class NPCGenerator:
                                     fixedRolls=fixedRolls)
         newCharacter.stats['hitDiceSize'] = hitDiceSize
         newCharacter.stats['hitDiceNum'] = hitDiceNum
+        if giveASI:
+            newCharacter.generateASIProgression(priorityAttributeWeight=ASI_PROGRESSION_PRIORITY_WEIGHT,
+                                                otherAttributeWeight=ASI_PROGRESSION_OTHER_WEIGHT)
+            newCharacter.applyASIProgression(hdPerIncrease=ASI_HD_PER_INCREASE,
+                                             pointsPerIncrease=ASI_POINTS_PER_INCREASE)
         newCharacter.updateDerivedStats()
         newCharacter.chooseArmors()
         return newCharacter
@@ -494,14 +510,17 @@ class NPCGenerator:
 
 class Character:
     def __init__(self):
+        self.seed = None
+
         self.stats = {}
-        for attr in STATS_ATTRIBUTES:
-            self.stats[attr] = DEFAULT_ATTRIBUTE_VALUE
+        # for attr in STATS_ATTRIBUTES:
+        #     self.stats[attr] = DEFAULT_ATTRIBUTE_VALUE
         for stat in STATS_BASE:
             self.stats[stat] = STATS_BASE[stat]
 
         self.attributeBonuses = {}
         self.priorityAttributes = []
+        self.asiProgression = []
 
         self.raceName = ''
         self.className = ''
@@ -520,7 +539,7 @@ class Character:
 
         self.spellCastingAbility = None
 
-        self.updateDerivedStats()
+        # self.updateDerivedStats()
 
     def rollAttributes(self, dieSize=6, numDice=3, dropLowest=0, dropHighest=0,
                        rerollsAllowed=0, minTotal=0, fixedRolls=[],
@@ -576,6 +595,48 @@ class Character:
         for attribute, val in attributeDict.items():
             self.stats[attribute] = val
 
+    def generateASIProgression(self, priorityAttributeWeight=ASI_PROGRESSION_PRIORITY_WEIGHT,
+                               otherAttributeWeight=ASI_PROGRESSION_OTHER_WEIGHT):
+        asiProgression = []
+        attributeChoices = STATS_ATTRIBUTES[:]
+        attributeWeights = []
+        for attribute in attributeChoices:
+            if attribute in self.priorityAttributes:
+                attributeWeights.append(priorityAttributeWeight)
+            else:
+                attributeWeights.append(otherAttributeWeight)
+
+        while len(asiProgression) < 10:
+            if len(attributeChoices) == 0:
+                break
+            choiceIndex = random.choices(range(len(attributeChoices)), attributeWeights)[0]
+            attribute = attributeChoices[choiceIndex]
+            if (asiProgression.count(attribute) + self.getStat(attribute)) > 20:
+                attributeChoices.pop(choiceIndex)
+                attributeWeights.pop(choiceIndex)
+            else:
+                asiProgression.append(attribute)
+
+        self.asiProgression = asiProgression
+
+    def applyASIProgression(self, asiProgression=None, hdPerIncrease=4, pointsPerIncrease=2):
+        if not asiProgression:
+            asiProgression = self.asiProgression[:]
+
+        asiPointsRemaining = (self.getStat('hitDiceNum') // hdPerIncrease) * pointsPerIncrease
+
+        while asiPointsRemaining > 0:
+            if len(asiProgression) == 0:
+                break
+
+            attributeChoice = asiProgression.pop(0)
+            if self.getStat(attributeChoice) < 20:
+                dprint('{}: {} -> {}'.format(attributeChoice,
+                                             str(self.getStat(attributeChoice)),
+                                             str(self.getStat(attributeChoice)+1),), 3)
+                self.setStat(attributeChoice, self.getStat(attributeChoice) + 1)
+                asiPointsRemaining -= 1
+
     def updateDerivedStats(self):
         # stat mods
         for attribute in STATS_ATTRIBUTES:
@@ -600,6 +661,9 @@ class Character:
 
     def getStat(self, stat):
         return self.stats[stat]
+
+    def setStat(self, stat, value):
+        self.stats[stat] = value
 
     def chooseArmors(self):
         allArmors = list(self.armors.values())
@@ -656,9 +720,9 @@ class Character:
         outstring += '\n'
 
         # HP
-        outstring += 'Hit Points: {}({}d{}+{})\n'.format(self.getStat('hitPoints'), self.getStat('hitDiceNum'),
+        outstring += 'Hit Points: {}({}d{}{})\n'.format(self.getStat('hitPoints'), self.getStat('hitDiceNum'),
                                                          self.getStat('hitDiceSize'),
-                                                         self.getStat('hitDiceNum') * self.getStat('conMod'))
+                                                         numPlusser(self.getStat('hitDiceNum') * self.getStat('conMod')))
         # Size
         outstring += 'Size: {}\n'.format(self.getStat('size'))
         # Speed
@@ -843,7 +907,7 @@ class Weapon:
 
     def __repr__(self):
         outstring = '[{},{},{},{},{},{},{},{},{},{},'\
-            .format(self.intName, self.displayName, self.dmgDiceNum,self.dmgDiceSize, self.damageType, self.attackType,
+            .format(self.intName, self.displayName, self.dmgDiceNum, self.dmgDiceSize, self.damageType, self.attackType,
                     str(self.rangeShort), str(self.rangeLong), str(self.tags), str(self.numTargets))
         return outstring
 
@@ -885,6 +949,15 @@ class Weapon:
         dmgDiceNum, dmgDiceSize = self.dmgDiceNum, self.dmgDiceSize
         if useVersatile:
             dmgDiceSize += 2
+
+        # Check for Martial Arts special case
+        if 'martial_arts' in owner.traits:
+            if ('monk' in self.tags) or \
+                (self.attackType == 'melee' and 'simple' in self.tags \
+                 and 'heavy' not in self.tags and '2h' not in self.tags):
+                if dmgDiceNum == 1 and dmgDiceSize < MARTIAL_ARTS_DAMAGE[owner.getStat('hitDiceNum')]:
+                    dmgDiceSize = MARTIAL_ARTS_DAMAGE[owner.getStat('hitDiceNum')]
+
         avgDmg = dmgDiceSize / 2 * dmgDiceNum + attackStat
         return int(avgDmg), dmgDiceNum, dmgDiceSize, attackStat, self.damageType, avgDmg
 
