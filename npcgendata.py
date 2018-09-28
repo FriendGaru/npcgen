@@ -55,15 +55,16 @@ DEFAULT_HITDICE_NUM = 5
 DEFAULT_HITDICE_SIZE = 8
 
 # Data Files
-ARMORS_FILENAME = 'armors.csv'
-WEAPONS_FILENAME = 'weapons.csv'
-TRAITS_FILENAME = 'traits.csv'
-SPELLS_FILENAME = 'spells.csv'
-SPELLLISTS_FILENAME = 'spelllists.csv'
-SPELLCASTERPROFILES_FILENAME = 'spellcasterprofiles.csv'
-LOADOUTPOOLS_FILENAME = 'loadoutpools.csv'
-RACETEMPLATES_FILENAME = 'racetemplates.csv'
-CLASSTEMPLATES_FILENAME = 'classtemplates.csv'
+DATA_FOLDER = 'data\\'
+ARMORS_FILENAME = DATA_FOLDER + 'armors.csv'
+WEAPONS_FILENAME = DATA_FOLDER + 'weapons.csv'
+TRAITS_FILENAME = DATA_FOLDER + 'traits.csv'
+SPELLS_FILENAME = DATA_FOLDER + 'spells.csv'
+SPELLLISTS_FILENAME = DATA_FOLDER + 'spelllists.csv'
+SPELLCASTERPROFILES_FILENAME = DATA_FOLDER + 'spellcasterprofiles.csv'
+LOADOUTPOOLS_FILENAME = DATA_FOLDER + 'loadoutpools.csv'
+RACETEMPLATES_FILENAME = DATA_FOLDER + 'racetemplates.csv'
+CLASSTEMPLATES_FILENAME = DATA_FOLDER + 'classtemplates.csv'
 
 TRAIT_TYPES = (
     'passive', 'hidden', 'action', 'reaction',

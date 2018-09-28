@@ -1,0 +1,1 @@
+from npcgen import NPCGenerator
