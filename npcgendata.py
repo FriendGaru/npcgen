@@ -1,4 +1,7 @@
 from typing import Dict
+import pkg_resources as pkg
+
+DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
 NUM2WORD = {0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six'}
 
@@ -55,16 +58,26 @@ DEFAULT_HITDICE_NUM = 5
 DEFAULT_HITDICE_SIZE = 8
 
 # Data Files
-DATA_FOLDER = 'data\\'
-ARMORS_FILENAME = DATA_FOLDER + 'armors.csv'
-WEAPONS_FILENAME = DATA_FOLDER + 'weapons.csv'
-TRAITS_FILENAME = DATA_FOLDER + 'traits.csv'
-SPELLS_FILENAME = DATA_FOLDER + 'spells.csv'
-SPELLLISTS_FILENAME = DATA_FOLDER + 'spelllists.csv'
-SPELLCASTERPROFILES_FILENAME = DATA_FOLDER + 'spellcasterprofiles.csv'
-LOADOUTPOOLS_FILENAME = DATA_FOLDER + 'loadoutpools.csv'
-RACETEMPLATES_FILENAME = DATA_FOLDER + 'racetemplates.csv'
-CLASSTEMPLATES_FILENAME = DATA_FOLDER + 'classtemplates.csv'
+# DATA_FOLDER = 'data\\'
+# ARMORS_FILENAME = DATA_FOLDER + 'armors.csv'
+# WEAPONS_FILENAME = DATA_FOLDER + 'weapons.csv'
+# TRAITS_FILENAME = DATA_FOLDER + 'traits.csv'
+# SPELLS_FILENAME = DATA_FOLDER + 'spells.csv'
+# SPELLLISTS_FILENAME = DATA_FOLDER + 'spelllists.csv'
+# SPELLCASTERPROFILES_FILENAME = DATA_FOLDER + 'spellcasterprofiles.csv'
+# LOADOUTPOOLS_FILENAME = DATA_FOLDER + 'loadoutpools.csv'
+# RACETEMPLATES_FILENAME = DATA_FOLDER + 'racetemplates.csv'
+# CLASSTEMPLATES_FILENAME = DATA_FOLDER + 'classtemplates.csv'
+
+ARMORS_FILENAME = pkg.resource_filename('npcgen', 'data/armors.csv')
+WEAPONS_FILENAME = pkg.resource_filename('npcgen', 'data/weapons.csv')
+TRAITS_FILENAME = pkg.resource_filename('npcgen', 'data/traits.csv')
+SPELLS_FILENAME = pkg.resource_filename('npcgen', 'data/spells.csv')
+SPELLLISTS_FILENAME = pkg.resource_filename('npcgen', 'data/spelllists.csv')
+SPELLCASTERPROFILES_FILENAME = pkg.resource_filename('npcgen', 'data/spellcasterprofiles.csv')
+LOADOUTPOOLS_FILENAME = pkg.resource_filename('npcgen', 'data/loadoutpools.csv')
+RACETEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/racetemplates.csv')
+CLASSTEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/classtemplates.csv')
 
 TRAIT_TYPES = (
     'passive', 'hidden', 'action', 'reaction',

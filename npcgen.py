@@ -1,7 +1,7 @@
 import random
 import csv
 import itertools
-from .npcgendata import *
+from npcgendata import *
 
 # -1 - Nothing at all
 # 0 - Errors only
