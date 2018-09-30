@@ -526,6 +526,23 @@ class NPCGenerator:
         new_character.choose_armors()
         return new_character
 
+    def get_options(self, options_type):
+        """
+        Returns a list of tuples for potential race options: [(internal_name, display_name),...]
+        """
+        if options_type == 'race':
+            options_dict = self.race_templates
+        elif options_type == 'class':
+            options_dict = self.class_templates
+        else:
+            raise ValueError("Invalid value type '{}'".format(options_type))
+
+        options_list = []
+        for internal_name in sorted(options_dict.keys()):
+            options_list.append((internal_name, options_dict[internal_name].display_name))
+
+        return options_list
+
 
 class Character:
     def __init__(self):
@@ -810,6 +827,136 @@ class Character:
             outstring += weaponObj.sheet_display(self) + '\n'
         return outstring
 
+    def build_stat_block(self):
+        sb = StatBlock()
+
+        sb.name = '{} {}'.format(self.race_name, self.class_name)
+
+        acstring = self.chosen_armor.sheet_display(self)
+        if self.extra_armors:
+            for armor in self.extra_armors:
+                acstring += ', ' + armor.sheet_display(self)
+        sb.armor = acstring
+
+        sb.hp = '{}({}d{}{})' \
+            .format(self.get_stat('hit_points'), self.get_stat('hit_dice_num'),
+                    self.get_stat('hit_dice_size'),
+                    num_plusser(self.get_stat('hit_dice_num') * self.get_stat('con_mod'))
+                    )
+        sb.size = self.get_stat('size')
+
+        speedstr = '{}ft.'.format(self.get_stat('speed_walk_final'))
+        if self.get_stat('speed_fly_final') > 0:
+            speedstr += ', fly {}ft.'.format(self.get_stat('speed_fly_final'))
+        if self.get_stat('speed_swim_final') > 0:
+            speedstr += ', swim {}ft.'.format(self.get_stat('speed_swim_final'))
+        if self.get_stat('speed_burrow_final') > 0:
+            speedstr += ', burrow {}ft.'.format(self.get_stat('speed_burrow_final'))
+        sb.speed = speedstr
+
+        sb.proficiency = num_plusser(self.get_stat('proficiency'))
+
+        attrstr = ''
+        for attr in STATS_ATTRIBUTES:
+            attrstr += '{} {}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
+        sb.attributes = attrstr
+
+        sb.saves = ''
+        if len(self.saves) > 0:
+            saves_list = []
+            for attribute in STATS_ATTRIBUTES:
+                if attribute in self.saves:
+                    save_val = self.stats[attribute + '_mod'] + self.stats['proficiency']
+                    val_str = num_plusser(save_val)
+                    saves_list.append(ATTRIBUTES_FULL[attribute] + ' ' + val_str)
+            sb.saves = ', '.join(saves_list)
+
+        sb.skills = ''
+        if len(self.skills) > 0:
+            skills_list = []
+            for skill in SKILLS_ORDERED:
+                if skill in self.skills:
+                    skill_attribute = SKILLS[skill]
+                    skill_val = self.stats[skill_attribute + '_mod'] + self.stats['proficiency']
+                    # check for expertise
+                    if self.skills[skill]:
+                        skill_val += self.stats['proficiency']
+                    if skill_val >= 0:
+                        val_str = ' +' + str(skill_val)
+                    else:
+                        val_str = ' ' + str(skill_val)
+                    skills_list.append(skill.capitalize() + val_str)
+            sb.skills = ', '.join(skills_list)
+
+        sb.cr = ''
+
+        sb.languages = ''
+
+        passives_list = []
+        for trait_int_name, trait_obj in self.traits.items():
+            assert isinstance(trait_obj, Trait)
+            if trait_obj.trait_type != 'passive':
+                continue
+            passives_list.append((trait_obj.display_name, trait_obj.display(self)))
+        if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
+            passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_name=False)))
+        sb.passive_traits = passives_list
+
+        attacks = []
+        for weapon in self.weapons.values():
+            attacks.append((weapon.display_name, weapon.sheet_display(self, show_name=False)))
+        sb.attacks = attacks
+
+        return sb
+
+
+class StatBlock:
+    """
+    Stablock contains all the entries needed for displaying a stablock without any logic
+    """
+
+    def __init__(self):
+        self.name = ''
+        self.race = ''
+        self._class = ''
+        self.armor = ''
+        self.hp = ''
+        self.size = ''
+        self.speed = ''
+        self.proficiency = ''
+        self.attributes = ''
+        self.saves = ''
+        self.skills = ''
+        self.cr = ''
+        self.languages = ''
+        self.passive_traits = []
+        self.attacks = []
+        self.actions = []
+        self.reactions = []
+
+    def display(self):
+        disp = ''
+        disp += self.name + '\n'
+        disp += 'AC:' + self.armor + '\n'
+        disp += 'Hit Points: ' + self.hp + '\n'
+        disp += 'Size: ' + self.size + '\n'
+        disp += 'Speed: ' + self.speed + '\n'
+        disp += 'Proficiency: ' + self.proficiency + '\n'
+        disp += self.attributes + '\n'
+        disp += 'Saves: ' +self.saves + '\n'
+        disp += 'Skills: ' +self.skills + '\n'
+        disp += 'Languages: ' + self.languages + '\n'
+        for trait in self.passive_traits:
+            disp += trait[0] + '. ' + trait[1]
+        for attack in self.attacks:
+            disp += attack[0] + '. ' + attack[1]
+        for action in self.actions:
+            disp += action[0] + '. ' + action[1]
+        for reaction in self.reactions:
+            disp += reaction[0] + '. ' + reaction[1]
+
+        return disp
+
 
 class Trait:
     def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
@@ -1009,8 +1156,10 @@ class Weapon:
         avg_dmg = dmg_dice_size / 2 * dmg_dice_num + attack_stat
         return int(avg_dmg), dmg_dice_num, dmg_dice_size, attack_stat, self.damage_type, avg_dmg
 
-    def sheet_display(self, owner):
-        outstring = self.display_name + '. '
+    def sheet_display(self, owner, show_name=True):
+        outstring = ''
+        if show_name:
+            outstring += self.display_name + '. '
         is_melee = self.attack_type == 'melee'
         is_ranged = self.attack_type == 'ranged' or 'thrown' in self.tags
         if is_melee and is_ranged:
@@ -1287,15 +1436,18 @@ class SpellCastingAbility:
 
         return spells_readied
 
-    def display(self, owner):
+    def display(self, owner, show_name=True):
         caster_level = self.get_caster_level(owner)
         if caster_level == 0:
             return None
         spells_ready = self.get_spells_readied(owner)
         # Header part
-        outline = "Spellcasting. This character is a {}-level spellcaster. " \
-                  "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
-                  "It has the following spells {}:"\
+        outline = ''
+        if show_name:
+            outline += 'Spellcasting. '
+        outline += "This character is a {}-level spellcaster. " \
+                   "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
+                   "It has the following spells {}:"\
             .format(NUM_TO_ORDINAL[caster_level],
                     ATTRIBUTES_FULL[self.casting_stat], owner.get_stat(self.casting_stat + '_dc'),
                     num_plusser(owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'

@@ -1,1 +1,2 @@
-from .npcgen import NPCGenerator
+import npcgen, npcgendata
+from npcgen import NPCGenerator
