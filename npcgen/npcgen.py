@@ -82,15 +82,25 @@ DEFAULT_HITDICE_SIZE = 8
 # RACETEMPLATES_FILENAME = DATA_FOLDER + 'racetemplates.csv'
 # CLASSTEMPLATES_FILENAME = DATA_FOLDER + 'classtemplates.csv'
 
-ARMORS_FILENAME = pkg.resource_filename('npcgen', 'data/armors.csv')
-WEAPONS_FILENAME = pkg.resource_filename('npcgen', 'data/weapons.csv')
-TRAITS_FILENAME = pkg.resource_filename('npcgen', 'data/traits.csv')
-SPELLS_FILENAME = pkg.resource_filename('npcgen', 'data/spells.csv')
-SPELLLISTS_FILENAME = pkg.resource_filename('npcgen', 'data/spelllists.csv')
-SPELLCASTERPROFILES_FILENAME = pkg.resource_filename('npcgen', 'data/spellcasterprofiles.csv')
-LOADOUTPOOLS_FILENAME = pkg.resource_filename('npcgen', 'data/loadoutpools.csv')
-RACETEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/racetemplates.csv')
-CLASSTEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/classtemplates.csv')
+# ARMORS_FILENAME = pkg.resource_filename('npcgen', 'data/armors.csv')
+# WEAPONS_FILENAME = pkg.resource_filename('npcgen', 'data/weapons.csv')
+# TRAITS_FILENAME = pkg.resource_filename('npcgen', 'data/traits.csv')
+# SPELLS_FILENAME = pkg.resource_filename('npcgen', 'data/spells.csv')
+# SPELLLISTS_FILENAME = pkg.resource_filename('npcgen', 'data/spelllists.csv')
+# SPELLCASTERPROFILES_FILENAME = pkg.resource_filename('npcgen', 'data/spellcasterprofiles.csv')
+# LOADOUTPOOLS_FILENAME = pkg.resource_filename('npcgen', 'data/loadoutpools.csv')
+# RACETEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/racetemplates.csv')
+# CLASSTEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/classtemplates.csv')
+
+ARMORS_FILENAME = pkg.resource_filename(__name__, 'data/armors.csv')
+WEAPONS_FILENAME = pkg.resource_filename(__name__, 'data/weapons.csv')
+TRAITS_FILENAME = pkg.resource_filename(__name__, 'data/traits.csv')
+SPELLS_FILENAME = pkg.resource_filename(__name__, 'data/spells.csv')
+SPELLLISTS_FILENAME = pkg.resource_filename(__name__, 'data/spelllists.csv')
+SPELLCASTERPROFILES_FILENAME = pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
+LOADOUTPOOLS_FILENAME = pkg.resource_filename(__name__, 'data/loadoutpools.csv')
+RACETEMPLATES_FILENAME = pkg.resource_filename(__name__, 'data/racetemplates.csv')
+CLASSTEMPLATES_FILENAME = pkg.resource_filename(__name__, 'data/classtemplates.csv')
 
 TRAIT_TYPES = (
     'passive', 'hidden', 'action', 'reaction',

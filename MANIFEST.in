@@ -1,9 +1,1 @@
-include npcgen/data/armors.csv
-include npcgen/data/classtemplates.csv
-include npcgen/data/loadoutpools.csv
-include npcgen/data/racetemplates.csv
-include npcgen/data/spellcasterprofiles.csv
-include npcgen/data/spelllists.csv
-include npcgen/data/spells.csv
-include npcgen/data/traits.csv
-include npcgen/data/weapons.csv
+global-include *.csv
