@@ -861,7 +861,7 @@ class Character:
 
         attributes_dict = {}
         for attribute in STATS_ATTRIBUTES:
-            attributes_dict[attribute] = self.get_stat(attribute)
+            attributes_dict[attribute] = '{} ({})'.format(self.get_stat(attribute), num_plusser(self.get_stat(attribute)))
         sb.attributes_dict = attributes_dict
 
         attrstr = ''
