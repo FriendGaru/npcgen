@@ -1,7 +1,10 @@
 import random
 import csv
 import itertools
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'npcgen'))
 from npcgendata import *
+
 
 # -1 - Nothing at all
 # 0 - Errors only
