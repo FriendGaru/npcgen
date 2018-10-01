@@ -1,11 +1,12 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="npcgen",
     version="0.1",
     author="JW",
-    license="Whatever",
-    packages=["npcgen"],
+    license="MIT",
+    packages=find_packages(exclude=['tests*']),
     install_requires=[],
-    package_data={'npcgen': ['data/*.csv']}
+    package_data={'npcgen': ['data/*.csv']},
+    url='https://github.com/FriendGaru/npcgen',
 )
