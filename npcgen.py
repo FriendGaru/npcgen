@@ -861,12 +861,18 @@ class Character:
 
         attributes_dict = {}
         for attribute in STATS_ATTRIBUTES:
-            attributes_dict[attribute] = '{} ({})'.format(self.get_stat(attribute), num_plusser(self.get_stat(attribute)))
+            attribute_val = self.get_stat(attribute)
+            if attribute_val < 10:
+                extra_space = ' '
+            else:
+                extra_space = ''
+            attributes_dict[attribute] = '{}{} ({})'\
+                .format(attribute_val, extra_space, num_plusser(self.get_stat(attribute)))
         sb.attributes_dict = attributes_dict
 
         attrstr = ''
         for attr in STATS_ATTRIBUTES:
-            attrstr += '{} {}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
+            attrstr += '{} {}{}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
         sb.attributes = attrstr
 
         sb.saves = ''
