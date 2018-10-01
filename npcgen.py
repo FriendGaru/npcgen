@@ -396,6 +396,16 @@ class NPCGenerator:
                 if line['languages']:
                     new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
+                if line['base_stats']:
+                    base_stats = {}
+                    for entry in line['base_stats'].replace(" ", "").split(','):
+                        base_stat, val = entry.split(':')
+                        val = int(val)
+                        base_stats[base_stat] = val
+                    new_race_template.base_stats = base_stats
+                else:
+                    new_race_template.base_stats = None
+
                 self.race_templates[new_race_template.int_name] = new_race_template
 
     def build_class_templates_from_csv(self, class_templates_filename):
