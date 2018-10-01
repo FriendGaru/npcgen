@@ -186,7 +186,9 @@ class NPCGenerator:
                     for raw_tag in line['tags'].replace(' ', '').split(','):
                         if ':' in raw_tag:
                             tag_name, tag_value = raw_tag.split(':')
-                            new_tags_dict[tag_name] = tag_value
+                            # NOTE if you want to give multiple of something like armor or resistances, you need to
+                            # use semicolons to separate them
+                            new_tags_dict[tag_name] = tag_value.split(';')
                         else:
                             new_tags_dict[raw_tag] = None
                     new_trait.tags = new_tags_dict
@@ -391,6 +393,19 @@ class NPCGenerator:
                 else:
                     new_race_template.traits = None
 
+                if line['languages']:
+                    new_race_template.languages = line['languages'].replace(" ", "").split(',')
+
+                if line['base_stats']:
+                    base_stats = {}
+                    for entry in line['base_stats'].replace(" ", "").split(','):
+                        base_stat, val = entry.split(':')
+                        val = int(val)
+                        base_stats[base_stat] = val
+                    new_race_template.base_stats = base_stats
+                else:
+                    new_race_template.base_stats = None
+
                 self.race_templates[new_race_template.int_name] = new_race_template
 
     def build_class_templates_from_csv(self, class_templates_filename):
@@ -434,10 +449,28 @@ class NPCGenerator:
         character.traits[trait_name] = trait
 
         if 'give_armor' in trait.tags:
-            self.give_armor(character, trait.tags['give_armor'])
+            for armor in trait.tags['give_armor']:
+                self.give_armor(character, armor)
 
         if 'give_weapon' in trait.tags:
-            self.give_weapon(character, trait.tags['give_weapon'])
+            for weapon in trait.tags['give_weapon']:
+                self.give_weapon(character, weapon)
+
+        if 'damage_immunity' in trait.tags:
+            for entry in trait.tags['damage_immunity']:
+                character.add_damage_immunity(entry)
+
+        if 'damage_vulnerability' in trait.tags:
+            for entry in trait.tags['damage_vulnerability']:
+                character.add_damage_vulnerability(entry)
+
+        if 'damage_resistance' in trait.tags:
+            for entry in trait.tags['damage_resistance']:
+                character.add_damage_resistance(entry)
+
+        if 'condition_immunity' in trait.tags:
+            for entry in trait.tags['condition_immunity']:
+                character.add_condition_immunity(entry)
 
     def give_armor(self, character, armor_name):
         armor = self.armors[armor_name]
@@ -492,6 +525,10 @@ class NPCGenerator:
         if template.base_stats:
             for baseStatName, statVal in template.base_stats.items():
                 character.stats[baseStatName] = statVal
+
+        if template.languages:
+            for language in template.languages:
+                character.add_language(language)
 
         if template.spell_casting_profile:
             character.spell_casting_ability = template.spell_casting_profile.generate_spell_casting_ability()
@@ -575,6 +612,15 @@ class Character:
         self.has_shield = False
 
         self.traits = {}
+
+        self.damage_vulnerabilities = []
+        self.damage_resistances = []
+        self.damage_immunities = []
+        self.condition_immunities = []
+        self.vulnerabilities = []
+
+        self.languages = []
+        self.senses = {}
 
         self.spell_casting_ability = None
 
@@ -706,6 +752,41 @@ class Character:
     def set_stat(self, stat, value):
         self.stats[stat] = value
 
+    def get_cr(self):
+        # To be implemented
+        return '6/7 (3.1459 XP)'
+
+    def get_senses(self):
+        passive_perception = 10 + self.get_stat('wis_mod')
+        if 'perception' in self.skills:
+            passive_perception += self.get_stat('proficiency')
+        senses_string = ''
+        if len(self.senses.keys()) > 0:
+            for k, v in self.senses:
+                senses_string += '{} {} ft., '.format(k, v)
+        senses_string += 'passive Perception {}'.format(passive_perception)
+        return senses_string
+    
+    def add_language(self, language):
+        if language not in self.languages:
+            self.languages.append(language)
+            
+    def add_damage_resistance(self, damage_resistance):
+        if damage_resistance not in self.damage_resistances:
+            self.damage_resistances.append(damage_resistance)
+            
+    def add_damage_immunity(self, damage_immunity):
+        if damage_immunity not in self.damage_immunities:
+            self.damage_immunities.append(damage_immunity)
+            
+    def add_damage_vulnerability(self, damage_vulnerability):
+        if damage_vulnerability not in self.damage_vulnerabilities:
+            self.damage_vulnerabilities.append(damage_vulnerability)
+            
+    def add_condition_immunity(self, condition_immunity):
+        if condition_immunity not in self.condition_immunities:
+            self.condition_immunities.append(condition_immunity)
+
     def choose_armors(self):
         all_armors = list(self.armors.values())
         regular_armors = []
@@ -750,6 +831,9 @@ class Character:
         self.extra_armors = valid_extras
 
     def display(self):
+        """
+        Don't use, stick to the statblock display from now on
+        """
         outstring = ''
         # Race and Class
         outstring += '{} {}\n'.format(self.race_name, self.class_name)
@@ -875,6 +959,9 @@ class Character:
             attrstr += '{} {}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
         sb.attributes = attrstr
 
+        sb.senses = self.get_senses()
+        sb.cr = self.get_cr()
+
         sb.saves = ''
         if len(self.saves) > 0:
             saves_list = []
@@ -902,9 +989,19 @@ class Character:
                     skills_list.append(skill.capitalize() + val_str)
             sb.skills = ', '.join(skills_list)
 
-        sb.cr = ''
+        sb.cr = self.get_cr()
+        sb.senses = self.get_senses()
 
-        sb.languages = ''
+        if self.languages:
+            sb.languages = ', '.join(sorted(self.languages))
+        if self.damage_vulnerabilities:
+            sb.damage_vulnerabilities = ', '.join(sorted(self.damage_vulnerabilities))
+        if self.damage_immunities:
+           sb.damage_immunities = ', '.join(sorted(self.damage_immunities))
+        if self.damage_resistances:
+          sb.damage_resistances = ', '.join(sorted(self.damage_resistances))
+        if self.condition_immunities:
+          sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
         passives_list = []
         for trait_int_name, trait_obj in self.traits.items():
@@ -940,10 +1037,15 @@ class StatBlock:
         self.proficiency = ''
         self.attributes = ''
         self.attributes_dict = {}
+        self.damage_vulnerabilities = None
+        self.damage_resistances = None
+        self.damage_immunities = None
+        self.condition_immunities = None
+        self.senses = ''
         self.saves = ''
         self.skills = ''
         self.cr = ''
-        self.languages = ''
+        self.languages = None
         self.passive_traits = []
         self.attacks = []
         self.actions = []
@@ -958,17 +1060,26 @@ class StatBlock:
         disp += 'Speed: ' + self.speed + '\n'
         disp += 'Proficiency: ' + self.proficiency + '\n'
         disp += self.attributes + '\n'
-        disp += 'Saves: ' +self.saves + '\n'
-        disp += 'Skills: ' +self.skills + '\n'
+        disp += 'Saves: ' + self.saves + '\n'
+        disp += 'Skills: ' + self.skills + '\n'
+        if self.damage_vulnerabilities:
+            disp += 'Damage Vulnerabilities: ' + self.damage_vulnerabilities + '\n'
+        if self.damage_resistances:
+            disp += 'Damage Resistances: ' + self.damage_resistances + '\n'
+        if self.damage_immunities:
+            disp += 'Damage Resistances: ' + self.damage_immunities + '\n'
+        if self.condition_immunities:
+            disp += 'Condition Immunities: ' + self.condition_immunities + '\n'
+        disp += 'Senses: ' + self.senses + '\n'
         disp += 'Languages: ' + self.languages + '\n'
         for trait in self.passive_traits:
-            disp += trait[0] + '. ' + trait[1]
+            disp += trait[0] + '. ' + trait[1] + '\n'
         for attack in self.attacks:
-            disp += attack[0] + '. ' + attack[1]
+            disp += attack[0] + '. ' + attack[1] + '\n'
         for action in self.actions:
-            disp += action[0] + '. ' + action[1]
+            disp += action[0] + '. ' + action[1] + '\n'
         for reaction in self.reactions:
-            disp += reaction[0] + '. ' + reaction[1]
+            disp += reaction[0] + '. ' + reaction[1] + '\n'
 
         return disp
 
@@ -984,7 +1095,13 @@ class StatBlock:
         stat_dict['attributes_dict'] = self.attributes_dict
         stat_dict['saves'] = self.saves
         stat_dict['skills'] = self.skills
+        stat_dict['damage_vulnerabilities'] = self.damage_vulnerabilities
+        stat_dict['damage_resistances'] = self.damage_resistances
+        stat_dict['damage_immunities'] = self.damage_immunities
+        stat_dict['condition_immunities'] = self.condition_immunities
+        stat_dict['senses'] = self.senses
         stat_dict['languages'] = self.languages
+        stat_dict['cr'] = self.cr
         stat_dict['passive_traits'] = self.passive_traits
         stat_dict['attacks'] = self.attacks
         stat_dict['actions'] = self.actions
@@ -1024,6 +1141,8 @@ class Template:
         self.skills_random = None
 
         self.size = None
+
+        self.senses = {}
 
         self.saves = None
         self.languages = []
@@ -1505,6 +1624,9 @@ class Loadout:
         self.weapons = weapons
         self.armors = armors
         self.shield = shield
+
+    def __str__(self):
+        return '<{},{},{}>'.format(str(self.weapons), str(self.armors), str(self.shield))
 
 
 class LoadoutPool:
