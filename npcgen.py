@@ -859,6 +859,11 @@ class Character:
 
         sb.proficiency = num_plusser(self.get_stat('proficiency'))
 
+        attributes_dict = {}
+        for attribute in STATS_ATTRIBUTES:
+            attributes_dict[attribute] = self.get_stat(attribute)
+        sb.attributes_dict = attributes_dict
+
         attrstr = ''
         for attr in STATS_ATTRIBUTES:
             attrstr += '{} {}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
@@ -928,6 +933,7 @@ class StatBlock:
         self.speed = ''
         self.proficiency = ''
         self.attributes = ''
+        self.attributes_dict = {}
         self.saves = ''
         self.skills = ''
         self.cr = ''
@@ -969,6 +975,7 @@ class StatBlock:
         stat_dict['speed'] = self.speed
         stat_dict['proficiency'] = self.proficiency
         stat_dict['attributes'] = self.attributes
+        stat_dict['attributes_dict'] = self.attributes_dict
         stat_dict['saves'] = self.saves
         stat_dict['skills'] = self.skills
         stat_dict['languages'] = self.languages
