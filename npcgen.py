@@ -1060,6 +1060,7 @@ class StatBlock:
             disp += 'Damage Resistances: ' + self.damage_immunities + '\n'
         if self.condition_immunities:
             disp += 'Condition Immunities: ' + self.condition_immunities + '\n'
+        disp += 'Senses: ' + self.senses + '\n'
         disp += 'Languages: ' + self.languages + '\n'
         for trait in self.passive_traits:
             disp += trait[0] + '. ' + trait[1] + '\n'
