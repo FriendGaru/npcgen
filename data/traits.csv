@@ -7,3 +7,4 @@ martial_arts,Martial Arts,passive,Do monk damage with monk weapons.,TRUE,give_we
 monk_defense,,hidden,,,give_armor:unarmored_defense_monk
 heavy_armor_training,Heavy Armor Training,passive,Speed is not reduced by wearing heavy armor,TRUE,
 medium_armor_master,Medium Armor Master,passive,"You have practiced moving in medium armor to gain the following benefits:\nWearing medium armor doesn't impose disadvantage on your Dexterity (Stealth)\nWhen you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher. checks. ",TRUE,
+toughy,,passive,Testy resistances,,"damage_resistance:fire;ice,damage_vulnerability:electricity;acid,damage_immunity:bludgeoning;slashing,condition_immunity:charmed,sleep"

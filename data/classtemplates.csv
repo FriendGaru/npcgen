@@ -4,3 +4,4 @@ magicker,,"int,wis",int,arcana,"religion,insight,nature,history",2,mage,evoker,
 helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,doofus,
 monk,,"dex,wis","dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,"martial_arts,monk_defense"
 sneaker,,"dex,int","dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,medium_armor_master
+weirdo,,"cha,con","cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,,toughy
