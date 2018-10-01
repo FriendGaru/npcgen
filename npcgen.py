@@ -1085,7 +1085,9 @@ class StatBlock:
         stat_dict['attributes_dict'] = self.attributes_dict
         stat_dict['saves'] = self.saves
         stat_dict['skills'] = self.skills
+        stat_dict['senses'] = self.senses
         stat_dict['languages'] = self.languages
+        stat_dict['cr'] = self.cr
         stat_dict['passive_traits'] = self.passive_traits
         stat_dict['attacks'] = self.attacks
         stat_dict['actions'] = self.actions
