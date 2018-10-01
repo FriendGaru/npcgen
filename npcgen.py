@@ -872,7 +872,7 @@ class Character:
 
         attrstr = ''
         for attr in STATS_ATTRIBUTES:
-            attrstr += '{} {}{}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
+            attrstr += '{} {}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
         sb.attributes = attrstr
 
         sb.saves = ''
