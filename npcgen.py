@@ -516,6 +516,10 @@ class NPCGenerator:
             for baseStatName, statVal in template.base_stats.items():
                 character.stats[baseStatName] = statVal
 
+        if template.languages:
+            for language in template.languages:
+                character.add_language(language)
+
         if template.spell_casting_profile:
             character.spell_casting_ability = template.spell_casting_profile.generate_spell_casting_ability()
 
@@ -975,13 +979,19 @@ class Character:
                     skills_list.append(skill.capitalize() + val_str)
             sb.skills = ', '.join(skills_list)
 
-        sb.cr = ''
+        sb.cr = self.get_cr()
+        sb.senses = self.get_senses()
 
-        sb.languages = ', '.join(sorted(self.languages))
-        sb.damage_vulnerabilities = ', '.join(sorted(self.damage_vulnerabilities))
-        sb.damage_immunities = ', '.join(sorted(self.damage_immunities))
-        sb.damage_resistances = ', '.join(sorted(self.damage_resistances))
-        sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
+        if self.languages:
+            sb.languages = ', '.join(sorted(self.languages))
+        if self.damage_vulnerabilities:
+            sb.damage_vulnerabilities = ', '.join(sorted(self.damage_vulnerabilities))
+        if self.damage_immunities:
+           sb.damage_immunities = ', '.join(sorted(self.damage_immunities))
+        if self.damage_resistances:
+          sb.damage_resistances = ', '.join(sorted(self.damage_resistances))
+        if self.condition_immunities:
+          sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
         passives_list = []
         for trait_int_name, trait_obj in self.traits.items():
@@ -1017,15 +1027,15 @@ class StatBlock:
         self.proficiency = ''
         self.attributes = ''
         self.attributes_dict = {}
-        self.damage_vulnerabilities = ''
-        self.damage_resistances = ''
-        self.damage_immunities = ''
-        self.condition_immunities = ''
+        self.damage_vulnerabilities = None
+        self.damage_resistances = None
+        self.damage_immunities = None
+        self.condition_immunities = None
         self.senses = ''
         self.saves = ''
         self.skills = ''
         self.cr = ''
-        self.languages = ''
+        self.languages = None
         self.passive_traits = []
         self.attacks = []
         self.actions = []
