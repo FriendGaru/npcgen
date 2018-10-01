@@ -576,6 +576,12 @@ class Character:
 
         self.traits = {}
 
+        self.resistances = []
+        self.immunities = []
+        self.vulnerabilities = []
+
+        self.senses = {}
+
         self.spell_casting_ability = None
 
         # self.updateDerivedStats()
@@ -705,6 +711,21 @@ class Character:
 
     def set_stat(self, stat, value):
         self.stats[stat] = value
+
+    def get_cr(self):
+        # To be implemented
+        return '6/7 (3.1459 XP)'
+
+    def get_senses(self):
+        passive_perception = 10 + self.get_stat('wis_mod')
+        if 'perception' in self.skills:
+            passive_perception += self.get_stat('proficiency')
+        senses_string = ''
+        if len(self.senses.keys()) > 0:
+            for k, v in self.senses:
+                senses_string += '{} {} ft., '.format(k, v)
+        senses_string += 'passive Perception {}'.format(passive_perception)
+        return senses_string
 
     def choose_armors(self):
         all_armors = list(self.armors.values())
@@ -875,6 +896,9 @@ class Character:
             attrstr += '{} {}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
         sb.attributes = attrstr
 
+        sb.senses = self.get_senses()
+        sb.cr = self.get_cr()
+
         sb.saves = ''
         if len(self.saves) > 0:
             saves_list = []
@@ -940,6 +964,10 @@ class StatBlock:
         self.proficiency = ''
         self.attributes = ''
         self.attributes_dict = {}
+        self.resistances = ''
+        self.immunities = ''
+        self.vulnerabilities = ''
+        self.senses = ''
         self.saves = ''
         self.skills = ''
         self.cr = ''
