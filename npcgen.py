@@ -867,7 +867,7 @@ class Character:
             else:
                 extra_space = ''
             attributes_dict[attribute] = '{}{} ({})'\
-                .format(attribute_val, extra_space, num_plusser(self.get_stat(attribute)))
+                .format(attribute_val, extra_space, num_plusser(self.get_stat(attribute + '_mod')))
         sb.attributes_dict = attributes_dict
 
         attrstr = ''
