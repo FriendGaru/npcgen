@@ -1,4 +1,5 @@
 npcgentest.py
 
+npcgen/__pycache__/*
 __pycache__/*
 .idea/*
