@@ -7,6 +7,6 @@ setup(
     license="MIT",
     packages=find_packages(exclude=['tests*']),
     install_requires=[],
-    package_data={'npcgen': ['data/*.csv']},
+    package_data={'npcgen': ['npcgen/data/*.csv']},
     url='https://github.com/FriendGaru/npcgen',
 )
