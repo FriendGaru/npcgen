@@ -1183,8 +1183,6 @@ class Character:
                 languages.insert(0, 'common')
             sb.languages = ', '.join(languages)
 
-
-
         if self.damage_vulnerabilities:
             sb.damage_vulnerabilities = ', '.join(sorted(self.damage_vulnerabilities))
         if self.damage_immunities:
@@ -1278,29 +1276,30 @@ class StatBlock:
         return disp
 
     def get_dict(self):
-        stat_dict = {}
-        stat_dict['name'] = self.name
-        stat_dict['armor'] = self.armor
-        stat_dict['hp'] = self.hp
-        stat_dict['size'] = self.size
-        stat_dict['speed'] = self.speed
-        stat_dict['proficiency'] = self.proficiency
-        stat_dict['attributes'] = self.attributes
-        stat_dict['attributes_dict'] = self.attributes_dict
-        stat_dict['saves'] = self.saves
-        stat_dict['skills'] = self.skills
-        stat_dict['damage_vulnerabilities'] = self.damage_vulnerabilities
-        stat_dict['damage_resistances'] = self.damage_resistances
-        stat_dict['damage_immunities'] = self.damage_immunities
-        stat_dict['condition_immunities'] = self.condition_immunities
-        stat_dict['senses'] = self.senses
-        stat_dict['languages'] = self.languages
-        stat_dict['cr'] = self.cr
-        stat_dict['passive_traits'] = self.passive_traits
-        stat_dict['attacks'] = self.attacks
-        stat_dict['actions'] = self.actions
-        stat_dict['reactions'] = self.reactions
-        return stat_dict
+        # stat_dict = {}
+        # stat_dict['name'] = self.name
+        # stat_dict['armor'] = self.armor
+        # stat_dict['hp'] = self.hp
+        # stat_dict['size'] = self.size
+        # stat_dict['speed'] = self.speed
+        # stat_dict['proficiency'] = self.proficiency
+        # stat_dict['attributes'] = self.attributes
+        # stat_dict['attributes_dict'] = self.attributes_dict
+        # stat_dict['saves'] = self.saves
+        # stat_dict['skills'] = self.skills
+        # stat_dict['damage_vulnerabilities'] = self.damage_vulnerabilities
+        # stat_dict['damage_resistances'] = self.damage_resistances
+        # stat_dict['damage_immunities'] = self.damage_immunities
+        # stat_dict['condition_immunities'] = self.condition_immunities
+        # stat_dict['senses'] = self.senses
+        # stat_dict['languages'] = self.languages
+        # stat_dict['cr'] = self.cr
+        # stat_dict['passive_traits'] = self.passive_traits
+        # stat_dict['attacks'] = self.attacks
+        # stat_dict['actions'] = self.actions
+        # stat_dict['reactions'] = self.reactions
+        # return stat_dict
+        return self.__dict__
 
 class Trait:
     def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
