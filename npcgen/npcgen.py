@@ -70,37 +70,15 @@ REROLLS_CAP = 99
 DEFAULT_HITDICE_NUM = 5
 DEFAULT_HITDICE_SIZE = 8
 
-# Data Files
-# DATA_FOLDER = 'data\\'
-# ARMORS_FILENAME = DATA_FOLDER + 'armors.csv'
-# WEAPONS_FILENAME = DATA_FOLDER + 'weapons.csv'
-# TRAITS_FILENAME = DATA_FOLDER + 'traits.csv'
-# SPELLS_FILENAME = DATA_FOLDER + 'spells.csv'
-# SPELLLISTS_FILENAME = DATA_FOLDER + 'spelllists.csv'
-# SPELLCASTERPROFILES_FILENAME = DATA_FOLDER + 'spellcasterprofiles.csv'
-# LOADOUTPOOLS_FILENAME = DATA_FOLDER + 'loadoutpools.csv'
-# RACETEMPLATES_FILENAME = DATA_FOLDER + 'racetemplates.csv'
-# CLASSTEMPLATES_FILENAME = DATA_FOLDER + 'classtemplates.csv'
-
-# ARMORS_FILENAME = pkg.resource_filename('npcgen', 'data/armors.csv')
-# WEAPONS_FILENAME = pkg.resource_filename('npcgen', 'data/weapons.csv')
-# TRAITS_FILENAME = pkg.resource_filename('npcgen', 'data/traits.csv')
-# SPELLS_FILENAME = pkg.resource_filename('npcgen', 'data/spells.csv')
-# SPELLLISTS_FILENAME = pkg.resource_filename('npcgen', 'data/spelllists.csv')
-# SPELLCASTERPROFILES_FILENAME = pkg.resource_filename('npcgen', 'data/spellcasterprofiles.csv')
-# LOADOUTPOOLS_FILENAME = pkg.resource_filename('npcgen', 'data/loadoutpools.csv')
-# RACETEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/racetemplates.csv')
-# CLASSTEMPLATES_FILENAME = pkg.resource_filename('npcgen', 'data/classtemplates.csv')
-
-ARMORS_FILENAME = pkg.resource_filename(__name__, 'data/armors.csv')
-WEAPONS_FILENAME = pkg.resource_filename(__name__, 'data/weapons.csv')
-TRAITS_FILENAME = pkg.resource_filename(__name__, 'data/traits.csv')
-SPELLS_FILENAME = pkg.resource_filename(__name__, 'data/spells.csv')
-SPELLLISTS_FILENAME = pkg.resource_filename(__name__, 'data/spelllists.csv')
-SPELLCASTERPROFILES_FILENAME = pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
-LOADOUTPOOLS_FILENAME = pkg.resource_filename(__name__, 'data/loadoutpools.csv')
-RACETEMPLATES_FILENAME = pkg.resource_filename(__name__, 'data/racetemplates.csv')
-CLASSTEMPLATES_FILENAME = pkg.resource_filename(__name__, 'data/classtemplates.csv')
+ARMORS_FILE = pkg.resource_filename(__name__, 'data/armors.csv')
+WEAPONS_FILE = pkg.resource_filename(__name__, 'data/weapons.csv')
+TRAITS_FILE = pkg.resource_filename(__name__, 'data/traits.csv')
+SPELLS_FILE = pkg.resource_filename(__name__, 'data/spells.csv')
+SPELLLISTS_FILE = pkg.resource_filename(__name__, 'data/spelllists.csv')
+SPELLCASTER_PROFILES_FILE = pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
+LOADOUT_POOLS_FILE = pkg.resource_filename(__name__, 'data/loadoutpools.csv')
+RACE_TEMPLATES_FILE = pkg.resource_filename(__name__, 'data/racetemplates.csv')
+CLASS_TEMPLATES_FILE = pkg.resource_filename(__name__, 'data/classtemplates.csv')
 
 TRAIT_TYPES = (
     'passive', 'hidden', 'action', 'reaction',
@@ -115,7 +93,7 @@ DEFAULT_RACE = 'humanoid'
 DEFAULT_CLASS = 'soldier'
 
 
-DEFAULT_WEAPON_REACH = 'reach 5 ft.'
+WEAPON_REACH_NORMAL = 'reach 5 ft.'
 WEAPON_REACH_W_BONUS = 'reach 10 ft.'
 DEFAULT_NUM_TARGETS = 1
 
@@ -125,7 +103,6 @@ DEFAULT_LOADOUTSET_WEIGHT = 1
 
 ASI_HD_PER_INCREASE = 4
 ASI_POINTS_PER_INCREASE = 2
-
 ASI_PROGRESSION_PRIORITY_WEIGHT = 3
 ASI_PROGRESSION_OTHER_WEIGHT = 1
 
@@ -135,7 +112,8 @@ DEFAULT_SPELLS_READIED_PROGRESSION = (
     2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 1, 2, 3,
 )
 
-DEFAULT_SPELLCASTER_SLOTS = (
+SPELL_SLOTS_TABLE = (
+        # SPELL_SLOTS_TABLE[caster_level][spell_level]
         (),
         # 1
         (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
@@ -162,91 +140,6 @@ DEFAULT_SPELLCASTER_SLOTS = (
         (-1, 4, 3, 3, 3, 3, 2, 1, 1, 1,),
         (-1, 4, 3, 3, 3, 3, 2, 2, 1, 1,),
 )
-
-# CASTER_SPELL_SLOTS = {
-#     # Index zeroes are dummied out so the index can nicely correspond to ccharacter/spell level
-#     'full': (
-#         (),
-#         # 1
-#         (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-#         # 6
-#         (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 2, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 1, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 2, 0, 0, 0, 0,),
-#         #11
-#         (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
-#         (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
-#         (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
-#         #16
-#         (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
-#         (-1, 4, 3, 3, 3, 2, 1, 1, 1, 1,),
-#         (-1, 4, 3, 3, 3, 3, 1, 1, 1, 1,),
-#         (-1, 4, 3, 3, 3, 3, 2, 1, 1, 1,),
-#         (-1, 4, 3, 3, 3, 3, 2, 2, 1, 1,),
-#     ),
-#     'half': (
-#         (),
-#         #1
-#         (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-#         #6
-#         (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-#         #11
-#         (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 2, 0, 0, 0, 0, 0,),
-#         #16
-#         (-1, 4, 3, 3, 2, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 1, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 1, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 2, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 3, 2, 0, 0, 0, 0,),
-#     ),
-#     'third': (
-#         (),
-#         #1
-#         (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         #6
-#         (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-#         #11
-#         (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-#         #16
-#         (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
-#         (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
-#     ),
-# }
 
 CASTER_SPELLS_KNOWN = {
     'sorcerer': (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15),
@@ -295,9 +188,7 @@ NUM_TO_ORDINAL = {
     18: '18th',
     19: '19th',
     20: '20th',
-
 }
-
 
 DEFAULT_SPELL_WEIGHT = 10
 
@@ -378,47 +269,47 @@ class NPCGenerator:
     Character class based on given parameters.
     """
     def __init__(self,
-                 weapons_filename=WEAPONS_FILENAME,
-                 armors_filename=ARMORS_FILENAME,
-                 spells_filename=SPELLS_FILENAME,
-                 spell_lists_filename=SPELLLISTS_FILENAME,
-                 spellcaster_profiles_filename=SPELLCASTERPROFILES_FILENAME,
-                 loadout_pools_filename=LOADOUTPOOLS_FILENAME,
-                 traits_filename=TRAITS_FILENAME,
-                 race_templates_filename=RACETEMPLATES_FILENAME,
-                 class_templates_filename=CLASSTEMPLATES_FILENAME,
+                 weapons_file_loc=WEAPONS_FILE,
+                 armors_file_loc=ARMORS_FILE,
+                 spells_file_loc=SPELLS_FILE,
+                 spell_lists_file_loc=SPELLLISTS_FILE,
+                 spellcaster_profiles_file_loc=SPELLCASTER_PROFILES_FILE,
+                 loadout_pools_file_loc=LOADOUT_POOLS_FILE,
+                 traits_file_loc=TRAITS_FILE,
+                 race_templates_file_loc=RACE_TEMPLATES_FILE,
+                 class_templates_file_loc=CLASS_TEMPLATES_FILE,
                  ):
 
         self.weapons = {}
-        self.build_weapons_from_csv(weapons_filename)
+        self.build_weapons_from_csv(weapons_file_loc)
 
         self.armors = {}
-        self.build_armors_from_csv(armors_filename)
+        self.build_armors_from_csv(armors_file_loc)
 
         self.loadout_pools = {}
-        self.build_loadout_pools_from_csv(loadout_pools_filename)
+        self.build_loadout_pools_from_csv(loadout_pools_file_loc)
 
         self.traits = {}
-        self.build_traits_from_csv(traits_filename)
+        self.build_traits_from_csv(traits_file_loc)
 
         self.spells = {}
-        self.build_spells_from_csv(spells_filename)
+        self.build_spells_from_csv(spells_file_loc)
 
         self.spell_lists = {}
-        self.build_spell_lists_from_csv(spell_lists_filename)
+        self.build_spell_lists_from_csv(spell_lists_file_loc)
 
         self.spellcaster_profiles = {}
-        self.build_spellcaster_profiles_from_csv(spellcaster_profiles_filename)
+        self.build_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
 
         self.race_templates = {}
-        self.build_race_templates_from_csv(race_templates_filename)
+        self.build_race_templates_from_csv(race_templates_file_loc)
 
         self.class_templates = {}
-        self.build_class_templates_from_csv(class_templates_filename)
+        self.build_class_templates_from_csv(class_templates_file_loc)
 
-    def build_armors_from_csv(self, armors_filename):
-        with open(armors_filename, newline='') as armorsFile:
-            armors_file_reader = csv.DictReader(armorsFile)
+    def build_armors_from_csv(self, armors_file_loc):
+        with open(armors_file_loc, newline='') as armors_file:
+            armors_file_reader = csv.DictReader(armors_file)
             for line in armors_file_reader:
                 new_armor = Armor()
                 new_armor.int_name = line['internal_name']
@@ -435,8 +326,8 @@ class NPCGenerator:
                 new_armor.tags = set(line['tags'].replace(" ", "").split(','))
                 self.armors[new_armor.int_name] = new_armor
 
-    def build_weapons_from_csv(self, weapons_filename):
-        with open(weapons_filename, newline='') as weaponsFile:
+    def build_weapons_from_csv(self, weapons_file_loc):
+        with open(weapons_file_loc, newline='') as weaponsFile:
             weapons_file_reader = csv.DictReader(weaponsFile)
             for line in weapons_file_reader:
 
@@ -461,8 +352,8 @@ class NPCGenerator:
                 self.weapons[new_weapon.int_name] = new_weapon
                 debug_print("Weapon Added: " + str(new_weapon), 3)
 
-    def build_traits_from_csv(self, traits_filename):
-        with open(traits_filename, newline='') as traitsFile:
+    def build_traits_from_csv(self, traits_file_loc):
+        with open(traits_file_loc, newline='') as traitsFile:
             traits_file_reader = csv.DictReader(traitsFile)
             for line in traits_file_reader:
                 new_trait = Trait()
@@ -488,8 +379,8 @@ class NPCGenerator:
 
                 self.traits[new_trait.int_name] = new_trait
 
-    def build_loadout_pools_from_csv(self, loadout_pools_filename):
-        with open(loadout_pools_filename, newline="") as loadoutPoolsFile:
+    def build_loadout_pools_from_csv(self, loadout_pools_file_loc):
+        with open(loadout_pools_file_loc, newline="") as loadoutPoolsFile:
             loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
             new_loadout_pool = None
             for line in loadout_pools_file_reader:
@@ -522,8 +413,8 @@ class NPCGenerator:
                 new_loadout_pool.add_loadout(new_loadout, weight)
             self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
-    def build_spells_from_csv(self, spells_filename):
-        with open(spells_filename, newline='') as spellsFile:
+    def build_spells_from_csv(self, spells_file_loc):
+        with open(spells_file_loc, newline='') as spellsFile:
             spells_file_reader = csv.DictReader(spellsFile)
             for line in spells_file_reader:
                 new_spell = Spell()
@@ -534,8 +425,8 @@ class NPCGenerator:
                 new_spell.classes = set(line['classes'].replace(" ", "").split(','))
                 self.spells[new_spell.name] = new_spell
 
-    def build_spell_lists_from_csv(self, spell_lists_filename):
-        with open(spell_lists_filename, newline='') as spellListsFile:
+    def build_spell_lists_from_csv(self, spell_lists_file_loc):
+        with open(spell_lists_file_loc, newline='') as spellListsFile:
             spell_lists_file_reader = csv.DictReader(spellListsFile)
             for line in spell_lists_file_reader:
                 new_spell_list = SpellList()
@@ -604,8 +495,8 @@ class NPCGenerator:
 
                 self.spell_lists[new_spell_list.name] = new_spell_list
 
-    def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_filename):
-        with open(spellcaster_profiles_filename, newline="") as spellcaster_profiles_file:
+    def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
+        with open(spellcaster_profiles_file_loc, newline="") as spellcaster_profiles_file:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
             for line in spellcaster_profiles_file_reader:
                 new_spellcaster_profile = SpellCasterProfile()
@@ -615,7 +506,7 @@ class NPCGenerator:
 
                 # Alternative slots progressions not implemented
                 # Probably not needed, since all casters currently in the game derive their slots from the standard
-                new_spellcaster_profile.spell_slots_table = DEFAULT_SPELLCASTER_SLOTS
+                new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
 
                 if line["hd_per_casting_level"]:
                     new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
@@ -651,12 +542,12 @@ class NPCGenerator:
                 new_spellcaster_profile.spell_lists = new_spell_lists_dict
 
                 # For now, only standard slots progression
-                new_spellcaster_profile.spell_slots_table = DEFAULT_SPELLCASTER_SLOTS
+                new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
 
                 self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
 
-    def build_race_templates_from_csv(self, race_templates_filename):
-        with open(race_templates_filename, newline='') as race_templates_file:
+    def build_race_templates_from_csv(self, race_templates_file_loc):
+        with open(race_templates_file_loc, newline='') as race_templates_file:
             race_templates_file_reader = csv.DictReader(race_templates_file)
             for line in race_templates_file_reader:
                 new_race_template = Template()
@@ -701,8 +592,8 @@ class NPCGenerator:
 
                 self.race_templates[new_race_template.int_name] = new_race_template
 
-    def build_class_templates_from_csv(self, class_templates_filename):
-        with open(class_templates_filename, newline='') as class_templates_file:
+    def build_class_templates_from_csv(self, class_templates_file_loc):
+        with open(class_templates_file_loc, newline='') as class_templates_file:
             class_templates_file_reader = csv.DictReader(class_templates_file)
             for line in class_templates_file_reader:
                 new_class_template = Template()
@@ -1621,12 +1512,12 @@ class Weapon:
             if 'reach' in self.tags:
                 outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_W_BONUS, self.range_short, self.range_long)
             else:
-                outstring += '{} or range {}/{} ft., '.format(DEFAULT_WEAPON_REACH, self.range_short, self.range_long)
+                outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_NORMAL, self.range_short, self.range_long)
         elif is_melee:
             if 'reach' in self.tags:
                 outstring += WEAPON_REACH_W_BONUS + ', '
             else:
-                outstring += DEFAULT_WEAPON_REACH + ', '
+                outstring += WEAPON_REACH_NORMAL + ', '
         elif is_ranged:
             outstring += 'range {}/{} ft., '.format(self.range_short, self.range_long)
 
@@ -1821,7 +1712,7 @@ class SpellCastingAbility:
                  spells_readied_progression=DEFAULT_SPELLS_READIED_PROGRESSION,
                  fixed_spells_known_by_level=None,
                  cantrips_progression=CASTER_CANTRIPS_KNOWN['none'],
-                 slots_progression=DEFAULT_SPELLCASTER_SLOTS,
+                 slots_progression=SPELL_SLOTS_TABLE,
                  spells_known_modifier=0,
                  ):
         # NPCs generally either have spells 'prepared' or 'known'
