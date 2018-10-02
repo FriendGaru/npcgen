@@ -1176,8 +1176,15 @@ class Character:
         sb.cr = self.get_cr()
         sb.senses = self.get_senses()
 
-        if self.languages:
-            sb.languages = ', '.join(sorted(self.languages))
+        if self.languages and len(self.languages) > 0:
+            languages = sorted(self.languages)
+            if 'common' in languages:
+                languages.remove('common')
+                languages.insert(0, 'common')
+            sb.languages = ', '.join(languages)
+
+
+
         if self.damage_vulnerabilities:
             sb.damage_vulnerabilities = ', '.join(sorted(self.damage_vulnerabilities))
         if self.damage_immunities:
@@ -1255,7 +1262,10 @@ class StatBlock:
         if self.condition_immunities:
             disp += 'Condition Immunities: ' + self.condition_immunities + '\n'
         disp += 'Senses: ' + self.senses + '\n'
-        disp += 'Languages: ' + self.languages + '\n'
+        if self.languages:
+            disp += 'Languages: ' + self.languages + '\n'
+        else:
+            disp += 'Languages: --' + self.languages + '\n'
         for trait in self.passive_traits:
             disp += trait[0] + '. ' + trait[1] + '\n'
         for attack in self.attacks:
@@ -1308,7 +1318,7 @@ class Trait:
 
     def display(self, owner, include_title=True):
         if include_title:
-            outstring = self.display_name + '. ' 
+            outstring = self.display_name + '. '
         else:
             outstring = ''
         self.text.format(**owner.stats)
