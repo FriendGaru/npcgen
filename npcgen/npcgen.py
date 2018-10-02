@@ -1306,8 +1306,12 @@ class Trait:
     def __str__(self):
         return '<{}:{},{},{},{}>'.format(self.int_name, self.display_name, self.trait_type, self.text, str(self.tags))
 
-    def display(self, owner):
-        outstring = self.display_name + '. ' + self.text.format(**owner.stats)
+    def display(self, owner, include_title=True):
+        if include_title:
+            outstring = self.display_name + '. ' 
+        else:
+            outstring = ''
+        self.text.format(**owner.stats)
         return outstring
 
 
