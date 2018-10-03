@@ -382,11 +382,13 @@ class NPCGenerator:
         self.build_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
 
         self.race_templates = {}
-        self.race_options = []
+        self.race_options = []  # For the HTML drop down boxes, includes categories for sorting
+        self.race_keys = []  # For random choices, doesn't include categories
         self.build_race_templates_from_csv(race_templates_file_loc)
 
         self.class_templates = {}
-        self.class_options = []
+        self.class_options = []  # For the HTML drop down boxes, includes categories for sorting
+        self.class_keys = []  # For random choices, doesn't include categories
         self.build_class_templates_from_csv(class_templates_file_loc)
 
     def build_armors_from_csv(self, armors_file_loc):
@@ -672,7 +674,7 @@ class NPCGenerator:
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
                 elif line['internal_name'] == '@CATEGORY':
-                    self.race_options.append(('@CATEGORY', line['internal_name']))
+                    self.race_options.append(('@CATEGORY', line['display_name']))
                     continue
 
                 new_race_template = Template()
@@ -717,6 +719,7 @@ class NPCGenerator:
 
                 self.race_options.append((new_race_template.int_name, new_race_template.display_name))
                 self.race_templates[new_race_template.int_name] = new_race_template
+                self.race_keys = list(self.race_templates.keys())
 
     def build_class_templates_from_csv(self, class_templates_file_loc):
         with open(class_templates_file_loc, newline='') as class_templates_file:
@@ -727,7 +730,7 @@ class NPCGenerator:
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
                 elif line['internal_name'] == '@CATEGORY':
-                    self.class_options.append(('@CATEGORY', line['internal_name']))
+                    self.class_options.append(('@CATEGORY', line['display_name']))
                     continue
 
                 new_class_template = Template()
@@ -761,6 +764,7 @@ class NPCGenerator:
 
                 self.class_options.append((new_class_template.int_name, new_class_template.display_name))
                 self.class_templates[new_class_template.int_name] = new_class_template
+                self.class_keys = list(self.class_templates.keys())
 
     def give_trait(self, character: 'Character', trait_name):
         trait = self.traits[trait_name]
@@ -919,9 +923,9 @@ class NPCGenerator:
 
     def get_random_option(self, option_type):
         if option_type == 'race':
-            return random.choice(self.race_templates.keys())
+            return random.choice(self.race_keys)
         elif option_type == 'class':
-            return random.choice(self.class_templates.keys())
+            return random.choice(self.class_keys)
         else:
             raise ValueError("Invalid value type '{}' requested for random option.".format(option_type))
 
