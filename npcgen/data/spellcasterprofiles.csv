@@ -4,3 +4,4 @@ evoker,int,prepared,,wizard,,,,"evoker:50,wizard"
 priest,wis,prepared,,sorcerer,,,,"healer:200,cleric"
 sorcerer,cha,known,,sorcerer,sorcerer,,,"enchanter:50,wizard"
 doofus,cha,known,2,wizard,,,healer,"evoker:1.5,cleric"
+lazy_wizard,int,prepared,3,wizard,,,,wizard

@@ -1,1 +1,2 @@
-limit character stats to just values, move multiattack and size to attributes
+perhaps redo random so it's not using the global value for seeding
+work out the nitty gritty of casters, they calculate spell slots one way but have a different method for fixed spells known

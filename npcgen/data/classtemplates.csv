@@ -5,6 +5,7 @@ monk,,"dex,wis","dex,con","acrobatics,athletics","stealth,insight,survival",1,mo
 @CATEGORY,Magic People,,,,,,,,,
 magicker,,"int,wis",int,arcana,"religion,insight,nature,history",2,mage,,wizard,
 helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,,priest,
+lazy_wizard,Lazy Wizard,"int,cha",int,arcana,"religion,insight,nature,history",1,mage,,lazy_wizard,
 @CATEGORY,Rogues,,,,,,,,,
 sneaker,,"dex,int","dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,,"medium_armor_master,expertise_single"
 weirdo,,"cha,con","cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,,,toughy
