@@ -6,7 +6,6 @@ medium_armor_master,Medium Armor Master,passive,"You have practiced moving in me
 free_attribute_bonus,,hidden,,free_attribute_bonus:1,
 free_attribute_bonus_double,,hidden,,free_attribute_bonus:2,
 expertise_single,,hidden,,expertise_random:1,
-expertise_rogue,,hidden,,expertise_rogue,
 expertise_stealth,,hidden,,expertise_fixed:stealth,
 ,,,,,
 #REGULAR TRAITS,,,,,

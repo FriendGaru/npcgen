@@ -382,9 +382,11 @@ class NPCGenerator:
         self.build_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
 
         self.race_templates = {}
+        self.race_options = []
         self.build_race_templates_from_csv(race_templates_file_loc)
 
         self.class_templates = {}
+        self.class_options = []
         self.build_class_templates_from_csv(class_templates_file_loc)
 
     def build_armors_from_csv(self, armors_file_loc):
@@ -666,8 +668,11 @@ class NPCGenerator:
             race_templates_file_reader = csv.DictReader(race_templates_file)
             for line in race_templates_file_reader:
 
-                # Ignore blank lines or comments using hastags
+                # Ignore blank lines or comments using hashtags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
+                    continue
+                elif line['internal_name'] == '<CATEGORY>':
+                    self.race_options.append(('<CATEGORY>', line['internal_name']))
                     continue
 
                 new_race_template = Template()
@@ -710,6 +715,7 @@ class NPCGenerator:
                 else:
                     new_race_template.base_stats = None
 
+                self.race_options.append((new_race_template.int_name, new_race_template.display_name))
                 self.race_templates[new_race_template.int_name] = new_race_template
 
     def build_class_templates_from_csv(self, class_templates_file_loc):
@@ -717,8 +723,11 @@ class NPCGenerator:
             class_templates_file_reader = csv.DictReader(class_templates_file)
             for line in class_templates_file_reader:
 
-                # Ignore blank lines or comments using hastags
+                # Ignore blank lines or comments using hashtags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
+                    continue
+                elif line['internal_name'] == '<CATEGORY>':
+                    self.class_options.append(('<CATEGORY>', line['internal_name']))
                     continue
 
                 new_class_template = Template()
@@ -750,6 +759,7 @@ class NPCGenerator:
                 if line['spellcasting_profile']:
                     new_class_template.spell_casting_profile = self.spellcaster_profiles[line['spellcasting_profile']]
 
+                self.class_options.append((new_class_template.int_name, new_class_template.display_name))
                 self.class_templates[new_class_template.int_name] = new_class_template
 
     def give_trait(self, character: 'Character', trait_name):
@@ -901,17 +911,11 @@ class NPCGenerator:
         Returns a list of tuples for potential race options: [(internal_name, display_name),...]
         """
         if options_type == 'race':
-            options_dict = self.race_templates
+            return self.race_options
         elif options_type == 'class':
-            options_dict = self.class_templates
+            return self.class_options
         else:
             raise ValueError("Invalid value type '{}'".format(options_type))
-
-        options_list = []
-        for internal_name in sorted(options_dict.keys()):
-            options_list.append((internal_name, options_dict[internal_name].display_name))
-
-        return options_list
 
 
 class Character:
