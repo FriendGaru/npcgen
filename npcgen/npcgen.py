@@ -679,7 +679,7 @@ class NPCGenerator:
                     self.race_options.append(('@CATEGORY', line['display_name']))
                     continue
 
-                new_race_template = Template()
+                new_race_template = RaceTemplate()
                 new_race_template.int_name = line["internal_name"]
                 if line["display_name"]:
                     new_race_template.display_name = line['display_name']
@@ -706,23 +706,29 @@ class NPCGenerator:
                 else:
                     new_race_template.size = DEFAULT_SIZE
 
+                if line['speeds']:
+                    for entry in line['speeds'].replace(' ', '').split(','):
+                        speed, val = entry.split(':')
+                        new_race_template.speeds[speed] = int(val)
+
+                if line['senses']:
+                    for entry in line ['senses'].replace(' ', '').split(','):
+                        sense, val = entry.split(':')
+                        new_race_template.senses[sense] = int(val)
+
                 if line['traits']:
                     new_race_template.traits = line['traits'].replace(" ", "").split(',')
-                else:
-                    new_race_template.traits = None
 
                 if line['languages']:
                     new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
-                if line['base_stats']:
-                    base_stats = {}
-                    for entry in line['base_stats'].replace(" ", "").split(','):
-                        base_stat, val = entry.split(':')
-                        val = int(val)
-                        base_stats[base_stat] = val
-                    new_race_template.base_stats = base_stats
-                else:
-                    new_race_template.base_stats = None
+                # if line['base_stats']:
+                #     base_stats = {}
+                #     for entry in line['base_stats'].replace(" ", "").split(','):
+                #         base_stat, val = entry.split(':')
+                #         val = int(val)
+                #         base_stats[base_stat] = val
+                #     new_race_template.base_stats = base_stats
 
                 self.race_options.append((new_race_template.int_name, new_race_template.display_name))
                 self.race_templates[new_race_template.int_name] = new_race_template
@@ -740,7 +746,7 @@ class NPCGenerator:
                     self.class_options.append(('@CATEGORY', line['display_name']))
                     continue
 
-                new_class_template = Template()
+                new_class_template = ClassTemplate()
                 new_class_template.int_name = line['internal_name']
 
                 if line['display_name']:
@@ -826,22 +832,56 @@ class NPCGenerator:
         weapon = self.weapons[weapon_name]
         character.weapons[weapon_name] = weapon
 
-    def apply_template(self, character: 'Character', template: 'Template', template_type=None):
+    def apply_race_template(self, character: 'Character', race_template, apply_traits=True):
+        if type(race_template) == str:
+            race_template = self.race_templates[race_template]
+        assert isinstance(race_template, RaceTemplate), \
+            "apply_race_template() requires either a RaceTemplate or a string indicating a valid RaceTemplate"
 
-        if template_type == 'race':
-            character.race_name = template.display_name
-        elif template_type == 'class':
-            character.class_name = template.display_name
+        character.race_name = race_template.display_name
+        character.attribute_bonuses = race_template.attribute_bonuses
+        for k, v in race_template.base_stats.items():
+            character.set_stat(k, v)
+        character.creature_type = race_template.creature_type
+        character.size = race_template.size
+        for k, v in race_template.speeds.items():
+            character.set_stat('speed_' + k, v)
+        for k, v in race_template.senses.items():
+            character.set_stat('sense_' + k, v)
+        for language in race_template.languages:
+            character.add_language(language)
 
-        if template.priority_attributes:
-            character.priority_attributes = template.priority_attributes
+        if apply_traits:
+            for trait in race_template.traits:
+                self.give_trait(character, trait)
 
-        if template.attribute_bonuses:
-            for k, v in template.attribute_bonuses.items():
-                character.attribute_bonuses[k] = v
+    def apply_class_template(self, character: 'Character', class_template, apply_traits=True):
+        if type(class_template) == str:
+            class_template = self.class_templates[class_template]
+        assert isinstance(class_template, ClassTemplate), \
+            "apply_class_template() requires either a ClassTemplate or a string indicating a valid ClassTemplate"
 
-        if template.loadout_pool:
-            loadout_pool = self.loadout_pools[template.loadout_pool]
+        character.class_name = class_template.display_name
+        character.priority_attributes = class_template.priority_attributes
+
+        for skill in class_template.skills_fixed:
+                character.add_skill(skill)
+
+        chosen_skills = random.sample(class_template.skills_random, class_template.num_random_skills)
+        for skill in chosen_skills:
+            character.add_skill(skill)
+
+        for save in class_template.saves:
+            character.saves.add(save)
+
+        for language in class_template.languages:
+            character.add_language(language)
+
+        if class_template.multiattack_type:
+            character.set_stat('multiattack_type', class_template.multiattack_type)
+
+        if class_template.loadout_pool:
+            loadout_pool = self.loadout_pools[class_template.loadout_pool]
             loadout = loadout_pool.get_random_loadout()
             if loadout.armors:
                 for armor in loadout.armors:
@@ -851,39 +891,12 @@ class NPCGenerator:
                     self.give_weapon(character, weapon)
             character.has_shield = loadout.shield
 
-        if template.skills_fixed:
-            for skill in template.skills_fixed:
-                character.add_skill(skill)
+        if class_template.spell_casting_profile:
+            character.spell_casting_ability = class_template.spell_casting_profile.generate_spell_casting_ability()
 
-        if template.skills_random:
-            chosen_skills = random.sample(template.skills_random, template.num_random_skills)
-            for skill in chosen_skills:
-                character.add_skill(skill)
-
-        if template.saves:
-            for save in template.saves:
-                character.saves.add(save)
-
-        if template.creature_type:
-            character.creature_type = template.creature_type
-
-        if template.base_stats:
-            for baseStatName, statVal in template.base_stats.items():
-                character.stats[baseStatName] = statVal
-
-        if template.languages:
-            for language in template.languages:
-                character.add_language(language)
-
-        if template.multiattack_type:
-            character.set_stat('multiattack_type', template.multiattack_type)
-
-        if template.traits:
-            for trait_name in template.traits:
-                self.give_trait(character, trait_name)
-
-        if template.spell_casting_profile:
-            character.spell_casting_ability = template.spell_casting_profile.generate_spell_casting_ability()
+        if apply_traits:
+            for trait in class_template.traits:
+                self.give_trait(character, trait)
 
     def new_character(self, attribute_roll_method=DEFAULT_ROLL_METHOD, rerolls_allowed=0, min_total=0,
                       allow_swapping=True, force_optimize=False,
@@ -898,10 +911,12 @@ class NPCGenerator:
         new_character.seed = seed
 
         race_template = self.race_templates[race_template_name]
-        self.apply_template(new_character, race_template, 'race')
+        # self.apply_template(new_character, race_template, 'race')
+        self.apply_race_template(new_character, race_template)
 
         class_template = self.class_templates[class_template_name]
-        self.apply_template(new_character, class_template, 'class')
+        # self.apply_template(new_character, class_template, 'class')
+        self.apply_class_template(new_character, class_template)
 
         new_character.roll_attributes(*ROLL_METHODS[attribute_roll_method],
                                       rerolls_allowed=rerolls_allowed, min_total=min_total,
@@ -918,6 +933,9 @@ class NPCGenerator:
                                                 points_per_increase=ASI_POINTS_PER_INCREASE)
         new_character.update_derived_stats()
         new_character.choose_armors()
+
+        # After generating, re-seed random
+        random.seed()
         return new_character
 
     def get_options(self, options_type):
@@ -958,6 +976,7 @@ class Character:
         self.class_name = ''
 
         self.creature_type = ''
+        self.size = ''
 
         # Skills are stored as a dictionary, if the value is true that means the character has expertise
         self.skills = set()
@@ -1584,29 +1603,6 @@ class StatBlock:
         return disp
 
     def get_dict(self):
-        # stat_dict = {}
-        # stat_dict['name'] = self.name
-        # stat_dict['armor'] = self.armor
-        # stat_dict['hp'] = self.hp
-        # stat_dict['size'] = self.size
-        # stat_dict['speed'] = self.speed
-        # stat_dict['proficiency'] = self.proficiency
-        # stat_dict['attributes'] = self.attributes
-        # stat_dict['attributes_dict'] = self.attributes_dict
-        # stat_dict['saves'] = self.saves
-        # stat_dict['skills'] = self.skills
-        # stat_dict['damage_vulnerabilities'] = self.damage_vulnerabilities
-        # stat_dict['damage_resistances'] = self.damage_resistances
-        # stat_dict['damage_immunities'] = self.damage_immunities
-        # stat_dict['condition_immunities'] = self.condition_immunities
-        # stat_dict['senses'] = self.senses
-        # stat_dict['languages'] = self.languages
-        # stat_dict['cr'] = self.cr
-        # stat_dict['passive_traits'] = self.passive_traits
-        # stat_dict['attacks'] = self.attacks
-        # stat_dict['actions'] = self.actions
-        # stat_dict['reactions'] = self.reactions
-        # return stat_dict
         return self.__dict__
 
 
@@ -1633,54 +1629,45 @@ class Trait:
         return outstring
 
 
-class Template:
-    def __init__(self, int_name='', display_name=''):
-        self.int_name = int_name
-        self.display_name = display_name
-        self.template_type = None
-        self.attribute_bonuses = None
-        self.base_stats = None
-        self.priority_attributes = None
+class RaceTemplate:
+    def __init__(self):
+        self.int_name = ''
+        self.display_name = ''
 
-        self.skills_fixed = None
-        self.num_random_skills = 0
-        self.skills_random = None
+        self.attribute_bonuses = {}
+        self.base_stats = {}
 
-        self.creature_type = None
-        self.size = None
+        self.creature_type = DEFAULT_CREATURE_TYPE
+        self.size = DEFAULT_SIZE
 
+        self.speeds = {}
         self.senses = {}
 
-        self.saves = None
+        self.languages = []
+
+        self.traits = []
+
+
+class ClassTemplate:
+    def __init__(self):
+        self.int_name = ''
+        self.display_name = ''
+
+        self.priority_attributes = []
+
+        self.skills_fixed = []
+        self.num_random_skills = 0
+        self.skills_random = []
+
+        self.saves = []
         self.languages = []
 
         self.multiattack_type = None
 
-        self.traits = None
         self.loadout_pool = None
         self.spell_casting_profile = None
 
-    def __repr__(self):
-        return '<Template: {}>'.format(self.int_name)
-
-    def __str__(self):
-        outstring = '<Template: {},{},{},{},{},{},{},{},{},{},{},{},{},{},{}>' \
-            .format(self.int_name, self.display_name, str(self.template_type), str(self.attribute_bonuses),
-                    str(self.base_stats), str(self.priority_attributes), str(self.skills_fixed),
-                    str(self.num_random_skills), str(self.skills_random), str(self.size), str(self.saves),
-                    str(self.languages), str(self.traits), str(self.loadout_pool), str(self.spell_casting_profile))
-        return outstring
-
-    def validate(self):
-        if type(self.attribute_bonuses) == Dict:
-            for attribute in self.attribute_bonuses:
-                if attribute not in STATS_ATTRIBUTES:
-                    raise ValueError("!!! Template:{} has invalid attribute bonus:{}".format(self.int_name, attribute))
-        else:
-            raise ValueError("!!! Template:{} attributesBonues is not a Dict type!".format(self.int_name))
-        for skill in itertools.chain(self.skills_fixed, self.skills_random):
-            if skill not in SKILLS:
-                raise ValueError("!!! Template:{} has invalid skill:{}".format(self.int_name, skill))
+        self.traits = []
 
 
 class Armor:
@@ -1916,7 +1903,7 @@ class SpellList:
         if spell in self.spells:
             self.spells.pop(spell)
 
-    def get_spellnames_by_level(self):
+    def get_spell_names_by_level(self):
         out_spells = [set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), ]
         for spell in self.spells.values():
             out_spells[spell.level].add(spell.name)
