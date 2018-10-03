@@ -1,7 +1,7 @@
-internal_name,display_name,priority_attributes,saves,skills_fixed,skills_random,num_random_skills,loadout_pool,spellcasting_profile,traits
-soldier,,"str,con",con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,,
-magicker,,"int,wis",int,arcana,"religion,insight,nature,history",2,mage,evoker,
-helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,doofus,
-monk,,"dex,wis","dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,"martial_arts,monk_defense"
-sneaker,,"dex,int","dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,medium_armor_master
-weirdo,,"cha,con","cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,,toughy
+internal_name,display_name,priority_attributes,saves,skills_fixed,skills_random,num_random_skills,loadout_pool,multiattack_type,spellcasting_profile,traits
+soldier,,"str,con",con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,fighter,,
+magicker,,"int,wis",int,arcana,"religion,insight,nature,history",2,mage,,wizard,
+helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,,priest,
+monk,,"dex,wis","dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,,"martial_arts,monk_defense"
+sneaker,,"dex,int","dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,,"medium_armor_master,expertise_single"
+weirdo,,"cha,con","cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,,,toughy

@@ -1,10 +1,18 @@
-internal_name,display_name,trait_type,text,special,tags
+internal_name,display_name,trait_type,text,tags,cr_changes
+#HARDCODED TRAITS,,,,,
+martial_arts,Martial Arts,passive,Do monk damage with monk weapons.,give_weapon:monk_unarmed,
+heavy_armor_training,Heavy Armor Training,passive,Speed is not reduced by wearing heavy armor,,
+medium_armor_master,Medium Armor Master,passive,"You have practiced moving in medium armor to gain the following benefits:\nWearing medium armor doesn't impose disadvantage on your Dexterity (Stealth)\nWhen you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher. checks. ",,
+free_attribute_bonus,,hidden,,free_attribute_bonus:1,
+free_attribute_bonus_double,,hidden,,free_attribute_bonus:2,
+expertise_single,,hidden,,expertise_random:1,
+expertise_rogue,,hidden,,expertise_rogue,
+expertise_stealth,,hidden,,expertise_fixed:stealth,
+,,,,,
+#REGULAR TRAITS,,,,,
 breath_weapon,Breath Weapon,action,Does {proficiency}d6 damage with DC{conDC},,
-natural_armor,Natural Armor,passive,Has natural AC 13 + Dex modifier,,give_armor:natural_armor
+natural_armor,Natural Armor,passive,Has natural AC 13 + Dex modifier,give_armor:natural_armor,
 lucky,,passive,Reroll 1s.,,
-talons,,hidden,,,give_weapon:talons
-martial_arts,Martial Arts,passive,Do monk damage with monk weapons.,TRUE,give_weapon:monk_unarmed
-monk_defense,,hidden,,,give_armor:unarmored_defense_monk
-heavy_armor_training,Heavy Armor Training,passive,Speed is not reduced by wearing heavy armor,TRUE,
-medium_armor_master,Medium Armor Master,passive,"You have practiced moving in medium armor to gain the following benefits:\nWearing medium armor doesn't impose disadvantage on your Dexterity (Stealth)\nWhen you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher. checks. ",TRUE,
-toughy,,passive,Testy resistances,,"damage_resistance:fire;ice,damage_vulnerability:electricity;acid,damage_immunity:bludgeoning;slashing,condition_immunity:charmed,sleep"
+talons,,hidden,,give_weapon:talons,
+monk_defense,,hidden,,give_armor:unarmored_defense_monk,
+toughy,,passive,Testy resistances,"damage_resistance:fire;ice, damage_vulnerability:electricity;acid, damage_immunity:bludgeoning;slashing, condition_immunity:charmed;sleep",

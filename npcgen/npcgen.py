@@ -1,7 +1,7 @@
 import random
 import csv
 import itertools
-import sys, os
+import math
 from typing import Dict
 import pkg_resources as pkg
 
@@ -26,16 +26,19 @@ ATTRIBUTES_FULL: Dict[str, str] = {
 }
 
 STATS_BASE = {
-    'hit_dice_num': 1, 'hit_dice_size': 8, 'hit_points_extra': 0, 'proficiency_extra': 0,
+    'hit_dice_num': 1, 'hit_dice_size': 8,
+    # extra hit dice are used ONLY for hp calculations
+    'hit_dice_extra': 0, 'hit_points_extra': 0,
+    'proficiency_extra': 0,
     'speed_walk': 30, 'speed_fly': 0, 'speed_burrow': 0, 'speed_swim': 0,
-    'random_stat_points': 0,
     'size': 'medium',
-    # Armor AC Bonus is granted to some fighters
-    'armorACBonus': 0,
+    # Used for cr calculations, can be improved by multiattack feats
+    'multiattack_type': None,
 }
-STATS_DERIVED = (
-    'hit_points', 'proficiency',
-)
+
+# STATS_DERIVED = (
+#     'hit_points', 'proficiency', 'attacks_per_round'
+# )
 
 SKILLS = {
     'athletics': 'str',
@@ -69,6 +72,9 @@ DEFAULT_ROLL_METHOD = '3d6'
 REROLLS_CAP = 99
 DEFAULT_HITDICE_NUM = 5
 DEFAULT_HITDICE_SIZE = 8
+# Max hit dice a character can have for generating stats
+# Characters may still have bonus hd, which give extra hp but are not used for stat calculations
+HITDICE_NUM_CAP = 20
 
 ARMORS_FILE = pkg.resource_filename(__name__, 'data/armors.csv')
 WEAPONS_FILE = pkg.resource_filename(__name__, 'data/weapons.csv')
@@ -80,8 +86,9 @@ LOADOUT_POOLS_FILE = pkg.resource_filename(__name__, 'data/loadoutpools.csv')
 RACE_TEMPLATES_FILE = pkg.resource_filename(__name__, 'data/racetemplates.csv')
 CLASS_TEMPLATES_FILE = pkg.resource_filename(__name__, 'data/classtemplates.csv')
 
+
 TRAIT_TYPES = (
-    'passive', 'hidden', 'action', 'reaction',
+    'hidden', 'passive', 'multiattack', 'action', 'reaction',
 )
 
 VALID_SIZES = (
@@ -99,12 +106,20 @@ DEFAULT_NUM_TARGETS = 1
 
 
 DEFAULT_LOADOUT_POOL_WEIGHT = 10
-DEFAULT_LOADOUTSET_WEIGHT = 1
 
+# Ability score increases, how often and how many points per increase
 ASI_HD_PER_INCREASE = 4
 ASI_POINTS_PER_INCREASE = 2
+# How likely a character is to pick their priority stats vs a random one
 ASI_PROGRESSION_PRIORITY_WEIGHT = 3
 ASI_PROGRESSION_OTHER_WEIGHT = 1
+# If enabled, this scale will be used to give decreasing weight to lesser priority attributes
+# For example, with a priority weight of 3, other weight of 1, and a subsequent scale:
+# If a character has str, dex, and con as priority attributes she would have the following weights when choosing an ASI
+# str: 3, dex: 2.25, con: 1.6875, int: 1, wis: 1, cha: 1
+ASI_PROGRESSION_PRIORITY_SUBSEQUENT_SCALE = 0.75
+# A character will never go above this value when choosing ASIs
+ASI_DEFAULT_ATTRIBUTE_CAP = 20
 
 MAX_SPELL_CHOICES_PER_LEVEL = 10
 DEFAULT_SPELLS_READIED_PROGRESSION = (
@@ -153,8 +168,45 @@ CASTER_CANTRIPS_KNOWN = {
     'sorcerer': (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, ),
 }
 
+CHALLENGE_RATING_CHART = (
+    # CR,    prof,  AC, HP,   hit,dpr,  saveDC
+    ('0 (0 or 10 XP)',       2,  13,  6,     3,  1,      13),
+    ('1/8 (25 XP)',     2,  13, 35,     3,  3,      13),
+    ('1/4 (50 XP)',     2,  13, 49,     3,  5,      13),
+    ('1/2 (100 XP)',     2,  13, 70,     3,  8,      13),
+    ('1 (200 XP)',       2,  13, 85,     3,  14,     13),
+    ('2 (450 XP)',       2,  13, 100,    3,  20,     13),
+    ('3 (700 XP)',       2,  13, 115,    4,  26,     13),
+    ('4 (1,100 XP)',       2,  14, 130,    5,  32,     14),
+    ('5 (1,800 XP)',       3,  15, 145,    6,  38,     15),
+    ('6 (2,300 XP)',       3,  15, 160,    6,  44,     15),
+    ('7 (2,900 XP)',       3,  15, 175,    6,  50,     15),
+    ('8 (3,900 XP)',       3,  16, 190,    7,  56,     16),
+    ('9 (5,000 XP)',       4,  16, 205,    7,  62,     16),
+    ('10 (5,900 XP)',      4,  17, 220,    7,  68,     16),
+    ('11 (7,200 XP)',      4,  17, 235,    8,  74,     17),
+    ('12 (8,400 XP)',      4,  17, 250,    8,  80,     17),
+    ('13 (10,000 XP)',      5,  18, 265,    8,  74,     18),
+    ('14 (11,500 XP)',      5,  18, 280,    8,  74,     18),
+    ('15 (13,000 XP)',      5,  18, 295,    8,  74,     18),
+    ('16 (15,000 XP)',      5,  18, 310,    9,  74,     18),
+    ('17 (18,000 XP)',      6,  19, 325,    10, 74,     19),
+    ('18 (20,000 XP)',      6,  19, 340,    10, 74,     19),
+    ('19 (22,000 XP)',      6,  19, 355,    10, 74,     19),
+    ('20 (25,000 XP)',      6,  19, 400,    10, 74,     19),
+    ('21 (33,000 XP)',      7,  19, 445,    11, 74,     20),
+    ('22 (41,000 XP)',      7,  19, 490,    11, 74,     20),
+    ('23 (50,000 XP)',      7,  19, 535,    11, 74,     20),
+    ('24 (62,000 XP)',      7,  19, 580,    12, 74,     21),
+    ('25 (75,000 XP)',      8,  19, 625,    12, 74,     21),
+    ('26 (90,000 XP)',      8,  19, 670,    12, 74,     21),
+    ('27 (105,000 XP)',      8,  19, 715,    13, 74,     22),
+    ('28 (120,000 XP)',      8,  19, 760,    13, 74,     22),
+    ('29 (135,000 XP)',      9,  19, 805,    13, 74,     22),
+    ('30 (155,000 XP)',      9,  19, 850,    14, 74,     23),
+)
 
-SPELL_LEVEL_ORDINAL_TO_NUM = {
+ORDINAL_TO_NUM = {
     'cantrip': 0,
     '1st': 1,
     '2nd': 2,
@@ -188,6 +240,34 @@ NUM_TO_ORDINAL = {
     18: '18th',
     19: '19th',
     20: '20th',
+}
+
+NUM_TO_TEXT = {
+    0: 'zero',
+    1: 'one',
+    2: 'two',
+    3: 'three',
+    4: 'four',
+    5: 'five',
+    6: 'six',
+    7: 'seven',
+    8: 'eight',
+    9: 'nine',
+    10: 'ten',
+}
+
+NUM_TIMES_TO_TEXT = {
+    0: 'zero',
+    1: 'once',
+    2: 'twice',
+    3: 'three times',
+    4: 'four times',
+    5: 'five times',
+    6: 'six times',
+    7: 'seven times',
+    8: 'eight times',
+    9: 'nine times',
+    10: 'ten times',
 }
 
 DEFAULT_SPELL_WEIGHT = 10
@@ -311,6 +391,11 @@ class NPCGenerator:
         with open(armors_file_loc, newline='') as armors_file:
             armors_file_reader = csv.DictReader(armors_file)
             for line in armors_file_reader:
+
+                # Ignore blank lines or comments using hastags
+                if line['internal_name'] == '' or '#' in line['internal_name']:
+                    continue
+
                 new_armor = Armor()
                 new_armor.int_name = line['internal_name']
                 if line['display_name']:
@@ -331,7 +416,8 @@ class NPCGenerator:
             weapons_file_reader = csv.DictReader(weaponsFile)
             for line in weapons_file_reader:
 
-                if line['internal_name'] == '':
+                # Ignore blank lines or comments using hastags
+                if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
 
                 new_weapon = Weapon()
@@ -356,6 +442,11 @@ class NPCGenerator:
         with open(traits_file_loc, newline='') as traitsFile:
             traits_file_reader = csv.DictReader(traitsFile)
             for line in traits_file_reader:
+
+                # Ignore blank lines or comments using hastags
+                if line['internal_name'] == '' or '#' in line['internal_name']:
+                    continue
+
                 new_trait = Trait()
                 new_trait.int_name = line['internal_name']
                 if line['display_name']:
@@ -372,6 +463,8 @@ class NPCGenerator:
                             tag_name, tag_value = raw_tag.split(':')
                             # NOTE if you want to give multiple of something like armor or resistances, you need to
                             # use semicolons to separate them
+                            # Each tag for a trait will ALWAYS have a list associated with it, remember when doing trait
+                            # logic
                             new_tags_dict[tag_name] = tag_value.split(';')
                         else:
                             new_tags_dict[raw_tag] = None
@@ -384,6 +477,12 @@ class NPCGenerator:
             loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
             new_loadout_pool = None
             for line in loadout_pools_file_reader:
+
+                # loadout pools are a little different, blank lines mean they get added to the previous pool
+                # Hashtag comment lines are still skippable
+                if '#' in line['name']:
+                    continue
+
                 if line['name']:
                     if new_loadout_pool:
                         self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
@@ -417,10 +516,15 @@ class NPCGenerator:
         with open(spells_file_loc, newline='') as spellsFile:
             spells_file_reader = csv.DictReader(spellsFile)
             for line in spells_file_reader:
+
+                # Ignore blank lines or comments using hastags
+                if line['name'] == '' or '#' in line['name']:
+                    continue
+
                 new_spell = Spell()
                 new_spell.name = line['name']
                 new_spell.source = line['source']
-                new_spell.level = SPELL_LEVEL_ORDINAL_TO_NUM[line['level']]
+                new_spell.level = ORDINAL_TO_NUM[line['level']]
                 new_spell.school = line['school']
                 new_spell.classes = set(line['classes'].replace(" ", "").split(','))
                 self.spells[new_spell.name] = new_spell
@@ -429,6 +533,11 @@ class NPCGenerator:
         with open(spell_lists_file_loc, newline='') as spellListsFile:
             spell_lists_file_reader = csv.DictReader(spellListsFile)
             for line in spell_lists_file_reader:
+
+                # Ignore blank lines or comments using hastags
+                if line['name'] == '' or '#' in line['name']:
+                    continue
+
                 new_spell_list = SpellList()
                 new_spell_list.name = line['name']
 
@@ -499,6 +608,11 @@ class NPCGenerator:
         with open(spellcaster_profiles_file_loc, newline="") as spellcaster_profiles_file:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
             for line in spellcaster_profiles_file_reader:
+
+                # Ignore blank lines or comments using hastags
+                if line['internal_name'] == '' or '#' in line['internal_name']:
+                    continue
+
                 new_spellcaster_profile = SpellCasterProfile()
                 new_spellcaster_profile.intName = line['internal_name']
                 new_spellcaster_profile.casting_stat = line['casting_stat']
@@ -542,6 +656,7 @@ class NPCGenerator:
                 new_spellcaster_profile.spell_lists = new_spell_lists_dict
 
                 # For now, only standard slots progression
+                # In the future, may add support for nonstandard slot progressions, like warlock
                 new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
 
                 self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
@@ -550,6 +665,11 @@ class NPCGenerator:
         with open(race_templates_file_loc, newline='') as race_templates_file:
             race_templates_file_reader = csv.DictReader(race_templates_file)
             for line in race_templates_file_reader:
+
+                # Ignore blank lines or comments using hastags
+                if line['internal_name'] == '' or '#' in line['internal_name']:
+                    continue
+
                 new_race_template = Template()
                 new_race_template.int_name = line["internal_name"]
                 if line["display_name"]:
@@ -596,6 +716,11 @@ class NPCGenerator:
         with open(class_templates_file_loc, newline='') as class_templates_file:
             class_templates_file_reader = csv.DictReader(class_templates_file)
             for line in class_templates_file_reader:
+
+                # Ignore blank lines or comments using hastags
+                if line['internal_name'] == '' or '#' in line['internal_name']:
+                    continue
+
                 new_class_template = Template()
                 new_class_template.int_name = line['internal_name']
 
@@ -615,13 +740,12 @@ class NPCGenerator:
 
                 if line['loadout_pool']:
                     new_class_template.loadout_pool = line['loadout_pool']
-                else:
-                    new_class_template.loadout_pool = None
+
+                if line['multiattack_type']:
+                    new_class_template.multiattack_type = line['multiattack_type']
 
                 if line['traits']:
                     new_class_template.traits = line['traits'].replace(" ", "").split(',')
-                else:
-                    new_class_template.traits = None
 
                 if line['spellcasting_profile']:
                     new_class_template.spell_casting_profile = self.spellcaster_profiles[line['spellcasting_profile']]
@@ -630,7 +754,10 @@ class NPCGenerator:
 
     def give_trait(self, character: 'Character', trait_name):
         trait = self.traits[trait_name]
-        character.traits[trait_name] = trait
+
+        # Remember,
+        # trait.tags = {tag_name: [tag_val_1, tag_val_2, ...], ...}
+        # each tag ALWAYS has a list associated with it even if it's for a single value
 
         if 'give_armor' in trait.tags:
             for armor in trait.tags['give_armor']:
@@ -639,6 +766,17 @@ class NPCGenerator:
         if 'give_weapon' in trait.tags:
             for weapon in trait.tags['give_weapon']:
                 self.give_weapon(character, weapon)
+
+        if 'expertise_random' in trait.tags:
+            num_expertise = int(trait.tags['expertise_random'][0])
+            expertise_choices = random.sample(character.skills, num_expertise)
+            for choice in expertise_choices:
+                character.add_skill(choice, expertise=True)
+
+        if 'expertise_fixed' in trait.tags:
+            expertise_choices = trait.tags['expertise_random']
+            for choice in expertise_choices:
+                character.add_skill(choice, expertise=True)
 
         if 'damage_immunity' in trait.tags:
             for entry in trait.tags['damage_immunity']:
@@ -655,6 +793,9 @@ class NPCGenerator:
         if 'condition_immunity' in trait.tags:
             for entry in trait.tags['condition_immunity']:
                 character.add_condition_immunity(entry)
+
+        # happens at end because some traits might not actually get added
+        character.traits[trait_name] = trait
 
     def give_armor(self, character, armor_name):
         armor = self.armors[armor_name]
@@ -678,10 +819,6 @@ class NPCGenerator:
             for k, v in template.attribute_bonuses.items():
                 character.attribute_bonuses[k] = v
 
-        if template.traits:
-            for trait_name in template.traits:
-                self.give_trait(character, trait_name)
-
         if template.loadout_pool:
             loadout_pool = self.loadout_pools[template.loadout_pool]
             loadout = loadout_pool.get_random_loadout()
@@ -695,12 +832,12 @@ class NPCGenerator:
 
         if template.skills_fixed:
             for skill in template.skills_fixed:
-                character.skills[skill] = False
+                character.add_skill(skill)
 
         if template.skills_random:
             chosen_skills = random.sample(template.skills_random, template.num_random_skills)
             for skill in chosen_skills:
-                character.skills[skill] = False
+                character.add_skill(skill)
 
         if template.saves:
             for save in template.saves:
@@ -713,6 +850,13 @@ class NPCGenerator:
         if template.languages:
             for language in template.languages:
                 character.add_language(language)
+
+        if template.multiattack_type:
+            character.set_stat('multiattack_type', template.multiattack_type)
+
+        if template.traits:
+            for trait_name in template.traits:
+                self.give_trait(character, trait_name)
 
         if template.spell_casting_profile:
             character.spell_casting_ability = template.spell_casting_profile.generate_spell_casting_ability()
@@ -739,8 +883,10 @@ class NPCGenerator:
                                       rerolls_allowed=rerolls_allowed, min_total=min_total,
                                       allow_swapping=allow_swapping, force_optimize=force_optimize,
                                       fixed_rolls=fixed_rolls)
+
         new_character.stats['hit_dice_size'] = hit_dice_size
         new_character.stats['hit_dice_num'] = hit_dice_num
+
         if give_asi:
             new_character.generate_asi_progression(priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
                                                    other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT)
@@ -786,7 +932,8 @@ class Character:
         self.class_name = ''
 
         # Skills are stored as a dictionary, if the value is true that means the character has expertise
-        self.skills = {}
+        self.skills = set()
+        self.skills_expertise = set()
         self.saves = set()
 
         self.armors = {}
@@ -808,7 +955,6 @@ class Character:
 
         self.spell_casting_ability = None
 
-        # self.updateDerivedStats()
 
     def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
@@ -865,23 +1011,39 @@ class Character:
         for attribute, val in attribute_dict.items():
             self.stats[attribute] = val
 
-    def generate_asi_progression(self, priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
-                                 other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT):
+    def generate_asi_progression(self,
+                                 priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
+                                 other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT,
+                                 priority_attribute_subsequent_scale=ASI_PROGRESSION_PRIORITY_SUBSEQUENT_SCALE,
+                                 asi_attribute_cap=ASI_DEFAULT_ATTRIBUTE_CAP):
         asi_progression = []
-        attribute_choices = list(STATS_ATTRIBUTES[:])
-        attribute_weights = []
-        for attribute in attribute_choices:
-            if attribute in self.priority_attributes:
-                attribute_weights.append(priority_attribute_weight)
-            else:
-                attribute_weights.append(other_attribute_weight)
 
-        while len(asi_progression) < 10:
+        attribute_weights_dict = {}
+        for attribute in STATS_ATTRIBUTES:
+            attribute_weights_dict[attribute] = other_attribute_weight
+
+        current_priority_attribute_weight = priority_attribute_weight
+        for priority_attribute in self.priority_attributes:
+            attribute_weights_dict[priority_attribute] = max(current_priority_attribute_weight,
+                                                             attribute_weights_dict[priority_attribute])
+            current_priority_attribute_weight *= priority_attribute_subsequent_scale
+
+        attribute_choices = []
+        attribute_weights = []
+        for attribute, weight in attribute_weights_dict.items():
+            attribute_choices.append(attribute)
+            attribute_weights.append(weight)
+
+        # In principle, we should only ever need HITDICE_NUM_CAP / ASI_HD_PER_INCREASE * ASI_POINTS_PER_INCREASE
+        # But, if we add traits or things that increase attributes, we MIGHT rarely not have enough choices
+        # So, double that to be super safe
+        max_asi_selections = HITDICE_NUM_CAP / ASI_HD_PER_INCREASE * ASI_POINTS_PER_INCREASE * 2
+        while len(asi_progression) < max_asi_selections:
             if len(attribute_choices) == 0:
                 break
             choice_index = random.choices(range(len(attribute_choices)), attribute_weights)[0]
             attribute = attribute_choices[choice_index]
-            if (asi_progression.count(attribute) + self.get_stat(attribute)) > 20:
+            if (asi_progression.count(attribute) + self.get_stat(attribute)) > asi_attribute_cap:
                 attribute_choices.pop(choice_index)
                 attribute_weights.pop(choice_index)
             else:
@@ -890,7 +1052,9 @@ class Character:
         self.asi_progression = asi_progression
 
     def apply_asi_progression(self, asi_progression=None,
-                              hd_per_increase=ASI_HD_PER_INCREASE, points_per_increase=ASI_POINTS_PER_INCREASE):
+                              hd_per_increase=ASI_HD_PER_INCREASE,
+                              points_per_increase=ASI_POINTS_PER_INCREASE,
+                              asi_attribute_cap=ASI_DEFAULT_ATTRIBUTE_CAP):
         if not asi_progression:
             asi_progression = self.asi_progression[:]
 
@@ -901,7 +1065,7 @@ class Character:
                 break
 
             attribute_choice = asi_progression.pop(0)
-            if self.get_stat(attribute_choice) < 20:
+            if self.get_stat(attribute_choice) < asi_attribute_cap:
                 debug_print('{}: {} -> {}'.format(attribute_choice,
                                                   str(self.get_stat(attribute_choice)),
                                                   str(self.get_stat(attribute_choice) + 1), ), 3)
@@ -929,6 +1093,24 @@ class Character:
         self.stats['speed_fly_final'] = self.stats['speed_fly']
         self.stats['speed_swim_final'] = self.stats['speed_swim']
         self.stats['speed_burrow_final'] = self.stats['speed_burrow']
+        # Multiattack
+        if self.stats['multiattack_type']:
+            hd = self.stats['hit_dice_num']
+            multiattack_type = self.stats['multiattack_type']
+            attacks = 1
+            if multiattack_type == 'fighter':
+                if hd >= 20:
+                    attacks = 4
+                elif hd >= 11:
+                    attacks = 3
+                elif hd >= 5:
+                    attacks = 2
+            elif multiattack_type == 'single':
+                if hd >= 5:
+                    attacks = 2
+            self.stats['attacks_per_round'] = attacks
+        else:
+            self.stats['attacks_per_round'] = 1
 
     def get_stat(self, stat):
         return self.stats[stat]
@@ -936,9 +1118,89 @@ class Character:
     def set_stat(self, stat, value):
         self.stats[stat] = value
 
+    def get_best_attack(self):
+        best_to_hit = 0
+        best_avg_dmg = 0
+        for weapon in self.weapons.values():
+            if weapon.get_to_hit(self) > best_to_hit:
+                best_to_hit = weapon.get_to_hit(self)
+                best_avg_dmg = weapon.get_damage(self, use_versatile=True)[0]
+            elif weapon.get_to_hit(self) == best_to_hit:
+                best_avg_dmg = max(best_avg_dmg, weapon.get_damage(self, use_versatile=True)[0])
+        return best_to_hit, best_avg_dmg
+
+    def get_best_ac(self):
+        assert type(self.chosen_armor) == Armor, "Can't get AC before setting armor!"
+        best_ac = self.chosen_armor.get_ac(self)
+        if self.extra_armors:
+            for extra_armor in self.extra_armors:
+                best_ac = max(best_ac, extra_armor.get_ac(self))
+        return best_ac
+
     def get_cr(self):
-        # To be implemented
-        return '6/7 (3.1459 XP)'
+        effective_to_hit, effective_attack_dmg = self.get_best_attack()
+        effective_dmg_per_round = effective_attack_dmg * self.stats['attacks_per_round']
+        effective_hp = self.stats['hit_points']
+        effective_ac = self.get_best_ac()
+
+        # For now, we'll just say that if a character's spellcasting level is greater than half its hit dice,
+        # we'll treat it like a caster for CR purposes
+        if self.spell_casting_ability:
+            effective_caster_level = self.spell_casting_ability.get_caster_level(self)
+            effective_spell_dc = self.spell_casting_ability.get_spell_dc(self)
+            if self.spell_casting_ability.get_caster_level(self) > self.stats['hit_dice_num'] / 2:
+                cr_focus = 'caster'
+            else:
+                cr_focus = 'not_caster'
+        else:
+            effective_caster_level = 0
+            effective_spell_dc = 0
+            cr_focus = 'not_caster'
+
+        # Note, we're using row index for CR math instead of the actual number,
+        # This should accommodate fractional CRs
+        # Get the character's defensive challenge rating
+        # Start with the max vals, in case we can't find on chart
+        cr_index_def = len(CHALLENGE_RATING_CHART)
+        expected_ac = 19
+        for row_num in range(len(CHALLENGE_RATING_CHART)):
+            row_hp = CHALLENGE_RATING_CHART[row_num][3]  # index 3 is hp
+            if row_hp > effective_hp:
+                cr_index_def = row_num
+                expected_ac = CHALLENGE_RATING_CHART[row_num][2]
+                break
+        # For every two points, shift up or down one row
+        cr_def_shift = int(float(effective_ac - expected_ac) / 2)
+        cr_index_def += cr_def_shift
+
+        # Get the character's offensive challenge rating
+        # Start with the max vals, in case we can't find on chart
+        cr_index_off = len(CHALLENGE_RATING_CHART)
+        expected_to_hit = 14
+        expected_dc = 23
+        # So, we don't really have a good way to get avg damage for casters at the moment, so we're going to use a hack
+        # For casters, we'll just start them at caster level -3 on the chart
+        # Conveniently, that happens to be the row's index number
+        if cr_focus == 'caster':
+            cr_index_off = effective_caster_level
+            expected_dc = CHALLENGE_RATING_CHART[cr_index_off][6]
+            cr_off_shift = int(float(effective_spell_dc - expected_dc) / 2)
+        else:
+            for row_num in range(len(CHALLENGE_RATING_CHART)):
+                if CHALLENGE_RATING_CHART[row_num][5] > effective_dmg_per_round:
+                    cr_index_off = row_num
+                    expected_to_hit = CHALLENGE_RATING_CHART[row_num][4]
+                    break
+            cr_off_shift = int(float(effective_to_hit - expected_to_hit) / 2)
+        cr_index_off += cr_off_shift
+
+        avg_cr_index = math.ceil((cr_index_off + cr_index_def) / 2)
+
+        # Make sure we didn't pop out of the table somehow
+        avg_cr_index = max(avg_cr_index, 0)
+        avg_cr_index = min(avg_cr_index, len(CHALLENGE_RATING_CHART) - 1)
+
+        return CHALLENGE_RATING_CHART[avg_cr_index][0]
 
     def get_senses(self):
         passive_perception = 10 + self.get_stat('wis_mod')
@@ -954,6 +1216,11 @@ class Character:
     def add_language(self, language):
         if language not in self.languages:
             self.languages.append(language)
+
+    def add_skill(self, skill, expertise=False):
+        self.skills.add(skill)
+        if expertise:
+            self.skills_expertise.add(skill)
             
     def add_damage_resistance(self, damage_resistance):
         if damage_resistance not in self.damage_resistances:
@@ -1088,11 +1355,11 @@ class Character:
             trait = self.traits[trait_name]
             if trait.trait_type == 'hidden':
                 continue
-            trait_string = trait.display(self) + "\n"
+            trait_string = trait.plain_text(self) + "\n"
             outstring += trait_string
         # Spellcasting
         if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-            outstring += self.spell_casting_ability.display(self) + '\n'
+            outstring += self.spell_casting_ability.plain_text(self) + '\n'
         # Attacks
         for weaponName, weaponObj in self.weapons.items():
             outstring += weaponObj.sheet_display(self) + '\n'
@@ -1164,7 +1431,7 @@ class Character:
                     skill_attribute = SKILLS[skill]
                     skill_val = self.stats[skill_attribute + '_mod'] + self.stats['proficiency']
                     # check for expertise
-                    if self.skills[skill]:
+                    if skill in self.skills_expertise:
                         skill_val += self.stats['proficiency']
                     if skill_val >= 0:
                         val_str = ' +' + str(skill_val)
@@ -1202,6 +1469,10 @@ class Character:
             passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_name=False)))
         sb.passive_traits = passives_list
 
+        if self.get_stat('attacks_per_round') > 1:
+            sb.multiattack = 'This creatures makes {} attacks when it uses the attack action.'\
+                .format(NUM_TO_TEXT[self.get_stat('attacks_per_round')])
+
         attacks = []
         for weapon in self.weapons.values():
             attacks.append((weapon.display_name, weapon.sheet_display(self, show_name=False)))
@@ -1236,14 +1507,15 @@ class StatBlock:
         self.cr = ''
         self.languages = None
         self.passive_traits = []
+        self.multiattack = None
         self.attacks = []
         self.actions = []
         self.reactions = []
 
-    def display(self):
+    def plain_text(self):
         disp = ''
         disp += self.name + '\n'
-        disp += 'AC:' + self.armor + '\n'
+        disp += 'AC: ' + self.armor + '\n'
         disp += 'Hit Points: ' + self.hp + '\n'
         disp += 'Size: ' + self.size + '\n'
         disp += 'Speed: ' + self.speed + '\n'
@@ -1264,8 +1536,12 @@ class StatBlock:
             disp += 'Languages: ' + self.languages + '\n'
         else:
             disp += 'Languages: --' + self.languages + '\n'
+        if self.cr:
+            disp += 'Challenge: ' + self.cr + '\n'
         for trait in self.passive_traits:
             disp += trait[0] + '. ' + trait[1] + '\n'
+        if self.multiattack:
+            disp += 'Multiattack. ' + self.multiattack + '\n'
         for attack in self.attacks:
             disp += attack[0] + '. ' + attack[1] + '\n'
         for action in self.actions:
@@ -1301,6 +1577,7 @@ class StatBlock:
         # return stat_dict
         return self.__dict__
 
+
 class Trait:
     def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
         self.int_name = int_name
@@ -1320,7 +1597,7 @@ class Trait:
             outstring = self.display_name + '. '
         else:
             outstring = ''
-        self.text.format(**owner.stats)
+        outstring += self.text.format(**owner.stats)
         return outstring
 
 
@@ -1343,6 +1620,9 @@ class Template:
 
         self.saves = None
         self.languages = []
+
+        self.multiattack_type = None
+
         self.traits = None
         self.loadout_pool = None
         self.spell_casting_profile = None
@@ -1741,6 +2021,9 @@ class SpellCastingAbility:
         self.fixed_spells_known_by_level = fixed_spells_known_by_level
         self.slots_progression = slots_progression
         self.spells_known_modifier = spells_known_modifier
+
+    def get_spell_dc(self, owner):
+        return owner.get_stat(self.casting_stat + '_dc')
 
     def get_caster_level(self, owner):
         hit_dice = owner.get_stat('hit_dice_num')
