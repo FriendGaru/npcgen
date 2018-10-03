@@ -1464,7 +1464,7 @@ class Character:
             assert isinstance(trait_obj, Trait)
             if trait_obj.trait_type != 'passive':
                 continue
-            passives_list.append((trait_obj.display_name, trait_obj.display(self)))
+            passives_list.append((trait_obj.display_name, trait_obj.display(self, include_title=False)))
         if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
             passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_name=False)))
         sb.passive_traits = passives_list
