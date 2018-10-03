@@ -915,7 +915,15 @@ class NPCGenerator:
         elif options_type == 'class':
             return self.class_options
         else:
-            raise ValueError("Invalid value type '{}'".format(options_type))
+            raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
+
+    def get_random_option(self, option_type):
+        if option_type == 'race':
+            return random.choice(self.race_templates.keys())
+        elif option_type == 'class':
+            return random.choice(self.class_templates.keys())
+        else:
+            raise ValueError("Invalid value type '{}' requested for random option.".format(option_type))
 
 
 class Character:
