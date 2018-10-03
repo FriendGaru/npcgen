@@ -671,8 +671,8 @@ class NPCGenerator:
                 # Ignore blank lines or comments using hashtags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
-                elif line['internal_name'] == '<CATEGORY>':
-                    self.race_options.append(('<CATEGORY>', line['internal_name']))
+                elif line['internal_name'] == '@CATEGORY':
+                    self.race_options.append(('@CATEGORY', line['internal_name']))
                     continue
 
                 new_race_template = Template()
@@ -726,8 +726,8 @@ class NPCGenerator:
                 # Ignore blank lines or comments using hashtags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
-                elif line['internal_name'] == '<CATEGORY>':
-                    self.class_options.append(('<CATEGORY>', line['internal_name']))
+                elif line['internal_name'] == '@CATEGORY':
+                    self.class_options.append(('@CATEGORY', line['internal_name']))
                     continue
 
                 new_class_template = Template()

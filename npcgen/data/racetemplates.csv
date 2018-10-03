@@ -1,5 +1,12 @@
 internal_name,display_name,attribute_bonuses,base_stats,size,languages,traits
 humanoid,Humanoid (Any),,,,,
-aarakocra,,"dex:2,wis:2","speed_walk:20,speed_fly:50",,"common,aarakocra,auran",talons
+@CATEGORY,Humans,,,,,
+human,,"str:1,dex:1,con:1,int:1,wis:1,cha:1",,,common,
+human_variant,Variant Human,,,,common,
+@CATEGORY,Halflings,,,,,
 halfling_lightfoot,Halfling (Lightfoot),"dex:2,wis:1",speed_walk:25,small,"common,halfling",lucky
+halfling_stout,Halfling (Stout),"dex:2,con:1",speed_walk:25,small,"common,halfling",
+@CATEGORY,Avians,,,,,
+aarakocra,,"dex:2,wis:2","speed_walk:20,speed_fly:50",,"common,aarakocra,auran",talons
+@CATEGORY,Monstrous Races,,,,,
 lizardfolk,,"con:2,wis:1",speed_swim:30,,"common,draconic",natural_armor
