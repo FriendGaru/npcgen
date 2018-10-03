@@ -96,6 +96,8 @@ VALID_SIZES = (
 )
 DEFAULT_SIZE = 'medium'
 
+DEFAULT_CREATURE_TYPE = 'humanoid'
+
 DEFAULT_RACE = 'humanoid'
 DEFAULT_CLASS = 'soldier'
 
@@ -694,6 +696,11 @@ class NPCGenerator:
 
                 new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
+                if line['creature_type']:
+                    new_race_template.creature_type = line['creature_type']
+                else:
+                    new_race_template.creature_type = DEFAULT_CREATURE_TYPE
+
                 if line['size']:
                     new_race_template.size = line['size']
                 else:
@@ -857,6 +864,9 @@ class NPCGenerator:
             for save in template.saves:
                 character.saves.add(save)
 
+        if template.creature_type:
+            character.creature_type = template.creature_type
+
         if template.base_stats:
             for baseStatName, statVal in template.base_stats.items():
                 character.stats[baseStatName] = statVal
@@ -946,6 +956,8 @@ class Character:
 
         self.race_name = ''
         self.class_name = ''
+
+        self.creature_type = ''
 
         # Skills are stored as a dictionary, if the value is true that means the character has expertise
         self.skills = set()
@@ -1386,6 +1398,8 @@ class Character:
 
         sb.name = '{} {}'.format(self.race_name, self.class_name)
 
+        sb.creature_type = self.creature_type
+
         acstring = self.chosen_armor.sheet_display(self)
         if self.extra_armors:
             for armor in self.extra_armors:
@@ -1505,6 +1519,7 @@ class StatBlock:
     def __init__(self):
         self.name = ''
         self.race = ''
+        self.creature_type = ''
         self._class = ''
         self.armor = ''
         self.hp = ''
@@ -1531,6 +1546,7 @@ class StatBlock:
     def plain_text(self):
         disp = ''
         disp += self.name + '\n'
+        disp += self.creature_type + '\n'
         disp += 'AC: ' + self.armor + '\n'
         disp += 'Hit Points: ' + self.hp + '\n'
         disp += 'Size: ' + self.size + '\n'
@@ -1630,6 +1646,7 @@ class Template:
         self.num_random_skills = 0
         self.skills_random = None
 
+        self.creature_type = None
         self.size = None
 
         self.senses = {}
