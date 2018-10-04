@@ -334,11 +334,16 @@ MARTIAL_ARTS_DAMAGE = (
 )
 
 
-def roll_die(die_size):
-    return random.randint(1, die_size)
+# Random functions can accept an instance of random,
+# If they don't get one, they default to the global random
+# Should make seeding more reliable and not have to screw with global seeding
+def roll_die(die_size, rnd_instance=None):
+    if not rnd_instance:
+        rnd_instance = random
+    return rnd_instance.randint(1, die_size)
 
 
-def roll_dice(die_size, num_dice, drop_lowest=0, drop_highest=0):
+def roll_dice(die_size, num_dice, drop_lowest=0, drop_highest=0, rnd_instance=None):
     """
     Rolls a number of dice and returns the total, dropping the lowest or highest dice values as specified.
     numDice is the number of dice to add up AFTER dropping dice.
@@ -346,7 +351,7 @@ def roll_dice(die_size, num_dice, drop_lowest=0, drop_highest=0):
     dice_to_roll = num_dice + drop_lowest + drop_highest
     dice_pool = []
     for i in range(dice_to_roll):
-        dice_pool.append(roll_die(die_size))
+        dice_pool.append(roll_die(die_size, rnd_instance))
     dice_pool.sort()
     if drop_highest > 0:
         dice_pool = dice_pool[drop_lowest:-drop_highest]
@@ -355,17 +360,19 @@ def roll_dice(die_size, num_dice, drop_lowest=0, drop_highest=0):
     return sum(dice_pool)
 
 
-def weighted_sample(population, weights, k):
+def weighted_sample(population, weights, k, rnd_instance=None):
     """
     This function draws a random sample of length k
     from the sequence 'population' according to the
     list of weights
     """
+    if not rnd_instance:
+        rnd_instance = random
     sample = set()
     population = list(population)
     weights = list(weights)
     while len(sample) < k:
-        choice = random.choices(population, weights)[0]
+        choice = rnd_instance.choices(population, weights)[0]
         sample.add(choice)
         index = population.index(choice)
         weights.pop(index)
@@ -398,8 +405,11 @@ def num_plusser(num, add_space=False):
         else:
             return str(num)
 
-def random_string(length):
-    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
+
+def random_string(length, rnd_instance=None):
+    if not rnd_instance:
+        rnd_instance = random
+    return ''.join(rnd_instance.choice(string.ascii_letters) for _ in range(length))
 
 
 class NPCGenerator:
@@ -846,7 +856,11 @@ class NPCGenerator:
                 self.class_templates[new_class_template.int_name] = new_class_template
                 self.class_keys = list(self.class_templates.keys())
 
-    def give_trait(self, character: 'Character', trait_name):
+    def give_trait(self, character: 'Character', trait_name, rnd_instance=None):
+
+        if not rnd_instance:
+            rnd_instance = random
+
         trait = self.traits[trait_name]
 
         # Remember,
@@ -863,7 +877,7 @@ class NPCGenerator:
 
         if 'expertise_random' in trait.tags:
             num_expertise = int(trait.tags['expertise_random'][0])
-            expertise_choices = random.sample(character.skills, num_expertise)
+            expertise_choices = rnd_instance.sample(character.skills, num_expertise)
             for choice in expertise_choices:
                 character.add_skill(choice, expertise=True)
 
@@ -899,7 +913,11 @@ class NPCGenerator:
         weapon = self.weapons[weapon_name]
         character.weapons[weapon_name] = weapon
 
-    def apply_race_template(self, character: 'Character', race_template, apply_traits=True):
+    def apply_race_template(self, character: 'Character', race_template, apply_traits=True, rnd_instance=None):
+
+        if not rnd_instance:
+            rnd_instance = random
+
         if type(race_template) == str:
             race_template = self.race_templates[race_template]
         assert isinstance(race_template, RaceTemplate), \
@@ -922,7 +940,11 @@ class NPCGenerator:
             for trait in race_template.traits:
                 self.give_trait(character, trait)
 
-    def apply_class_template(self, character: 'Character', class_template, apply_traits=True):
+    def apply_class_template(self, character: 'Character', class_template, apply_traits=True, rnd_instance=None):
+
+        if not rnd_instance:
+            rnd_instance = random
+
         if type(class_template) == str:
             class_template = self.class_templates[class_template]
         assert isinstance(class_template, ClassTemplate), \
@@ -934,7 +956,7 @@ class NPCGenerator:
         for skill in class_template.skills_fixed:
                 character.add_skill(skill)
 
-        chosen_skills = random.sample(class_template.skills_random, class_template.num_random_skills)
+        chosen_skills = rnd_instance.sample(class_template.skills_random, class_template.num_random_skills)
         for skill in chosen_skills:
             character.add_skill(skill)
 
@@ -959,7 +981,8 @@ class NPCGenerator:
             character.has_shield = loadout.shield
 
         if class_template.spell_casting_profile:
-            character.spell_casting_ability = class_template.spell_casting_profile.generate_spell_casting_ability()
+            character.spell_casting_ability = \
+                class_template.spell_casting_profile.generate_spell_casting_ability(rnd_instance=rnd_instance)
 
         if apply_traits:
             for trait in class_template.traits:
@@ -975,43 +998,48 @@ class NPCGenerator:
                       give_asi=True,
                       seed=None):
 
-        random.seed(seed)
+        if not seed:
+            seed = random_string(10)
+
+        # rnd_instance = random.seed(seed)
         new_character = Character()
         new_character.seed = seed
 
-        random.seed(seed + 'race')
+        rnd_instance = random.Random(seed + 'race')
         race_template = self.race_templates[race_template_name]
-        self.apply_race_template(new_character, race_template)
+        self.apply_race_template(new_character, race_template, rnd_instance=rnd_instance)
 
-        random.seed(seed + 'class')
+        rnd_instance = random.Random(seed + 'class')
         class_template = self.class_templates[class_template_name]
-        self.apply_class_template(new_character, class_template)
+        self.apply_class_template(new_character, class_template, rnd_instance=rnd_instance)
 
-        random.seed(seed + 'attributes')
+        rnd_instance = random.Random(seed + 'attributes')
         attribute_roll_params = ROLL_METHODS[attribute_roll_method][1]
         attribute_roll_fixed_vals = ROLL_METHODS[attribute_roll_method][2]
         new_character.roll_attributes(*attribute_roll_params,
                                       rerolls_allowed=rerolls_allowed, min_total=min_total,
                                       allow_swapping=allow_swapping, force_optimize=force_optimize,
-                                      fixed_rolls=attribute_roll_fixed_vals)
+                                      fixed_rolls=attribute_roll_fixed_vals,
+                                      rnd_instance=rnd_instance, )
 
         new_character.stats['hit_dice_size'] = hit_dice_size
         new_character.stats['hit_dice_num'] = hit_dice_num
 
-        random.seed(seed + 'asi')
+        rnd_instance = random.Random(seed + 'asi')
         if give_asi:
             new_character.generate_asi_progression(priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
-                                                   other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT)
+                                                   other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT,
+                                                   rnd_instance=rnd_instance)
             new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
                                                 points_per_increase=ASI_POINTS_PER_INCREASE)
 
         new_character.update_derived_stats()
 
-        random.seed(seed + 'armor')
-        new_character.choose_armors()
+        rnd_instance = random.Random(seed + 'armor')
+        new_character.choose_armors(rnd_instance=rnd_instance)
 
         # After generating, re-seed random
-        random.seed()
+        # random.seed()
         return new_character
 
     def get_options(self, options_type):
@@ -1089,7 +1117,11 @@ class Character:
     def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
                         allow_swapping=True, force_optimize=False,
-                        apply_attribute_bonuses=True, ):
+                        apply_attribute_bonuses=True,
+                        rnd_instance=None,):
+
+        if not rnd_instance:
+            rnd_instance = random
 
         attribute_dict = {}
 
@@ -1103,13 +1135,13 @@ class Character:
             rolls = list(fixed_rolls[:])
             total_rolled = sum(rolls)
             while len(rolls) < len(STATS_ATTRIBUTES):
-                roll = roll_dice(die_size, num_dice, drop_lowest, drop_highest)
+                roll = roll_dice(die_size, num_dice, drop_lowest, drop_highest, rnd_instance=rnd_instance)
                 rolls.append(roll)
                 total_rolled += roll
             if total_rolled >= min_total:
                 break
 
-        random.shuffle(rolls)
+        rnd_instance.shuffle(rolls)
         for attribute in STATS_ATTRIBUTES:
             attribute_dict[attribute] = rolls.pop()
         debug_print(attribute_dict)
@@ -1127,7 +1159,7 @@ class Character:
                 highest_val = max(*[attribute_dict[x] for x in swap_options], attribute_dict[priorityAttribute])
                 if highest_val > attribute_dict[priorityAttribute]:
                     valid_swaps = ([k for k, v in attribute_dict.items() if k in swap_options and v == highest_val])
-                    swap_choice = random.choice(valid_swaps)
+                    swap_choice = rnd_instance.choice(valid_swaps)
                     attribute_dict[priorityAttribute], attribute_dict[swap_choice] = \
                         attribute_dict[swap_choice], attribute_dict[priorityAttribute]
                     debug_print('Swapped: ' + priorityAttribute + ', ' + swap_choice, 2)
@@ -1145,7 +1177,12 @@ class Character:
                                  priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
                                  other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT,
                                  priority_attribute_subsequent_scale=ASI_PROGRESSION_PRIORITY_SUBSEQUENT_SCALE,
-                                 asi_attribute_cap=ASI_DEFAULT_ATTRIBUTE_CAP):
+                                 asi_attribute_cap=ASI_DEFAULT_ATTRIBUTE_CAP,
+                                 rnd_instance=None):
+
+        if not rnd_instance:
+            rnd_instance = random
+
         asi_progression = []
 
         attribute_weights_dict = {}
@@ -1171,7 +1208,7 @@ class Character:
         while len(asi_progression) < max_asi_selections:
             if len(attribute_choices) == 0:
                 break
-            choice_index = random.choices(range(len(attribute_choices)), attribute_weights)[0]
+            choice_index = rnd_instance.choices(range(len(attribute_choices)), attribute_weights)[0]
             attribute = attribute_choices[choice_index]
             if (asi_progression.count(attribute) + self.get_stat(attribute)) > asi_attribute_cap:
                 attribute_choices.pop(choice_index)
@@ -1368,7 +1405,11 @@ class Character:
         if condition_immunity not in self.condition_immunities:
             self.condition_immunities.append(condition_immunity)
 
-    def choose_armors(self):
+    def choose_armors(self, rnd_instance=None):
+
+        if not rnd_instance:
+            rnd_instance = random
+
         all_armors = list(self.armors.values())
         regular_armors = []
         extra_armors = []
@@ -1408,7 +1449,7 @@ class Character:
                     new_valid_choices.append(armor)
             valid_choices = new_valid_choices
 
-        self.chosen_armor = random.choice(valid_choices)
+        self.chosen_armor = rnd_instance.choice(valid_choices)
         self.extra_armors = valid_extras
 
     # def display(self):
@@ -1607,7 +1648,7 @@ class Character:
 
         attacks = []
         for weapon in self.weapons.values():
-            attacks.append((weapon.display_name, weapon.sheet_display(self, show_name=False)))
+            attacks.append((weapon.display_name, weapon.sheet_display(self, include_weapon_name=False)))
         sb.attacks = attacks
 
         return sb
@@ -1888,9 +1929,9 @@ class Weapon:
         avg_dmg = dmg_dice_size / 2 * dmg_dice_num + attack_stat
         return int(avg_dmg), dmg_dice_num, dmg_dice_size, attack_stat, self.damage_type, avg_dmg
 
-    def sheet_display(self, owner, show_name=True):
+    def sheet_display(self, owner, include_weapon_name=True):
         outstring = ''
-        if show_name:
+        if include_weapon_name:
             outstring += self.display_name + '. '
         is_melee = self.attack_type == 'melee'
         is_ranged = self.attack_type == 'ranged' or 'thrown' in self.tags
@@ -2013,7 +2054,11 @@ class SpellCasterProfile:
                     free_spells[spell.level].append(spell.name)
         return free_spells
 
-    def get_random_spells(self):
+    def get_random_spells(self, rnd_instance=None):
+
+        if not rnd_instance:
+            rnd_instance = random
+
         free_spells = set()
         if self.free_spell_lists:
             for spell_list in self.free_spell_lists:
@@ -2047,7 +2092,7 @@ class SpellCasterProfile:
                 if len(spell_options) == 0:
                     break
 
-                choice_by_index = random.choices(range(len(spell_weights)), spell_weights)[0]
+                choice_by_index = rnd_instance.choices(range(len(spell_weights)), spell_weights)[0]
                 spell_choice = spell_options[choice_by_index]
 
                 spell_options.pop(choice_by_index)
@@ -2064,7 +2109,7 @@ class SpellCasterProfile:
             spell_selections.append(spell_selections_for_level)
         return spell_selections
 
-    def generate_spell_casting_ability(self):
+    def generate_spell_casting_ability(self, rnd_instance=None):
         new_spell_casting_ability = SpellCastingAbility(
             ready_style=self.ready_style, casting_stat=self.casting_stat,
             hd_per_casting_level=self.hd_per_casting_level,
@@ -2074,7 +2119,11 @@ class SpellCasterProfile:
             slots_progression=self.spell_slots_table,
             spells_known_modifier=self.spells_known_modifier,
         )
-        new_spell_casting_ability.spell_choices = self.get_random_spells()
+
+        if not rnd_instance:
+            rnd_instance = random
+
+        new_spell_casting_ability.spell_choices = self.get_random_spells(rnd_instance=rnd_instance)
         new_spell_casting_ability.free_spells = self.get_free_spells()
         return new_spell_casting_ability
 
@@ -2229,5 +2278,9 @@ class LoadoutPool:
         self.loadouts.append(loadout)
         self.weights.append(weight)
 
-    def get_random_loadout(self):
-        return random.choices(self.loadouts, self.weights)[0]
+    def get_random_loadout(self, rnd_instance=None):
+
+        if not rnd_instance:
+            rnd_instance = random
+
+        return rnd_instance.choices(self.loadouts, self.weights)[0]
