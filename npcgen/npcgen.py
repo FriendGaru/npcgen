@@ -85,6 +85,16 @@ ROLL_METHODS = {
         (6, 3, 1, 1),
         ()
     ),
+    '5d6dl2': (
+        'Roll 5d6, drop the two lowest',
+        (6, 3, 2, 0),
+        ()
+    ),
+    '5d6dh2': (
+        'Roll 5d6, drop the two highest',
+        (6, 3, 0, 2),
+        ()
+    ),
     '7d6dl2dh2': (
         'Roll 7d6, drop the two lowest and the two highest',
         (6, 3, 2, 2,),
@@ -102,10 +112,12 @@ ROLL_METHODS = {
 ROLL_METHODS_OPTIONS = (
     ('@CATEGORY', 'Random'),
     ('3d6', 'Roll 3d6'),
-    ('3d6dl', 'Roll 4d6, drop the lowest'),
-    ('3d6dh', 'Roll 4d6, drop the highest'),
-    ('3d6dldh', 'Roll 5d6, drop the lowest and highest',),
-    ('3d6dl2dh2', 'Roll 7d6, drop the two lowest and the two highest', ),
+    ('4d6dl', 'Roll 4d6, drop the lowest'),
+    ('4d6dh', 'Roll 4d6, drop the highest'),
+    ('5d6dldh', 'Roll 5d6, drop the lowest and highest',),
+    ('5d6dl2', 'Roll 5d6, drop the two lowest',),
+    ('5d6dh2', 'Roll 5d6, drop the two highest',),
+    ('7d6dl2dh2', 'Roll 7d6, drop the two lowest and the two highest', ),
     ('@CATEGORY', 'Fixed Arrays'),
     ('standard', 'Standard Array (15, 14, 13, 12, 10, 8)', ),
 )
