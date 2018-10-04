@@ -2,6 +2,7 @@ import random
 import csv
 import itertools
 import math
+import string
 from typing import Dict
 import pkg_resources as pkg
 
@@ -58,10 +59,57 @@ SKILLS = {
 SKILLS_ORDERED = sorted(SKILLS.keys())
 
 ROLL_METHODS = {
-    '3d6': (6, 3, 0, 0),
-    '4d6dl': (6, 3, 1, 0),
-    '5d6dldh': (6, 3, 1, 1),
+    # 'internal_name': (
+    #   'display_name',
+    #   (roll_dice params),
+    #   (fixed roll vals)
+    #  )
+    # Technically, don't really need the display name here, but might be useful later
+    '3d6': (
+        'Roll 3d6',
+        (6, 3, 0, 0),
+        ()
+    ),
+    '4d6dl': (
+        'Roll 4d6, drop the lowest',
+        (6, 3, 1, 0),
+        ()
+    ),
+    '4d6dh': (
+        'Roll 4d6, drop the highest',
+        (6, 3, 0, 1),
+        ()
+    ),
+    '5d6dldh': (
+        'Roll 5d6, drop the lowest and highest',
+        (6, 3, 1, 1),
+        ()
+    ),
+    '7d6dl2dh2': (
+        'Roll 7d6, drop the two lowest and the two highest',
+        (6, 3, 2, 2,),
+        ()
+    ),
+    'standard': (
+        'Standard Array (15, 14, 13, 12, 10, 8)',
+        (6, 3, 0, 0, ),
+        (15, 14, 13, 12, 10, 8),
+    ),
 }
+
+# Roll methods should be manually sorted for display
+# Uses the same sorting style as race and class options
+ROLL_METHODS_OPTIONS = (
+    ('@CATEGORY', 'Random'),
+    ('3d6', 'Roll 3d6'),
+    ('3d6dl', 'Roll 4d6, drop the lowest'),
+    ('3d6dh', 'Roll 4d6, drop the highest'),
+    ('3d6dldh', 'Roll 5d6, drop the lowest and highest',),
+    ('3d6dl2dh2', 'Roll 7d6, drop the two lowest and the two highest', ),
+    ('@CATEGORY', 'Fixed Arrays'),
+    ('standard', 'Standard Array (15, 14, 13, 12, 10, 8)', ),
+)
+
 DEFAULT_ROLL_METHOD = '3d6'
 # Max times a stat reroll is allowed, to prevent overflowing
 REROLLS_CAP = 99
@@ -350,6 +398,9 @@ def num_plusser(num, add_space=False):
         else:
             return str(num)
 
+def random_string(length):
+    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
+
 
 class NPCGenerator:
     """
@@ -389,6 +440,13 @@ class NPCGenerator:
         self.spellcaster_profiles = {}
         self.build_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
 
+        # All ???_options attributes are intended to provide easy access to valid options when it comes time to render
+        # They are of the format [(option internal_name, option display_name), ... ]
+        # Entries may have the internal name "@CATEGORY", which indicates it is not a valid option, but rather a sorting
+        # category, such as for categories in an html drop down menu
+        # ???_keys, on the other hand, contain ONLY valid options for new_character() parameters
+        # and can be used for easily grabbing valid random options
+
         self.race_templates = {}
         self.race_options = []  # For the HTML drop down boxes, includes categories for sorting
         self.race_keys = []  # For random choices, doesn't include categories
@@ -398,6 +456,9 @@ class NPCGenerator:
         self.class_options = []  # For the HTML drop down boxes, includes categories for sorting
         self.class_keys = []  # For random choices, doesn't include categories
         self.build_class_templates_from_csv(class_templates_file_loc)
+
+        self.roll_options = ROLL_METHODS_OPTIONS
+        self.roll_keys = list(ROLL_METHODS.keys())
 
     def build_armors_from_csv(self, armors_file_loc):
         with open(armors_file_loc, newline='') as armors_file:
@@ -904,9 +965,11 @@ class NPCGenerator:
             for trait in class_template.traits:
                 self.give_trait(character, trait)
 
-    def new_character(self, attribute_roll_method=DEFAULT_ROLL_METHOD, rerolls_allowed=0, min_total=0,
+    def new_character(self,
+                      attribute_roll_method=DEFAULT_ROLL_METHOD,
+                      rerolls_allowed=0, min_total=0,
                       allow_swapping=True, force_optimize=False,
-                      fixed_rolls=(),
+                      # fixed_rolls=(),
                       class_template_name=DEFAULT_CLASS, race_template_name=DEFAULT_RACE,
                       hit_dice_num=DEFAULT_HIT_DICE_NUM, hit_dice_size=DEFAULT_HIT_DICE_SIZE,
                       give_asi=True,
@@ -925,10 +988,12 @@ class NPCGenerator:
         self.apply_class_template(new_character, class_template)
 
         random.seed(seed + 'attributes')
-        new_character.roll_attributes(*ROLL_METHODS[attribute_roll_method],
+        attribute_roll_params = ROLL_METHODS[attribute_roll_method][1]
+        attribute_roll_fixed_vals = ROLL_METHODS[attribute_roll_method][2]
+        new_character.roll_attributes(*attribute_roll_params,
                                       rerolls_allowed=rerolls_allowed, min_total=min_total,
                                       allow_swapping=allow_swapping, force_optimize=force_optimize,
-                                      fixed_rolls=fixed_rolls)
+                                      fixed_rolls=attribute_roll_fixed_vals)
 
         new_character.stats['hit_dice_size'] = hit_dice_size
         new_character.stats['hit_dice_num'] = hit_dice_num
@@ -957,6 +1022,8 @@ class NPCGenerator:
             return self.race_options
         elif options_type == 'class':
             return self.class_options
+        elif options_type == 'roll':
+            return self.roll_options
         else:
             raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
 
@@ -965,6 +1032,8 @@ class NPCGenerator:
             return random.choice(self.race_keys)
         elif option_type == 'class':
             return random.choice(self.class_keys)
+        elif option_type == 'roll':
+            return random.choice(self.roll_keys)
         else:
             raise ValueError("Invalid value type '{}' requested for random option.".format(option_type))
 
@@ -996,6 +1065,8 @@ class Character:
         self.skills_expertise = set()
         self.saves = set()
 
+        # Armors and weapons are handled as dictionaries of the form {internal_name: object, ...}
+        # This way they hopefully won't get any duplicate items
         self.armors = {}
         self.chosen_armor = None
         self.extra_armors = []
@@ -1014,7 +1085,6 @@ class Character:
         self.senses = {}
 
         self.spell_casting_ability = None
-
 
     def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
@@ -1528,7 +1598,7 @@ class Character:
                 continue
             passives_list.append((trait_obj.display_name, trait_obj.display(self, include_title=False)))
         if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-            passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_name=False)))
+            passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_title=False)))
         sb.passive_traits = passives_list
 
         if self.get_stat('attacks_per_round') > 1:
@@ -2057,13 +2127,17 @@ class SpellCastingAbility:
                 caster_level = (hit_dice + self.hd_per_casting_level - 1) // self.hd_per_casting_level
         return caster_level
 
+    # returns a list of lists, [[level 1 spells, ], [level 2 spells, ], ...]
     def get_spells_readied(self, owner):
         caster_level = self.get_caster_level(owner)
         if caster_level == 0:
             return None
 
         if self.fixed_spells_known_by_level:
-            spells_known = self.fixed_spells_known_by_level[caster_level]
+            # spells_known = self.fixed_spells_known_by_level[caster_level]
+            # Technically, for fixed spells know progressions, it's by HD and not 'caster level'
+            hd = owner.get_stat('hit_dice_num')
+            spells_known = self.fixed_spells_known_by_level[hd]
         else:
             spells_known = owner.get_stat(self.casting_stat + '_mod') + caster_level
 
@@ -2095,14 +2169,23 @@ class SpellCastingAbility:
 
         return spells_readied
 
-    def display(self, owner, show_name=True):
+    # This is a bit expensive, but I do it this way to keep instances level agnostic
+    # Can improve this if I ever get around to redoing how I handle randomization
+    def has_spell(self, owner, spell_name):
+        spells_readied = self.get_spells_readied(owner)
+        for spell_level in spells_readied:
+            if spell_name in spell_level:
+                return True
+        return False
+
+    def display(self, owner, show_title=True):
         caster_level = self.get_caster_level(owner)
         if caster_level == 0:
             return None
         spells_ready = self.get_spells_readied(owner)
         # Header part
         outline = ''
-        if show_name:
+        if show_title:
             outline += 'Spellcasting. '
         outline += "This character is a {}-level spellcaster. " \
                    "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
