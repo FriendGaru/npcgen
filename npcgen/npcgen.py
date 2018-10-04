@@ -971,7 +971,7 @@ class NPCGenerator:
 
         if class_template.loadout_pool:
             loadout_pool = self.loadout_pools[class_template.loadout_pool]
-            loadout = loadout_pool.get_random_loadout()
+            loadout = loadout_pool.get_random_loadout(rnd_instance)
             if loadout.armors:
                 for armor in loadout.armors:
                     self.give_armor(character, armor)
@@ -1064,6 +1064,29 @@ class NPCGenerator:
             return random.choice(self.roll_keys)
         else:
             raise ValueError("Invalid value type '{}' requested for random option.".format(option_type))
+
+    def validate_params(self, class_choice=None, race_choice=None,
+                         hd=None, roll_choice=None):
+
+        if class_choice is not None:
+            if class_choice not in self.class_keys:
+                return False
+
+        if race_choice is not None:
+            if race_choice not in self.race_keys:
+                return False
+
+        if hd is not None:
+            if int(hd) < 1 or int(hd) > 20:
+                return False
+
+        if roll_choice is not None:
+            if roll_choice not in self.roll_keys:
+                return False
+
+        return True
+
+
 
 
 class Character:
