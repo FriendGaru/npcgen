@@ -4,3 +4,15 @@ randomization:
 since I've settled on "same seed and parameters yields the same character, consistent across HD",
 I can go back and redo the way it handles spellcaster abilities, asi progression, and other randomized choices to make
 things a bit cleaner and more comprehensible
+
+special weapons need exceptions:
+lance, net
+
+maybe rework 'weapons' as 'attacks'
+it would be nice and convenient for users if things like eldritch blast were listed under attacks
+it would also make CR calculations more reliable in cases like that
+
+CR calc should allow for various modifiers, things like effective hp and damage output
+sneak attack, for example, should increase effective damage
+easiest method would probably be for characters to keep track of various cr mods and handle them individually
+in the cr calculation
