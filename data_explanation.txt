@@ -1,0 +1,38 @@
+Naming:
+internal_name is used for references within the generator. internal_names MUST be unique or else they'll overwrite each
+other. internal_names should always use underscores, whitespace will be ignored.
+display_names are necessary only for things that have an unusual; way of being shown to the player.
+If something doesn't have a display name, the internal name will be used to generate one.
+For example, 'celestial_legacy' will become 'Celestial Legacy'
+Display names are allowed to duplicate other display names.
+
+
+Traits:
+'visibility' is used for determining when to show the trait in a stat block
+0 or undefined means the trait is ALWAYS shown as a statblock entry. It is crucial for the character.
+1 means that the trait should usually be shown as its own entry.
+This is typically for things like racial resistances or darkvision that are reflected elsewhere in the stat block,
+but might be helpful to have the reader's attention drawn to.
+2 means this trait usually shouldn't be displayed. Things like traits that grant proficiency or traits that are
+fully represented elsewhere (like an aarakocra's talons) that are mostly just taking up space from the user's perspective.
+
+Traits that have the trait_type 'hidden' ignore this value and are never ever shown.
+Hidden traits are meant to be used for behind the scenes stuff that users never need to see,
+like a human's floating attribute bonus.
+
+Tags are the key part of implementing trait functionality. Each tag has something coded into the generator to make stuff happen.
+Tags can be a single keyword, or they can take a list of values.
+Tag names and values must be separated by a colon and individual tag values must be separated by semicolons.
+For example, if a trait has 'damage_resistance:slashing;bludgeoning,give_weapon:talons'
+That means the 'damage_resistance' tag will have a value of ['slashing', 'piercing']
+and the 'give_weapon' tag will have a value of ['talons']
+Each trait may have an arbitrary combination of tags and values.
+
+Traits should avoid patterns that require they be added in a specific order.
+
+
+Races:
+Although size USUALLY determines a creatures move speed, that doesn't always hold true. So, races must have their movement
+speeds set manually.
+Senses like darkvision, on the other hand, are pretty uniform and generally get their own stat block entry, so those are
+handled by giving a race the appropriate trait.

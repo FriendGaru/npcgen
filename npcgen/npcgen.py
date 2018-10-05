@@ -30,6 +30,8 @@ STATS_BASE = {
     'hit_dice_extra': 0, 'hit_points_extra': 0,
     'proficiency_extra': 0,
     'speed_walk': 30, 'speed_fly': 0, 'speed_burrow': 0, 'speed_swim': 0,
+    # These aren't used by most character
+    'bonus_hp_per_level': 0,
 }
 
 # STATS_DERIVED = (
@@ -541,31 +543,33 @@ class NPCGenerator:
                 # Ignore blank lines or comments using hastags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
+                try:
+                    new_trait = Trait()
+                    new_trait.int_name = line['internal_name']
+                    if line['display_name']:
+                        new_trait.display_name = line['display_name']
+                    else:
+                        new_trait.display_name = line['internal_name'].replace('_', ' ').title()
+                    new_trait.trait_type = line['trait_type']
+                    new_trait.text = line['text'].replace('\\n', '\n\t')
 
-                new_trait = Trait()
-                new_trait.int_name = line['internal_name']
-                if line['display_name']:
-                    new_trait.display_name = line['display_name']
-                else:
-                    new_trait.display_name = line['internal_name'].capitalize()
-                new_trait.trait_type = line['trait_type']
-                new_trait.text = line['text'].replace('\\n', '\n\t')
+                    if line['tags']:
+                        new_tags_dict = {}
+                        for raw_tag in line['tags'].replace(' ', '').split(','):
+                            if ':' in raw_tag:
+                                tag_name, tag_value = raw_tag.split(':')
+                                # NOTE if you want to give multiple of something like armor or resistances, you need to
+                                # use semicolons to separate them
+                                # Each tag for a trait will ALWAYS have a list associated with it, remember when doing trait
+                                # logic
+                                new_tags_dict[tag_name] = tag_value.split(';')
+                            else:
+                                new_tags_dict[raw_tag] = None
+                        new_trait.tags = new_tags_dict
 
-                if line['tags']:
-                    new_tags_dict = {}
-                    for raw_tag in line['tags'].replace(' ', '').split(','):
-                        if ':' in raw_tag:
-                            tag_name, tag_value = raw_tag.split(':')
-                            # NOTE if you want to give multiple of something like armor or resistances, you need to
-                            # use semicolons to separate them
-                            # Each tag for a trait will ALWAYS have a list associated with it, remember when doing trait
-                            # logic
-                            new_tags_dict[tag_name] = tag_value.split(';')
-                        else:
-                            new_tags_dict[raw_tag] = None
-                    new_trait.tags = new_tags_dict
-
-                self.traits[new_trait.int_name] = new_trait
+                    self.traits[new_trait.int_name] = new_trait
+                except ValueError:
+                    print("Error procession trait {}".format(line['internal_name']))
 
     def build_loadout_pools_from_csv(self, loadout_pools_file_loc):
         with open(loadout_pools_file_loc, newline="") as loadoutPoolsFile:
@@ -768,60 +772,51 @@ class NPCGenerator:
                     self.race_options.append(('@CATEGORY', line['display_name']))
                     continue
 
-                new_race_template = RaceTemplate()
-                new_race_template.int_name = line["internal_name"]
-                if line["display_name"]:
-                    new_race_template.display_name = line['display_name']
-                else:
-                    new_race_template.display_name = line['internal_name'].capitalize()
+                try:
+                    new_race_template = RaceTemplate()
+                    new_race_template.int_name = line["internal_name"]
+                    if line["display_name"]:
+                        new_race_template.display_name = line['display_name']
+                    else:
+                        new_race_template.display_name = line['internal_name'].capitalize()
 
-                new_attribute_bonuses_dict = {}
-                if line['attribute_bonuses']:
-                    for raw_attribute_bonus in line['attribute_bonuses'].replace(' ', '').split(','):
-                        attribute, bonus = raw_attribute_bonus.split(':')
-                        bonus = int(bonus)
-                        new_attribute_bonuses_dict[attribute] = bonus
-                new_race_template.attribute_bonuses = new_attribute_bonuses_dict
+                    new_attribute_bonuses_dict = {}
+                    if line['attribute_bonuses']:
+                        for raw_attribute_bonus in line['attribute_bonuses'].replace(' ', '').split(','):
+                            attribute, bonus = raw_attribute_bonus.split(':')
+                            bonus = int(bonus)
+                            new_attribute_bonuses_dict[attribute] = bonus
+                    new_race_template.attribute_bonuses = new_attribute_bonuses_dict
 
-                new_race_template.languages = line['languages'].replace(" ", "").split(',')
-
-                if line['creature_type']:
-                    new_race_template.creature_type = line['creature_type']
-                else:
-                    new_race_template.creature_type = DEFAULT_CREATURE_TYPE
-
-                if line['size']:
-                    new_race_template.size = line['size']
-                else:
-                    new_race_template.size = DEFAULT_SIZE
-
-                if line['speeds']:
-                    for entry in line['speeds'].replace(' ', '').split(','):
-                        speed, val = entry.split(':')
-                        new_race_template.speeds[speed] = int(val)
-
-                if line['senses']:
-                    for entry in line ['senses'].replace(' ', '').split(','):
-                        sense, val = entry.split(':')
-                        new_race_template.senses[sense] = int(val)
-
-                if line['traits']:
-                    new_race_template.traits = line['traits'].replace(" ", "").split(',')
-
-                if line['languages']:
                     new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
-                # if line['base_stats']:
-                #     base_stats = {}
-                #     for entry in line['base_stats'].replace(" ", "").split(','):
-                #         base_stat, val = entry.split(':')
-                #         val = int(val)
-                #         base_stats[base_stat] = val
-                #     new_race_template.base_stats = base_stats
+                    if line['creature_type']:
+                        new_race_template.creature_type = line['creature_type']
+                    else:
+                        new_race_template.creature_type = DEFAULT_CREATURE_TYPE
 
-                self.race_options.append((new_race_template.int_name, new_race_template.display_name))
-                self.race_templates[new_race_template.int_name] = new_race_template
-                self.race_keys = list(self.race_templates.keys())
+                    if line['size']:
+                        new_race_template.size = line['size']
+                    else:
+                        new_race_template.size = DEFAULT_SIZE
+
+                    if line['speeds']:
+                        for entry in line['speeds'].replace(' ', '').split(','):
+                            speed, val = entry.split(':')
+                            new_race_template.speeds[speed] = int(val)
+
+                    if line['traits']:
+                        new_race_template.traits = line['traits'].replace(" ", "").split(',')
+
+                    if line['languages']:
+                        new_race_template.languages = line['languages'].replace(" ", "").split(',')
+
+                    self.race_options.append((new_race_template.int_name, new_race_template.display_name))
+                    self.race_templates[new_race_template.int_name] = new_race_template
+                    self.race_keys = list(self.race_templates.keys())
+
+                except ValueError:
+                    print("Error processing race template {}".format(line['internal_name']))
 
     def build_class_templates_from_csv(self, class_templates_file_loc):
         with open(class_templates_file_loc, newline='') as class_templates_file:
@@ -835,44 +830,49 @@ class NPCGenerator:
                     self.class_options.append(('@CATEGORY', line['display_name']))
                     continue
 
-                new_class_template = ClassTemplate()
-                new_class_template.int_name = line['internal_name']
+                try:
+                    new_class_template = ClassTemplate()
+                    new_class_template.int_name = line['internal_name']
 
-                if line['display_name']:
-                    new_class_template.display_name = line['display_name']
-                else:
-                    new_class_template.display_name = line['internal_name'].capitalize()
+                    if line['display_name']:
+                        new_class_template.display_name = line['display_name']
+                    else:
+                        new_class_template.display_name = line['internal_name'].capitalize()
 
-                new_class_template.priority_attributes = line['priority_attributes'].replace(" ", "").split(',')
-                new_class_template.saves = line['saves'].replace(" ", "").split(',')
-                new_class_template.skills_fixed = line['skills_fixed'].replace(" ", "").split(',')
-                new_class_template.skills_random = line['skills_random'].replace(" ", "").split(',')
-                if line['num_random_skills']:
-                    new_class_template.num_random_skills = int(line['num_random_skills'])
-                else:
-                    new_class_template.num_random_skills = 0
+                    new_class_template.priority_attributes = line['priority_attributes'].replace(" ", "").split(',')
+                    new_class_template.saves = line['saves'].replace(" ", "").split(',')
+                    new_class_template.skills_fixed = line['skills_fixed'].replace(" ", "").split(',')
+                    new_class_template.skills_random = line['skills_random'].replace(" ", "").split(',')
+                    if line['num_random_skills']:
+                        new_class_template.num_random_skills = int(line['num_random_skills'])
+                    else:
+                        new_class_template.num_random_skills = 0
 
-                if line['loadout_pool']:
-                    new_class_template.loadout_pool = line['loadout_pool']
+                    if line['loadout_pool']:
+                        new_class_template.loadout_pool = line['loadout_pool']
 
-                if line['multiattack_type']:
-                    new_class_template.multiattack_type = line['multiattack_type']
+                    if line['multiattack_type']:
+                        new_class_template.multiattack_type = line['multiattack_type']
 
-                if line['traits']:
-                    new_class_template.traits = line['traits'].replace(" ", "").split(',')
+                    if line['traits']:
+                        new_class_template.traits = line['traits'].replace(" ", "").split(',')
 
-                if line['spellcasting_profile']:
-                    new_class_template.spell_casting_profile = self.spellcaster_profiles[line['spellcasting_profile']]
+                    if line['spellcasting_profile']:
+                        new_class_template.spell_casting_profile = self.spellcaster_profiles[line['spellcasting_profile']]
 
-                self.class_options.append((new_class_template.int_name, new_class_template.display_name))
-                self.class_templates[new_class_template.int_name] = new_class_template
-                self.class_keys = list(self.class_templates.keys())
+                    self.class_options.append((new_class_template.int_name, new_class_template.display_name))
+                    self.class_templates[new_class_template.int_name] = new_class_template
+                    self.class_keys = list(self.class_templates.keys())
+
+                except ValueError:
+                    print("Error processing class template {}.".format(line['internal_name']))
 
     def give_trait(self, character: 'Character', trait_name, rnd_instance=None):
 
         if not rnd_instance:
             rnd_instance = random
 
+        assert trait_name in self.traits, "Trait {} not found!".format(trait_name)
         trait = self.traits[trait_name]
 
         # Remember,
@@ -913,6 +913,14 @@ class NPCGenerator:
         if 'condition_immunity' in trait.tags:
             for entry in trait.tags['condition_immunity']:
                 character.add_condition_immunity(entry)
+
+        if 'sense_darkvision' in trait.tags:
+            val = int(trait.tags['sense_darkvision'][0])
+            character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
+
+        if 'bonus_hp_per_level' in trait.tags:
+            val = int(trait.tags['bonus_hp_per_level'][0])
+            character.stats['bonus_hp_per_level'] += val
 
         # happens at end because some traits might not actually get added
         character.traits[trait_name] = trait
@@ -1280,8 +1288,9 @@ class Character:
             # stat modifiers = stat // 2 - 5
             self.stats[attribute + '_mod'] = self.stats[attribute] // 2 - 5
         # Hit Points
-        self.stats['hit_points'] = (self.stats['hit_dice_num'] * self.stats['hit_dice_size']) // 2 + self.stats[
-            'hit_dice_num'] * self.stats['con_mod'] + self.stats['hit_points_extra']
+        self.stats['hit_points'] = \
+            ((self.stats['hit_dice_num'] + self.stats.get('bonus_hp_per_level')) * self.stats['hit_dice_size']) // 2 \
+            + self.stats['hit_dice_num'] * self.stats['con_mod'] + self.stats['hit_points_extra']
         # Proficiency
         self.stats['proficiency'] = self.stats['hit_dice_num'] // 5 + 2 + self.stats['proficiency_extra']
         # DCs (all DCs are 8 + statMod + proficiency)
@@ -1410,7 +1419,7 @@ class Character:
             passive_perception += self.get_stat('proficiency')
         senses_string = ''
         if len(self.senses.keys()) > 0:
-            for k, v in self.senses:
+            for k, v in self.senses.items():
                 senses_string += '{} {} ft., '.format(k, v)
         senses_string += 'passive Perception {}'.format(passive_perception)
         return senses_string

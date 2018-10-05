@@ -1,17 +1,47 @@
-internal_name,display_name,trait_type,text,tags,cr_changes
-#HARDCODED TRAITS,,,,,
-martial_arts,Martial Arts,passive,Do monk damage with monk weapons.,give_weapon:monk_unarmed,
-heavy_armor_training,Heavy Armor Training,passive,Speed is not reduced by wearing heavy armor,,
-medium_armor_master,Medium Armor Master,passive,"You have practiced moving in medium armor to gain the following benefits:\nWearing medium armor doesn't impose disadvantage on your Dexterity (Stealth)\nWhen you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher. checks. ",,
-free_attribute_bonus,,hidden,,free_attribute_bonus:1,
-free_attribute_bonus_double,,hidden,,free_attribute_bonus:2,
-expertise_single,,hidden,,expertise_random:1,
-expertise_stealth,,hidden,,expertise_fixed:stealth,
-,,,,,
-#REGULAR TRAITS,,,,,
-breath_weapon,Breath Weapon,action,Does {proficiency}d6 damage with DC{conDC},,
-natural_armor,Natural Armor,passive,Has natural AC 13 + Dex modifier,give_armor:natural_armor,
-lucky,,passive,Reroll 1s.,,
-talons,,hidden,,give_weapon:talons,
-monk_defense,,hidden,,give_armor:unarmored_defense_monk,
-toughy,,passive,Testy resistances,"damage_resistance:fire;ice, damage_vulnerability:electricity;acid, damage_immunity:bludgeoning;slashing, condition_immunity:charmed;sleep",
+internal_name,display_name,trait_type,visibility,text,tags,cr_changes
+#HARDCODED TRAITS,,,,,,
+martial_arts,Martial Arts,passive,1,Do monk damage with monk weapons.,give_weapon:monk_unarmed,
+heavy_armor_training,Speed,passive,1,Your speed is not reduced by wearing heavy armor. ,,
+medium_armor_master,Medium Armor Master,passive,1,"You have practiced moving in medium armor to gain the following benefits:\nWearing medium armor doesn't impose disadvantage on your Dexterity (Stealth)\nWhen you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher. checks. ",,
+free_attribute_bonus,,hidden,,,free_attribute_bonus:1,
+free_attribute_bonus_double,,hidden,,,free_attribute_bonus:2,
+expertise_single,,hidden,,,expertise_random:1,
+expertise_stealth,,hidden,,,expertise_fixed:stealth,
+,,,,,,
+#REGULAR TRAITS,,,,,,
+breath_weapon,,action,,Does {proficiency}d6 damage with DC{conDC},,
+natural_armor,,passive,,Has natural AC 13 + Dex modifier,give_armor:natural_armor,
+lucky,,passive,,Reroll 1s.,,
+talons,,hidden,1,,give_weapon:talons,
+monk_defense,,hidden,1,,give_armor:unarmored_defense_monk,
+toughy,,passive,1,Testy resistances,"damage_resistance:fire;ice, damage_vulnerability:electricity;acid, damage_immunity:bludgeoning;slashing, condition_immunity:charmed;sleep",
+celestial_resistance,,passive,1,This character has resistance to necrotic and radiant damage.,damage_resistance:necrotic;radiant,
+celestial_legacy,,passive,,"You know the light cantrip. Once you reach 3rd level, you can cast the lesser restoration spell once with this trait, and you regain the ability to do so when you finish a long rest. Once you reach 5th level, you can cast the daylight spell once with this trait as a 3rd-level spell, and you regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells.",,
+healing_hands,,passive,,"As an action, you can touch a creature and cause it to regain a number of hit points equal to your level. Once you use this trait, you can't use it again until you finish a long rest. ",,
+light_bearer,,passive,,You know the light cantrip. Charisma is your spellcasting ability for it. ,,
+necrotic_shroud,,passive,,"Starting at 3rd level, you can use your action to unleash the divine energy within yourself, causing your eyes to turn into pools of darkness and two skeletal, ghostly, flightless wings to sprout from your back. The instant you transform, other creatures within 10 feet of you that can see you must succeed on a Charisma saving throw (DC 8 + your proficiency bonus + your Charisma modifier) or become frightened of you until the end of your next turn.
+
+Your transformation lasts for 1 minute or until you end it as a bonus action. During it, once on each of your turns, you can deal extra necrotic damage to one target when you deal damage to it with an attack or a spell. The extra necrotic damage equals your level.
+
+Once you use this trait, you can't use it again until you finish a long rest.",,
+radiant_soul,,passive,,"Starting at 3rd level, you can use your action to unleash the divine energy within yourself, causing your eyes to glimmer and two luminous, incorporeal wings to sprout from your back.
+
+Your transformation lasts for 1 minute or until you end it as a bonus action. During it, you have a flying speed of 30 feet, and once on each of your turns, you can deal extra radiant damage to one target when you deal damage to it with an attack or a spell. The extra radiant damage equals your level.
+
+Once you use this trait, you can't use it again until you finish a long rest.",,
+radiant_consumption,,passive,,"Starting at 3rd level, you can use your action to unleash the divine energy within yourself, causing a searing light to radiate from you, pour out of your eyes and mouth, and threaten to char you.
+
+Your transformation lasts for 1 minute or until you end it as a bonus action. During it, you shed bright light in a 10-foot radius and dim light for an additional 10 feet, and at the end of each of your turns, you and each creature within 10 feet of you take radiant damage equal to half your level (rounded up). In addition, once on each of your turns, you can deal extra radiant damage to one target when you deal damage to it with an attack or a spell. The extra radiant damage equals your level.
+
+Once you use this trait, you can't use it again until you finish a long rest.",,
+dwarven_reslience,,passive,,"You have advantage on saving throws against poison, and you have resistance against poison damage. ","damage_resistance:poison,save_advantage:poison",
+dwarven_combat_training,,passive,TRUE,"You have proficiency with the battleaxe, handaxe, light hammer, and warhammer. ",,
+tool_proficiency_dwarven,,passive,TRUE,"You gain proficiency with the artisan's tools of your choice: smith's tools, brewer's supplies, or mason's tools. ",,
+stonecunning,,passive,,"Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus. ",,
+duergar_resilience,,passive,,"You have advantage on saving throws against poison, and you have resistance against poison damage. You also have advantage on saving throws against illusions and against being charmed or paralyzed. ","damage_resistance:poison,save_advantage:poison;illusion;charm;paralyze",
+duergar_magic,,passive,,"When you reach 3rd level, you can cast the Enlarge/Reduce spell on yourself once with this trait, using only the spell's enlarge option. When you reach 5th level, you can cast the Invisibility spell on yourself once with this trait. You don't need material components for either spell, and you can't cast them while you're in direct sunlight, although sunlight has no effect on them once cast. You regain the ability to cast these spells with this trait when you finish a long rest. Intelligence is your spellcasting ability for these spells. ",,
+sunlight_sensitivity,,passive,,"You have disadvantage on attack rolls and Wisdom (Perception) checks that rely on sight when you, the target of your attack, or whatever you are trying to perceive is in direct sunlight. ",,
+dwarven_toughness,,passive,1,"Your hit point maximum increases by 1, and it increases by 1 every time you gain a level. ",bonus_hp_per_level:1,
+dwarven_armor_training,,passive,1,You have proficiency with light and medium armor. ,,
+darkvision,,passive,1,"Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray. ",sense_darkvision:60,
+superior_darkvision,,passive,1,"Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray. ",sense_darkvision:120,
