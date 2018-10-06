@@ -9,10 +9,10 @@ import pkg_resources as pkg
 
 # -1 - Nothing at all
 # 0 - Errors only
-# 1 - Basic operations completed
-# 2 - Minor operations completed
+# 1 - Basic operations
+# 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 0
+DEBUG_LEVEL = 1
 
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
@@ -30,8 +30,9 @@ STATS_BASE = {
     'hit_dice_extra': 0, 'hit_points_extra': 0,
     'proficiency_extra': 0,
     'speed_walk': 30, 'speed_fly': 0, 'speed_burrow': 0, 'speed_swim': 0,
-    # These aren't used by most character
-    'bonus_hp_per_level': 0,
+    # These are used for various trait implementations
+    'bonus_hp_per_level': 0, 
+    'heavy_armor_move_penalty': -10, 'speed_bonus_universal': 0,
 }
 
 # STATS_DERIVED = (
@@ -132,6 +133,9 @@ DEFAULT_HIT_DICE_SIZE = 8
 # Max hit dice a character can have for generating stats
 # Characters may still have bonus hd, which give extra hp but are not used for stat calculations
 HIT_DICE_NUM_CAP = 20
+VALID_HD_SIZES = (
+    4, 6, 8, 10, 12
+)
 
 ARMORS_FILE = \
     pkg.resource_filename(__name__, 'data/armors.csv')
@@ -166,6 +170,11 @@ DEFAULT_CREATURE_TYPE = 'humanoid'
 
 DEFAULT_RACE = 'humanoid'
 DEFAULT_CLASS = 'soldier'
+
+LANGUAGES = (
+    'common', 'dwarvish',  'elvish', 'giant', 'gnomish', 'goblin', 'halfling', 'orc',
+    'abyssal', 'celestial', 'draconic', 'deep speech', 'infernal', 'primordial', 'sylvan', 'undercommon',
+)
 
 
 WEAPON_REACH_NORMAL = 'reach 5 ft.'
@@ -887,6 +896,10 @@ class NPCGenerator:
             for weapon in trait.tags['give_weapon']:
                 self.give_weapon(character, weapon)
 
+        if 'skill_proficiency' in trait.tags:
+            for skill in trait.tags['skill_proficiency']:
+                character.add_skill(skill)
+
         if 'expertise_random' in trait.tags:
             num_expertise = int(trait.tags['expertise_random'][0])
             expertise_choices = rnd_instance.sample(character.skills, num_expertise)
@@ -921,6 +934,16 @@ class NPCGenerator:
         if 'bonus_hp_per_level' in trait.tags:
             val = int(trait.tags['bonus_hp_per_level'][0])
             character.stats['bonus_hp_per_level'] += val
+
+        if 'random_language' in trait.tags:
+            num_extra_languages = trait.tags['random_language'][0]
+            language_options = set(LANGUAGES)
+            for language in character.languages:
+                language_options.remove(language)
+            language_choices = rnd_instance.sample(language_options, num_extra_languages)
+            for language in language_choices:
+                character.add_language(language)
+
 
         # happens at end because some traits might not actually get added
         character.traits[trait_name] = trait
@@ -1015,11 +1038,31 @@ class NPCGenerator:
                       # fixed_rolls=(),
                       class_template_name=DEFAULT_CLASS, race_template_name=DEFAULT_RACE,
                       hit_dice_num=DEFAULT_HIT_DICE_NUM, hit_dice_size=DEFAULT_HIT_DICE_SIZE,
+                      bonus_hd=0,
                       give_asi=True,
                       seed=None):
 
         if not seed:
             seed = random_string(10)
+
+        debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={}'
+                    .format(race_template_name, class_template_name, hit_dice_num, hit_dice_size, bonus_hd,
+                            seed, attribute_roll_method), 1)
+
+        # Sanity checks, better to just return a default guy than risk crashing
+        if not 1 <= hit_dice_num <= 20:
+            debug_print('Invalid HD_NUM received: {}'.format(hit_dice_num))
+            hit_dice_num = DEFAULT_HIT_DICE_SIZE
+        if hit_dice_size not in VALID_HD_SIZES:
+            debug_print('Invalid HD_SIZE received: {}'.format(hit_dice_size))
+            hit_dice_size = DEFAULT_HIT_DICE_SIZE
+        if class_template_name not in self.class_keys:
+            debug_print('Invalid class_template: {}'.format(class_template_name))
+            class_template_name = DEFAULT_CLASS
+        if race_template_name not in self.race_keys:
+            debug_print('Invalid race_template: {}'.format(race_template_name))
+            race_template_name = DEFAULT_RACE
+
 
         # rnd_instance = random.seed(seed)
         new_character = Character()
@@ -1042,9 +1085,6 @@ class NPCGenerator:
                                       fixed_rolls=attribute_roll_fixed_vals,
                                       rnd_instance=rnd_instance, )
 
-        new_character.stats['hit_dice_size'] = hit_dice_size
-        new_character.stats['hit_dice_num'] = hit_dice_num
-
         rnd_instance = random.Random(seed + 'asi')
         if give_asi:
             new_character.generate_asi_progression(priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
@@ -1053,13 +1093,18 @@ class NPCGenerator:
             new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
                                                 points_per_increase=ASI_POINTS_PER_INCREASE)
 
+        new_character.set_stat('hit_dice_size', hit_dice_size)
+        new_character.set_stat('hit_dice_num',  hit_dice_num)
+        new_character.set_stat('hit_dice_extra', bonus_hd)
+
         new_character.update_derived_stats()
 
         rnd_instance = random.Random(seed + 'armor')
         new_character.choose_armors(rnd_instance=rnd_instance)
+        # Remember, speeds have to come after armor selection
+        new_character.update_speeds()
 
-        # After generating, re-seed random
-        # random.seed()
+        debug_print('Build success!', 1)
         return new_character
 
     def get_options(self, options_type):
@@ -1288,9 +1333,15 @@ class Character:
             # stat modifiers = stat // 2 - 5
             self.stats[attribute + '_mod'] = self.stats[attribute] // 2 - 5
         # Hit Points
-        self.stats['hit_points'] = \
-            ((self.stats['hit_dice_num'] + self.stats.get('bonus_hp_per_level')) * self.stats['hit_dice_size']) // 2 \
-            + self.stats['hit_dice_num'] * self.stats['con_mod'] + self.stats['hit_points_extra']
+        self.stats['effective_hit_dice'] = self.stats['hit_dice_num'] + self.stats['hit_dice_extra']
+        hp_per_level = (self.stats['hit_dice_size'] // 2) + self.stats['con_mod'] + self.stats['bonus_hp_per_level']
+        # Minimum 1 hp per level
+        hp_per_level = max(1, hp_per_level)
+        self.stats['hit_points_total'] = \
+            self.stats['effective_hit_dice'] * hp_per_level
+        # This is for when it comes time to display Z in "XdY + Z"
+        self.stats['hit_points_from_con'] = \
+            self.stats['effective_hit_dice'] * (self.stats['con_mod'] + self.stats['bonus_hp_per_level'])
         # Proficiency
         self.stats['proficiency'] = self.stats['hit_dice_num'] // 5 + 2 + self.stats['proficiency_extra']
         # DCs (all DCs are 8 + statMod + proficiency)
@@ -1300,10 +1351,7 @@ class Character:
         for attribute in STATS_ATTRIBUTES:
             self.stats[attribute + '_attack'] = self.stats['proficiency'] + self.stats[attribute + '_mod']
         # Speed
-        self.stats['speed_walk_final'] = self.stats['speed_walk']
-        self.stats['speed_fly_final'] = self.stats['speed_fly']
-        self.stats['speed_swim_final'] = self.stats['speed_swim']
-        self.stats['speed_burrow_final'] = self.stats['speed_burrow']
+        # Speed has to come after armor, so it gets its own method
         # Multiattack
         if self.multiattack:
             hd = self.stats['hit_dice_num']
@@ -1322,6 +1370,51 @@ class Character:
             self.stats['attacks_per_round'] = attacks
         else:
             self.stats['attacks_per_round'] = 1
+
+    # Speed is partially dependent on armor, which is determined separately from derived stats
+    def update_speeds(self):
+        # Python lets us multiply bools by ints, so yay
+        # This val should only be nonzero if a character is wearing heavy armor, doesn't have enough strength,
+        # and hasn't has their penalty reduced, such as by the heavy_armor_training_trait
+        armor_move_penalty = (self.get_stat('heavy_armor_move_penalty') * self.chosen_armor.speed_penalty(self))
+        
+        # If the base move for any is zero, that means they don't have that ype of movement at all
+        # Technically, I guess if speed is reduced below zero they should lose that movement, so let's do that too
+        if self.get_stat('speed_walk') > 0:
+            self.set_stat('speed_walk_final',
+                          self.get_stat('speed_walk')
+                          + self.get_stat('speed_bonus_universal') + armor_move_penalty
+                          )
+        else:
+            self.set_stat('speed_walk_final', 0)
+        self.set_stat('speed_walk_final', max(0, self.get_stat('speed_walk_final')))
+            
+        if self.get_stat('speed_swim') > 0:
+            self.set_stat('speed_swim_final',
+                          self.get_stat('speed_swim')
+                          + self.get_stat('speed_bonus_universal') + armor_move_penalty
+                          )
+        else:
+            self.set_stat('speed_swim_final', 0)
+        self.set_stat('speed_swim_final', max(0, self.get_stat('speed_swim_final')))
+        
+        if self.get_stat('speed_fly') > 0:
+            self.set_stat('speed_fly_final',
+                          self.get_stat('speed_fly')
+                          + self.get_stat('speed_bonus_universal') + armor_move_penalty
+                          )
+        else:
+            self.set_stat('speed_fly_final', 0)
+        self.set_stat('speed_fly_final', max(0, self.get_stat('speed_fly_final')))
+        
+        if self.get_stat('speed_burrow') > 0:
+            self.set_stat('speed_burrow_final',
+                          self.get_stat('speed_burrow')
+                          + self.get_stat('speed_bonus_universal') + armor_move_penalty
+                          )
+        else:
+            self.set_stat('speed_burrow_final', 0)
+        self.set_stat('speed_burrow_final', max(0, self.get_stat('speed_burrow_final')))
 
     def get_stat(self, stat):
         return self.stats[stat]
@@ -1351,7 +1444,7 @@ class Character:
     def get_cr(self):
         effective_to_hit, effective_attack_dmg = self.get_best_attack()
         effective_dmg_per_round = effective_attack_dmg * self.stats['attacks_per_round']
-        effective_hp = self.stats['hit_points']
+        effective_hp = self.stats['hit_points_total']
         effective_ac = self.get_best_ac()
 
         # For now, we'll just say that if a character's spellcasting level is greater than half its hit dice,
@@ -1593,10 +1686,10 @@ class Character:
                 acstring += ', ' + armor.sheet_display(self)
         sb.armor = acstring
 
-        sb.hp = '{}({}d{}{})' \
-            .format(self.get_stat('hit_points'), self.get_stat('hit_dice_num'),
+        sb.hp = '{}({}d{} {})' \
+            .format(self.get_stat('hit_points_total'), self.get_stat('effective_hit_dice'),
                     self.get_stat('hit_dice_size'),
-                    num_plusser(self.get_stat('hit_dice_num') * self.get_stat('con_mod'))
+                    num_plusser(self.get_stat('hit_points_from_con'), add_space=True)
                     )
         sb.size = self.size
 
@@ -1872,16 +1965,16 @@ class Armor:
 
         return total_ac
 
+
+    # This method returns true if a character should take a speed penalty
+    # For dwarves or other characters who have heavy armor training, this will still return true,
+    # but their penalty should have been reduced to zero, so it won't affect them
     def speed_penalty(self, owner):
 
-        # Special case for dwarfs
-        if 'heavy_armor_training' in owner.traits:
-            return 0
-
         if self.armor_type == 'heavy' and self.min_str < owner.get_stat('str'):
-            return -10
+            return True
         else:
-            return 0
+            return False
 
     def stealth_penalty(self, owner):
 

@@ -20,3 +20,8 @@ aasimar_scourge,Aasimar (Scourge),"con:1,cha:2",,,,"common,celestial","darkvisio
 dwarf_duergar,Dwarf (Duergar),"str:1,con:2",walk:25,,,"common,dwarvish,undercommon","heavy_armor_training,superior_darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,duergar_resilience,duergar_magic,sunlight_sensitivity"
 dwarf_hill,Dwarf (Hill),"con:2,wis:1",walk:25,,,"common,dwarvish","heavy_armor_training,darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,dwarven_toughness"
 dwarf_mountain,Dwarf (Mountain),"str:2,con:2",walk:25,,,"common,dwarvish","heavy_armor_training,darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,dwarven_armor_training"
+@CATEGORY,Elf,,,,,,
+elf_drow,Elf (Drow),"dex:2,cha:1",,,,"common,elvish","superior_darkvision,keen_senses,fey_ancestry,trance,sunlight_sensitivity,drow_magic,drow_weapon_training"
+elf_eladrin,Elf (Eladrin),"dex:2,int:1",,,,"common,elvish","darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,fey_step"
+elf_high,Elf (High),"dex:2,int:1",,,,"common,elvish","darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,extra_cantrip,extra_language"
+elf_wood,Elf (Wood),"dex:2,wis:1",walk:35,,,"common,elvish","darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,fleet_of_foot,mask_of_the_wild"

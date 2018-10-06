@@ -12,7 +12,19 @@ maybe rework 'weapons' as 'attacks'
 it would be nice and convenient for users if things like eldritch blast were listed under attacks
 it would also make CR calculations more reliable in cases like that
 
+mage armor: the generator should check if the npc has mage armor the spell rather than attaching it to loadouts.
+If I start listing spells like eldritch blast under attacks, the generator should check for those spells.
+
 CR calc should allow for various modifiers, things like effective hp and damage output
 sneak attack, for example, should increase effective damage
 easiest method would probably be for characters to keep track of various cr mods and handle them individually
 in the cr calculation
+
+Skill proficencies granted by traits are slapdash.
+Should clean it up and have a good way to handle proficiencies being granted by both class and traits.
+
+Tool proficiencies
+
+Extra cantip trait should grant a randomized cantrip
+Ideally, should consolidate all of hte various innate magic traits into one unified system, perhaps have it coordinate
+with the spellcasting system to prevent overlap
