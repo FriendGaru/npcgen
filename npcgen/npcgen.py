@@ -1754,7 +1754,7 @@ class Character:
 
         attacks = []
         for weapon in self.weapons.values():
-            attacks.append((weapon.display_name, weapon.sheet_display(self, include_weapon_name=False)))
+            attacks.append((weapon.display_name, weapon.sheet_display(self, include_name=False)))
         sb.attacks = attacks
 
         return sb
@@ -1967,7 +1967,25 @@ class Armor:
         return outstring
 
 
-class Weapon:
+# For CR calculations, an attack needs to give its to hit and average damage value
+# And it needs to be able to give a stat block entry when it comes time to render
+class Attack:
+    def __init__(self):
+        self.int_name = None
+        self.display_name = None
+
+    def get_to_hit(self):
+        pass
+
+    def get_avg_dmg(self, owner):
+        avg_dmg = 1
+        return avg_dmg
+
+    def sheet_display(self, owner, include_name=True):
+        pass
+
+
+class Weapon(Attack):
     def __init__(self, int_name=None, display_name=None, dmg_dice_num=None, dmg_dice_size=None, damage_type=None,
                  attack_type=None, short_range=None, long_range=None, tags=None, num_targets=DEFAULT_NUM_TARGETS):
         self.int_name = int_name
@@ -2036,11 +2054,15 @@ class Weapon:
                     dmg_dice_size = MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]
 
         avg_dmg = dmg_dice_size / 2 * dmg_dice_num + attack_stat
+
         return int(avg_dmg), dmg_dice_num, dmg_dice_size, attack_stat, self.damage_type, avg_dmg
 
-    def sheet_display(self, owner, include_weapon_name=True):
+    def get_avg_dmg(self, owner):
+        return self.get_damage(use_versatile=True)[5]
+
+    def sheet_display(self, owner, include_name=True):
         outstring = ''
-        if include_weapon_name:
+        if include_name:
             outstring += self.display_name + '. '
         is_melee = self.attack_type == 'melee'
         is_ranged = self.attack_type == 'ranged' or 'thrown' in self.tags
