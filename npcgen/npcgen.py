@@ -494,7 +494,7 @@ class NPCGenerator:
         self.roll_keys = list(ROLL_METHODS.keys())
 
     def build_armors_from_csv(self, armors_file_loc):
-        with open(armors_file_loc, newline='') as armors_file:
+        with open(armors_file_loc, newline='', encoding="utf-8") as armors_file:
             armors_file_reader = csv.DictReader(armors_file)
             for line in armors_file_reader:
 
@@ -518,7 +518,7 @@ class NPCGenerator:
                 self.armors[new_armor.int_name] = new_armor
 
     def build_weapons_from_csv(self, weapons_file_loc):
-        with open(weapons_file_loc, newline='') as weaponsFile:
+        with open(weapons_file_loc, newline='', encoding="utf-8") as weaponsFile:
             weapons_file_reader = csv.DictReader(weaponsFile)
             for line in weapons_file_reader:
 
@@ -545,7 +545,7 @@ class NPCGenerator:
                 debug_print("Weapon Added: " + str(new_weapon), 3)
 
     def build_traits_from_csv(self, traits_file_loc):
-        with open(traits_file_loc, newline='') as traitsFile:
+        with open(traits_file_loc, newline='', encoding="utf-8") as traitsFile:
             traits_file_reader = csv.DictReader(traitsFile)
             for line in traits_file_reader:
 
@@ -581,7 +581,7 @@ class NPCGenerator:
                     print("Error procession trait {}".format(line['internal_name']))
 
     def build_loadout_pools_from_csv(self, loadout_pools_file_loc):
-        with open(loadout_pools_file_loc, newline="") as loadoutPoolsFile:
+        with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
             loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
             new_loadout_pool = None
             for line in loadout_pools_file_reader:
@@ -621,7 +621,7 @@ class NPCGenerator:
             self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
     def build_spells_from_csv(self, spells_file_loc):
-        with open(spells_file_loc, newline='') as spellsFile:
+        with open(spells_file_loc, newline='', encoding="utf-8") as spellsFile:
             spells_file_reader = csv.DictReader(spellsFile)
             for line in spells_file_reader:
 
@@ -638,7 +638,7 @@ class NPCGenerator:
                 self.spells[new_spell.name] = new_spell
 
     def build_spell_lists_from_csv(self, spell_lists_file_loc):
-        with open(spell_lists_file_loc, newline='') as spellListsFile:
+        with open(spell_lists_file_loc, newline='', encoding="utf-8") as spellListsFile:
             spell_lists_file_reader = csv.DictReader(spellListsFile)
             for line in spell_lists_file_reader:
 
@@ -713,7 +713,7 @@ class NPCGenerator:
                 self.spell_lists[new_spell_list.name] = new_spell_list
 
     def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
-        with open(spellcaster_profiles_file_loc, newline="") as spellcaster_profiles_file:
+        with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
             for line in spellcaster_profiles_file_reader:
 
@@ -770,7 +770,7 @@ class NPCGenerator:
                 self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
 
     def build_race_templates_from_csv(self, race_templates_file_loc):
-        with open(race_templates_file_loc, newline='') as race_templates_file:
+        with open(race_templates_file_loc, newline='', encoding="utf-8") as race_templates_file:
             race_templates_file_reader = csv.DictReader(race_templates_file)
             for line in race_templates_file_reader:
 
@@ -828,7 +828,7 @@ class NPCGenerator:
                     print("Error processing race template {}".format(line['internal_name']))
 
     def build_class_templates_from_csv(self, class_templates_file_loc):
-        with open(class_templates_file_loc, newline='') as class_templates_file:
+        with open(class_templates_file_loc, newline='', encoding="utf-8") as class_templates_file:
             class_templates_file_reader = csv.DictReader(class_templates_file)
             for line in class_templates_file_reader:
 
