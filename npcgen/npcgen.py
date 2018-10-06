@@ -2080,7 +2080,7 @@ class Weapon:
         if is_melee and 'versatile' in self.tags:
             avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = \
                 self.get_damage(owner, use_versatile=True)
-            outstring += ' or {}({}d{} - {}) {} damage if used with two hands'\
+            outstring += ' or {}({}d{} {}) {} damage if used with two hands'\
                 .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
         outstring += '.'
         return outstring
