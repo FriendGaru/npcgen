@@ -25,6 +25,17 @@ Should clean it up and have a good way to handle proficiencies being granted by 
 
 Tool proficiencies
 
-Extra cantip trait should grant a randomized cantrip
+The following traits need randomized spells:
+extra_cantrip
+natural_illusionist
 Ideally, should consolidate all of hte various innate magic traits into one unified system, perhaps have it coordinate
 with the spellcasting system to prevent overlap
+
+tinker trait needs a randomization scheme
+should create a generalized method for traits like this
+
+tools can have spaces and apostrophes in them, (i.e. "tinker's tools"),
+if I implement tool proficiencies in the statblock I'll need to address that
+
+
+

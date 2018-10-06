@@ -876,77 +876,116 @@ class NPCGenerator:
                 except ValueError:
                     print("Error processing class template {}.".format(line['internal_name']))
 
-    def give_trait(self, character: 'Character', trait_name, rnd_instance=None):
+    def give_trait(self, character: 'Character', trait_name, rnd_instance=None, process_tags=True):
+
+        # Process tags means the trait will execute tag stuff
+        # This allows a handful of traits to basically give themselves to the character for the sake of ordering
 
         if not rnd_instance:
             rnd_instance = random
 
         assert trait_name in self.traits, "Trait {} not found!".format(trait_name)
+
         trait = self.traits[trait_name]
+
+        # If a character already has the trait from another source,
+        # and doesn't have the repeatable tag, don't give again
+        if trait_name in character.traits and 'repeatable' not in trait.tags:
+            return
 
         # Remember,
         # trait.tags = {tag_name: [tag_val_1, tag_val_2, ...], ...}
         # each tag ALWAYS has a list associated with it even if it's for a single value
 
-        if 'give_armor' in trait.tags:
-            for armor in trait.tags['give_armor']:
-                self.give_armor(character, armor)
+        # Some tags might have tags that implicitly require that the trait should not be given to the character
+        # They can set this flag to false to block the giving at the end
+        give_trait = True
 
-        if 'give_weapon' in trait.tags:
-            for weapon in trait.tags['give_weapon']:
-                self.give_weapon(character, weapon)
+        if process_tags:
+            if 'give_armor' in trait.tags:
+                for armor in trait.tags['give_armor']:
+                    self.give_armor(character, armor)
 
-        if 'skill_proficiency' in trait.tags:
-            for skill in trait.tags['skill_proficiency']:
-                character.add_skill(skill)
+            if 'give_weapon' in trait.tags:
+                for weapon in trait.tags['give_weapon']:
+                    self.give_weapon(character, weapon)
 
-        if 'expertise_random' in trait.tags:
-            num_expertise = int(trait.tags['expertise_random'][0])
-            expertise_choices = rnd_instance.sample(character.skills, num_expertise)
-            for choice in expertise_choices:
-                character.add_skill(choice, expertise=True)
+            if 'skill_proficiency' in trait.tags:
+                for skill in trait.tags['skill_proficiency']:
+                    character.add_skill(skill)
 
-        if 'expertise_fixed' in trait.tags:
-            expertise_choices = trait.tags['expertise_random']
-            for choice in expertise_choices:
-                character.add_skill(choice, expertise=True)
+            if 'expertise_random' in trait.tags:
+                num_expertise = int(trait.tags['expertise_random'][0])
+                expertise_choices = rnd_instance.sample(character.skills, num_expertise)
+                for choice in expertise_choices:
+                    character.add_skill(choice, expertise=True)
 
-        if 'damage_immunity' in trait.tags:
-            for entry in trait.tags['damage_immunity']:
-                character.add_damage_immunity(entry)
+            if 'expertise_fixed' in trait.tags:
+                expertise_choices = trait.tags['expertise_random']
+                for choice in expertise_choices:
+                    character.add_skill(choice, expertise=True)
 
-        if 'damage_vulnerability' in trait.tags:
-            for entry in trait.tags['damage_vulnerability']:
-                character.add_damage_vulnerability(entry)
+            if 'damage_immunity' in trait.tags:
+                for entry in trait.tags['damage_immunity']:
+                    character.add_damage_immunity(entry)
 
-        if 'damage_resistance' in trait.tags:
-            for entry in trait.tags['damage_resistance']:
-                character.add_damage_resistance(entry)
+            if 'damage_vulnerability' in trait.tags:
+                for entry in trait.tags['damage_vulnerability']:
+                    character.add_damage_vulnerability(entry)
 
-        if 'condition_immunity' in trait.tags:
-            for entry in trait.tags['condition_immunity']:
-                character.add_condition_immunity(entry)
+            if 'damage_resistance' in trait.tags:
+                for entry in trait.tags['damage_resistance']:
+                    character.add_damage_resistance(entry)
 
-        if 'sense_darkvision' in trait.tags:
-            val = int(trait.tags['sense_darkvision'][0])
-            character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
+            if 'condition_immunity' in trait.tags:
+                for entry in trait.tags['condition_immunity']:
+                    character.add_condition_immunity(entry)
 
-        if 'bonus_hp_per_level' in trait.tags:
-            val = int(trait.tags['bonus_hp_per_level'][0])
-            character.stats['bonus_hp_per_level'] += val
+            if 'sense_darkvision' in trait.tags:
+                val = int(trait.tags['sense_darkvision'][0])
+                character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
 
-        if 'random_language' in trait.tags:
-            num_extra_languages = trait.tags['random_language'][0]
-            language_options = set(LANGUAGES)
-            for language in character.languages:
-                language_options.remove(language)
-            language_choices = rnd_instance.sample(language_options, num_extra_languages)
-            for language in language_choices:
-                character.add_language(language)
+            if 'bonus_hp_per_level' in trait.tags:
+                val = int(trait.tags['bonus_hp_per_level'][0])
+                character.stats['bonus_hp_per_level'] += val
 
+            if 'random_language' in trait.tags:
+                num_extra_languages = trait.tags['random_language'][0]
+                language_options = set(LANGUAGES)
+                for language in character.languages:
+                    language_options.remove(language)
+                language_choices = rnd_instance.sample(language_options, num_extra_languages)
+                for language in language_choices:
+                    character.add_language(language)
+
+            if 'random_subtraits' in trait.tags:
+                # If the first val is an int, then that's how many subtraits to give
+                # If it's not, assume we need only one
+                try:
+                    num_subtraits = int(trait.tags['random_subtraits'][0])
+                    trait_options = trait.tags['random_subtraits'][1:]
+                except ValueError:
+                    num_subtraits = 1
+                    trait_options = trait.tags['random_subtraits'][:]
+                assert num_subtraits <= len(trait_options), \
+                    "Trait {} doesn't have enough subtrait options!!".format(trait_name)
+                trait_choices = rnd_instance.sample(trait_options, num_subtraits)
+                # We're going to call this function again to give this trait to the character, but without processing
+                # the tags, hopefully ensuring things end up in the right order
+                self.give_trait(character, trait_name, rnd_instance=rnd_instance, process_tags=False)
+                for trait_choice in trait_choices:
+                    self.give_trait(character, trait_choice, rnd_instance=rnd_instance,process_tags=True)
+                give_trait = False
 
         # happens at end because some traits might not actually get added
-        character.traits[trait_name] = trait
+        # All traits get added to the character's dictionary, and non-hidden ones get added to the order attributes
+        # Complicated, but this will maintain trait order which can be important for traits with subtraits
+        if give_trait:
+            character.traits[trait_name] = trait
+            if trait.trait_type == 'passive':
+                character.trait_order_passive.append(trait_name)
+            elif trait.trait_type == 'action':
+                character.trait_order_action.append(trait_name)
 
     def give_armor(self, character, armor_name):
         armor = self.armors[armor_name]
@@ -1152,8 +1191,6 @@ class NPCGenerator:
         return True
 
 
-
-
 class Character:
     def __init__(self):
         self.seed = None
@@ -1190,6 +1227,11 @@ class Character:
         self.has_shield = False
 
         self.traits = {}
+
+        # Just for maintaining consistent trait order
+        self.trait_order_passive = []
+        self.trait_order_action = []
+        self.traits_order_reaction = []
 
         self.damage_vulnerabilities = []
         self.damage_resistances = []
@@ -1589,90 +1631,6 @@ class Character:
         self.chosen_armor = rnd_instance.choice(valid_choices)
         self.extra_armors = valid_extras
 
-    # def display(self):
-    #     """
-    #     Don't use, stick to the statblock display from now on
-    #     """
-    #     outstring = ''
-    #     # Race and Class
-    #     outstring += '{} {}\n'.format(self.race_name, self.class_name)
-    #     # Armor
-    #     outstring += 'AC: ' + self.chosen_armor.sheet_display(self)
-    #     if self.extra_armors:
-    #         for armor in self.extra_armors:
-    #             outstring += ', ' + armor.sheet_display(self)
-    #     outstring += '\n'
-    #
-    #     # HP
-    #     outstring += 'Hit Points: {}({}d{}{})\n' \
-    #         .format(self.get_stat('hit_points'), self.get_stat('hit_dice_num'),
-    #                 self.get_stat('hit_dice_size'),
-    #                 num_plusser(self.get_stat('hit_dice_num') * self.get_stat('con_mod'))
-    #                 )
-    #     # Size
-    #     outstring += 'Size: {}\n'.format(self.get_stat('size'))
-    #     # Speed
-    #     outstring += 'Speed: {}ft.'.format(self.get_stat('speed_walk_final'))
-    #     if self.get_stat('speed_fly_final') > 0:
-    #         outstring += ', fly {}ft.'.format(self.get_stat('speed_fly_final'))
-    #     if self.get_stat('speed_swim_final') > 0:
-    #         outstring += ', swim {}ft.'.format(self.get_stat('speed_swim_final'))
-    #     if self.get_stat('speed_burrow_final') > 0:
-    #         outstring += ', burrow {}ft.'.format(self.get_stat('speed_burrow_final'))
-    #     outstring += '\n'
-    #     # Proficiency
-    #     outstring += 'Proficiency: +{}\n'.format(self.get_stat('proficiency'))
-    #     # Attributes
-    #     for attr in STATS_ATTRIBUTES:
-    #         outstring += '{} {}({}) '.format(attr.upper(), self.get_stat(attr),
-    #                                          '{0:+d}'.format(self.get_stat(attr + '_mod')))
-    #     outstring += '\n'
-    #     # Saves
-    #     if len(self.saves) > 0:
-    #         outstring += 'Saves: '
-    #         # A little more complicated, but this will put saves in the same order as attributes
-    #         saves_list = []
-    #         for attribute in STATS_ATTRIBUTES:
-    #             if attribute in self.saves:
-    #                 save_val = self.stats[attribute + '_mod'] + self.stats['proficiency']
-    #                 val_str = num_plusser(save_val)
-    #                 saves_list.append(ATTRIBUTES_ABBREVIATION_TO_FULL_WORD[attribute] + ' ' + val_str)
-    #         outstring += ', '.join(saves_list) + '\n'
-    #
-    #     # Skills
-    #     if len(self.skills) > 0:
-    #         outstring += 'Skills: '
-    #         skills_list = []
-    #         for skill in SKILLS_ORDERED:
-    #             if skill in self.skills:
-    #                 skill_attribute = SKILLS[skill]
-    #                 skill_val = self.stats[skill_attribute + '_mod'] + self.stats['proficiency']
-    #                 # check for expertise
-    #                 if self.skills[skill]:
-    #                     skill_val += self.stats['proficiency']
-    #                 if skill_val >= 0:
-    #                     val_str = ' +' + str(skill_val)
-    #                 else:
-    #                     val_str = ' ' + str(skill_val)
-    #                 skills_list.append(skill.capitalize() + val_str)
-    #         outstring += ', '.join(skills_list) + '\n'
-    #     # CR
-    #     # Languages
-    #     # Traits
-    #     for trait_name in self.traits:
-    #         trait = self.traits[trait_name]
-    #         if trait.trait_type == 'hidden':
-    #             continue
-    #         trait_string = trait.plain_text(self) + "\n"
-    #         outstring += trait_string
-    #     # Spellcasting
-    #     if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-    #         outstring += self.spell_casting_ability.plain_text(self) + '\n'
-    #     # Attacks
-    #     for weaponName, weaponObj in self.weapons.items():
-    #         outstring += weaponObj.sheet_display(self) + '\n'
-    #     return outstring
-
     def build_stat_block(self):
         sb = StatBlock()
 
@@ -1763,21 +1721,32 @@ class Character:
         if self.damage_vulnerabilities:
             sb.damage_vulnerabilities = ', '.join(sorted(self.damage_vulnerabilities))
         if self.damage_immunities:
-           sb.damage_immunities = ', '.join(sorted(self.damage_immunities))
+            sb.damage_immunities = ', '.join(sorted(self.damage_immunities))
         if self.damage_resistances:
-          sb.damage_resistances = ', '.join(sorted(self.damage_resistances))
+            sb.damage_resistances = ', '.join(sorted(self.damage_resistances))
         if self.condition_immunities:
-          sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
+            sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
-        passives_list = []
-        for trait_int_name, trait_obj in self.traits.items():
-            assert isinstance(trait_obj, Trait)
-            if trait_obj.trait_type != 'passive':
-                continue
-            passives_list.append((trait_obj.display_name, trait_obj.display(self, include_title=False)))
+        # passives_list = []
+        # for trait_int_name, trait_obj in self.traits.items():
+        #     assert isinstance(trait_obj, Trait)
+        #     if trait_obj.trait_type != 'passive':
+        #         continue
+        #     passives_list.append((trait_obj.display_name, trait_obj.display(self, include_title=False)))
+        # if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
+        #     passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_title=False)))
+        # sb.passive_traits = passives_list
+
+        passive_traits = []
+        for passive_trait_name in self.trait_order_passive:
+            trait_obj = self.traits[passive_trait_name]
+            passive_traits.append((trait_obj.display_name, trait_obj.display(self, include_title=False)))
+        sb.passive_traits = passive_traits
+
+        spellcasting_traits = []
         if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-            passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_title=False)))
-        sb.passive_traits = passives_list
+            spellcasting_traits.append(('Spellcasting', self.spell_casting_ability.display(self, show_title=False)))
+        sb.spellcasting_traits = spellcasting_traits
 
         if self.get_stat('attacks_per_round') > 1:
             sb.multiattack = 'This creatures makes {} attacks when it uses the attack action.'\
@@ -1818,6 +1787,7 @@ class StatBlock:
         self.cr = ''
         self.languages = None
         self.passive_traits = []
+        self.spellcasting_traits = []
         self.multiattack = None
         self.attacks = []
         self.actions = []
@@ -1852,6 +1822,8 @@ class StatBlock:
             disp += 'Challenge: ' + self.cr + '\n'
         for trait in self.passive_traits:
             disp += trait[0] + '. ' + trait[1] + '\n'
+        for spellcasting_trait in self.spellcasting_traits:
+            disp += spellcasting_trait[0] + '. ' + spellcasting_trait[1] + '\n'
         if self.multiattack:
             disp += 'Multiattack. ' + self.multiattack + '\n'
         for attack in self.attacks:
