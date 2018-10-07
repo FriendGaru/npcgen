@@ -1,11 +1,14 @@
-internal_name,display_name,priority_attributes,saves,skills_fixed,skills_random,num_random_skills,loadout_pool,multiattack_type,spellcasting_profile,traits
-@CATEGORY,Warriors,,,,,,,,,
-soldier,,"str,con",con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,fighter,,
-monk,,"dex,wis","dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,,"martial_arts,monk_defense"
-@CATEGORY,Magic People,,,,,,,,,
-magicker,,"int,wis",int,arcana,"religion,insight,nature,history",2,mage,,wizard,
-helper_guy,Helper Guy,"wis,cha",cha,medicine,"acrobatics,persuasion",1,mage,,priest,
-lazy_wizard,Lazy Wizard,"int,cha",int,arcana,"religion,insight,nature,history",1,mage,,lazy_wizard,
-@CATEGORY,Rogues,,,,,,,,,
-sneaker,,"dex,int","dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,,"medium_armor_master,expertise_single"
-weirdo,,"cha,con","cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,,,toughy
+internal_name,display_name,priority_attributes,hd_size,saves,skills_fixed,skills_random,num_random_skills,loadout_pool,multiattack_type,spellcasting_profile,traits
+@CATEGORY,Warriors,,,,,,,,,,
+@RANDOM,Random Warrior,,,,,,,,,,
+soldier,,"str,con",10,con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,fighter,,
+monk,,"dex,wis",10,"dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,,"martial_arts,monk_defense"
+,,,,,,,,,,,
+@CATEGORY,Magic People,,,,,,,,,,
+magicker,,"int,wis",6,int,arcana,"religion,insight,nature,history",2,mage,,wizard,
+helper_guy,Helper Guy,"wis,cha",6,cha,medicine,"acrobatics,persuasion",1,mage,,priest,
+lazy_wizard,Lazy Wizard,"int,cha",6,int,arcana,"religion,insight,nature,history",1,mage,,lazy_wizard,
+,,,,,,,,,,,
+@CATEGORY,Rogues,,,,,,,,,,
+sneaker,,"dex,int",8,"dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,,"medium_armor_master,expertise_single"
+weirdo,,"cha,con",8,"cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,,,toughy

@@ -7,6 +7,15 @@ For example, 'celestial_legacy' will become 'Celestial Legacy'
 Display names are allowed to duplicate other display names.
 
 
+Race/Class names and categories:
+NPCGenerator uses the order of races/classes in the csv file to determine the order they sohuld be shown to users.
+If an entry has '@CATEGORY' for an internal name, then that will be used to organize the following entries into a category.
+Most obviously it will be used for group headers in dropdown boxes.
+If an entry has '@RANDOM', that means that all the following entries will be added to a special random option.
+Display names for random options are arbitrary, but should be obvious
+When a new category starts, it will stop adding entries.
+
+
 Traits:
 'visibility' is used for determining when to show the trait in a stat block
 0 or undefined means the trait is ALWAYS shown as a statblock entry. It is crucial for the character.

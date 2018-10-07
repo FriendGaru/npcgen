@@ -31,8 +31,8 @@ STATS_BASE = {
     'proficiency_extra': 0,
     'speed_walk': 30, 'speed_fly': 0, 'speed_burrow': 0, 'speed_swim': 0,
     # These are used for various trait implementations
-    'bonus_hp_per_level': 0, 
-    'heavy_armor_move_penalty': -10, 'speed_bonus_universal': 0,
+    'bonus_hp_per_level': 0,
+    'speed_bonus_universal': 0,
 }
 
 # STATS_DERIVED = (
@@ -176,6 +176,7 @@ LANGUAGES = (
     'abyssal', 'celestial', 'draconic', 'deep speech', 'infernal', 'primordial', 'sylvan', 'undercommon',
 )
 
+HEAVY_ARMOR_MOVE_PENALTY = -10
 
 WEAPON_REACH_NORMAL = 'reach 5 ft.'
 WEAPON_REACH_W_BONUS = 'reach 10 ft.'
@@ -483,15 +484,19 @@ class NPCGenerator:
         self.race_templates = {}
         self.race_options = []  # For the HTML drop down boxes, includes categories for sorting
         self.race_keys = []  # For random choices, doesn't include categories
+        self.race_random_categories = {}
         self.build_race_templates_from_csv(race_templates_file_loc)
 
         self.class_templates = {}
         self.class_options = []  # For the HTML drop down boxes, includes categories for sorting
         self.class_keys = []  # For random choices, doesn't include categories
+        self.class_random_categories = {}
         self.build_class_templates_from_csv(class_templates_file_loc)
 
         self.roll_options = ROLL_METHODS_OPTIONS
         self.roll_keys = list(ROLL_METHODS.keys())
+
+        self.hd_size_options = tuple(itertools.chain(['Default'], VALID_HD_SIZES))
 
     def build_armors_from_csv(self, armors_file_loc):
         with open(armors_file_loc, newline='', encoding="utf-8") as armors_file:
@@ -560,7 +565,12 @@ class NPCGenerator:
                     else:
                         new_trait.display_name = line['internal_name'].replace('_', ' ').title()
                     new_trait.trait_type = line['trait_type']
+
                     new_trait.text = line['text'].replace('\\n', '\n\t')
+                    if line['text_short']:
+                        new_trait.text_short = line['text_short'].replace('\\n', '\n\t')
+                    else:
+                        new_trait.text_short = new_trait.text
 
                     if line['tags']:
                         new_tags_dict = {}
@@ -772,14 +782,29 @@ class NPCGenerator:
     def build_race_templates_from_csv(self, race_templates_file_loc):
         with open(race_templates_file_loc, newline='', encoding="utf-8") as race_templates_file:
             race_templates_file_reader = csv.DictReader(race_templates_file)
+
+            current_category = ''
+            add_random_entries = False
             for line in race_templates_file_reader:
 
                 # Ignore blank lines or comments using hashtags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
+
+                # For building random categories automatically
                 elif line['internal_name'] == '@CATEGORY':
                     self.race_options.append(('@CATEGORY', line['display_name']))
+                    current_category = line['display_name'].lower().replace(' ', '_')
+                    add_random_entries = False
                     continue
+                elif line['internal_name'] == '@RANDOM':
+                    self.race_options.append(('random_' + current_category, line['display_name']))
+                    self.race_random_categories['random_' + current_category] = []
+                    self.race_keys.append('random_' + current_category)
+                    add_random_entries = True
+                    continue
+                elif add_random_entries:
+                    self.race_random_categories['random_' + current_category].append(line['internal_name'])
 
                 try:
                     new_race_template = RaceTemplate()
@@ -822,7 +847,7 @@ class NPCGenerator:
 
                     self.race_options.append((new_race_template.int_name, new_race_template.display_name))
                     self.race_templates[new_race_template.int_name] = new_race_template
-                    self.race_keys = list(self.race_templates.keys())
+                    self.race_keys.append(new_race_template.int_name)
 
                 except ValueError:
                     print("Error processing race template {}".format(line['internal_name']))
@@ -830,14 +855,29 @@ class NPCGenerator:
     def build_class_templates_from_csv(self, class_templates_file_loc):
         with open(class_templates_file_loc, newline='', encoding="utf-8") as class_templates_file:
             class_templates_file_reader = csv.DictReader(class_templates_file)
+
+            current_category = ''
+            add_random_entries = False
             for line in class_templates_file_reader:
 
                 # Ignore blank lines or comments using hashtags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
+
+                # For building random categories automatically
                 elif line['internal_name'] == '@CATEGORY':
                     self.class_options.append(('@CATEGORY', line['display_name']))
+                    current_category = line['display_name'].lower().replace(' ', '_')
+                    add_random_entries = False
                     continue
+                elif line['internal_name'] == '@RANDOM':
+                    self.class_options.append(('random_' + current_category, line['display_name']))
+                    self.class_random_categories['random_' + current_category] = []
+                    self.class_keys.append('random_' + current_category)
+                    add_random_entries = True
+                    continue
+                elif add_random_entries:
+                    self.class_random_categories['random_' + current_category].append(line['internal_name'])
 
                 try:
                     new_class_template = ClassTemplate()
@@ -849,6 +889,8 @@ class NPCGenerator:
                         new_class_template.display_name = line['internal_name'].capitalize()
 
                     new_class_template.priority_attributes = line['priority_attributes'].replace(" ", "").split(',')
+                    new_class_template.hd_size = int(line['hd_size'])
+
                     new_class_template.saves = line['saves'].replace(" ", "").split(',')
                     new_class_template.skills_fixed = line['skills_fixed'].replace(" ", "").split(',')
                     new_class_template.skills_random = line['skills_random'].replace(" ", "").split(',')
@@ -871,7 +913,7 @@ class NPCGenerator:
 
                     self.class_options.append((new_class_template.int_name, new_class_template.display_name))
                     self.class_templates[new_class_template.int_name] = new_class_template
-                    self.class_keys = list(self.class_templates.keys())
+                    self.class_keys.append(new_class_template.int_name)
 
                 except ValueError:
                     print("Error processing class template {}.".format(line['internal_name']))
@@ -897,7 +939,8 @@ class NPCGenerator:
         # trait.tags = {tag_name: [tag_val_1, tag_val_2, ...], ...}
         # each tag ALWAYS has a list associated with it even if it's for a single value
 
-        # Some tags might have tags that implicitly require that the trait should not be given to the character
+        # Some tags might implicitly require that the trait should not be given to the character
+        # Traits that give other traits, for example
         # They can set this flag to false to block the giving at the end
         give_trait = True
 
@@ -909,6 +952,10 @@ class NPCGenerator:
             if 'give_weapon' in trait.tags:
                 for weapon in trait.tags['give_weapon']:
                     self.give_weapon(character, weapon)
+
+            if 'give_tag' in trait.tags:
+                for character_tag in trait.tags['give_tag']:
+                    character.add_tag(character_tag)
 
             if 'skill_proficiency' in trait.tags:
                 for skill in trait.tags['skill_proficiency']:
@@ -1076,7 +1123,7 @@ class NPCGenerator:
                       allow_swapping=True, force_optimize=False,
                       # fixed_rolls=(),
                       class_template_name=DEFAULT_CLASS, race_template_name=DEFAULT_RACE,
-                      hit_dice_num=DEFAULT_HIT_DICE_NUM, hit_dice_size=DEFAULT_HIT_DICE_SIZE,
+                      hit_dice_num=DEFAULT_HIT_DICE_NUM, hit_dice_size=None,
                       bonus_hd=0,
                       give_asi=True,
                       seed=None):
@@ -1088,13 +1135,21 @@ class NPCGenerator:
                     .format(race_template_name, class_template_name, hit_dice_num, hit_dice_size, bonus_hd,
                             seed, attribute_roll_method), 1)
 
+        rnd_instance = random.Random(seed + 'random_race')
+        if race_template_name in self.race_random_categories:
+            race_template_name = rnd_instance.choice(self.race_random_categories[race_template_name])
+
+        rnd_instance = random.Random(seed + 'random_class')
+        if class_template_name in self.class_random_categories:
+            class_template_name = rnd_instance.choice(self.class_random_categories[class_template_name])
+
         # Sanity checks, better to just return a default guy than risk crashing
         if not 1 <= hit_dice_num <= 20:
             debug_print('Invalid HD_NUM received: {}'.format(hit_dice_num))
             hit_dice_num = DEFAULT_HIT_DICE_SIZE
-        if hit_dice_size not in VALID_HD_SIZES:
-            debug_print('Invalid HD_SIZE received: {}'.format(hit_dice_size))
-            hit_dice_size = DEFAULT_HIT_DICE_SIZE
+        # if hit_dice_size not in VALID_HD_SIZES:
+        #     debug_print('Invalid HD_SIZE received: {}'.format(hit_dice_size))
+        #     hit_dice_size = DEFAULT_HIT_DICE_SIZE
         if class_template_name not in self.class_keys:
             debug_print('Invalid class_template: {}'.format(class_template_name))
             class_template_name = DEFAULT_CLASS
@@ -1109,10 +1164,12 @@ class NPCGenerator:
 
         rnd_instance = random.Random(seed + 'race')
         race_template = self.race_templates[race_template_name]
+        assert isinstance(race_template, RaceTemplate), "new_character(): {} is not race template name"
         self.apply_race_template(new_character, race_template, rnd_instance=rnd_instance)
 
         rnd_instance = random.Random(seed + 'class')
         class_template = self.class_templates[class_template_name]
+        assert isinstance(class_template, ClassTemplate), "new_character(): {} is not class template name"
         self.apply_class_template(new_character, class_template, rnd_instance=rnd_instance)
 
         rnd_instance = random.Random(seed + 'attributes')
@@ -1132,7 +1189,12 @@ class NPCGenerator:
             new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
                                                 points_per_increase=ASI_POINTS_PER_INCREASE)
 
-        new_character.set_stat('hit_dice_size', hit_dice_size)
+        if hit_dice_size and hit_dice_size in VALID_HD_SIZES:
+            new_character.set_stat('hit_dice_size', hit_dice_size)
+        elif class_template.hd_size:
+            new_character.set_stat('hit_dice_size', class_template.hd_size)
+        else:
+            new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
         new_character.set_stat('hit_dice_num',  hit_dice_num)
         new_character.set_stat('hit_dice_extra', bonus_hd)
 
@@ -1212,6 +1274,11 @@ class Character:
         self.size = ''
 
         self.multiattack = None
+
+        # I don't like directly referencing traits, so I'm adding an intermediary step.
+        # Traits can give character tags, which in turn may be referenced by character logic
+        # Tags are not included in stat blocks at all
+        self.character_tags = {}
 
         # Skills are stored as a dictionary, if the value is true that means the character has expertise
         self.skills = set()
@@ -1418,7 +1485,7 @@ class Character:
         # Python lets us multiply bools by ints, so yay
         # This val should only be nonzero if a character is wearing heavy armor, doesn't have enough strength,
         # and hasn't has their penalty reduced, such as by the heavy_armor_training_trait
-        armor_move_penalty = (self.get_stat('heavy_armor_move_penalty') * self.chosen_armor.speed_penalty(self))
+        armor_move_penalty = self.chosen_armor.speed_penalty(self)
         
         # If the base move for any is zero, that means they don't have that ype of movement at all
         # Technically, I guess if speed is reduced below zero they should lose that movement, so let's do that too
@@ -1460,6 +1527,15 @@ class Character:
 
     def get_stat(self, stat):
         return self.stats[stat]
+
+    # Checks to see if a charcter has access to a given spell
+    # Mainly for mage armor and eldritch blast
+    # Could expand to include innate magice
+    def has_spell(self, spell_name):
+        if self.spell_casting_ability:
+            assert isinstance(self.spell_casting_ability, SpellCastingAbility)
+            return self.spell_casting_ability.has_spell(self, spell_name)
+        return False
 
     def set_stat(self, stat, value):
         self.stats[stat] = value
@@ -1567,6 +1643,9 @@ class Character:
         self.skills.add(skill)
         if expertise:
             self.skills_expertise.add(skill)
+
+    def add_tag(self, tag, tag_val=None):
+        self.character_tags[tag] = tag_val
             
     def add_damage_resistance(self, damage_resistance):
         if damage_resistance not in self.damage_resistances:
@@ -1631,7 +1710,7 @@ class Character:
         self.chosen_armor = rnd_instance.choice(valid_choices)
         self.extra_armors = valid_extras
 
-    def build_stat_block(self):
+    def build_stat_block(self, short_traits=True):
         sb = StatBlock()
 
         sb.name = '{} {}'.format(self.race_name, self.class_name)
@@ -1740,12 +1819,14 @@ class Character:
         passive_traits = []
         for passive_trait_name in self.trait_order_passive:
             trait_obj = self.traits[passive_trait_name]
-            passive_traits.append((trait_obj.display_name, trait_obj.display(self, include_title=False)))
+            passive_traits.append((trait_obj.display_name,
+                                   trait_obj.display(self, short=short_traits, include_title=False)))
         sb.passive_traits = passive_traits
 
         spellcasting_traits = []
         if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-            spellcasting_traits.append(('Spellcasting', self.spell_casting_ability.display(self, show_title=False)))
+            spellcasting_traits.append(('Spellcasting',
+                                        self.spell_casting_ability.display(self, short=short_traits, show_title=False)))
         sb.spellcasting_traits = spellcasting_traits
 
         if self.get_stat('attacks_per_round') > 1:
@@ -1845,6 +1926,7 @@ class Trait:
         self.display_name = display_name
         self.trait_type = trait_type
         self.text = text
+        self.text_short = ''
         if not tags:
             self.tags = {}
         else:
@@ -1853,12 +1935,16 @@ class Trait:
     def __str__(self):
         return '<{}:{},{},{},{}>'.format(self.int_name, self.display_name, self.trait_type, self.text, str(self.tags))
 
-    def display(self, owner, include_title=True):
+    def display(self, owner, short=True, include_title=True):
         if include_title:
             outstring = self.display_name + '. '
         else:
             outstring = ''
-        outstring += self.text.format(**owner.stats)
+
+        if short:
+            outstring += self.text_short.format(**owner.stats)
+        else:
+            outstring += self.text.format(**owner.stats)
         return outstring
 
 
@@ -1887,6 +1973,8 @@ class ClassTemplate:
         self.display_name = ''
 
         self.priority_attributes = []
+
+        self.hd_size = None
 
         self.skills_fixed = []
         self.num_random_skills = 0
@@ -1941,12 +2029,15 @@ class Armor:
     # This method returns true if a character should take a speed penalty
     # For dwarves or other characters who have heavy armor training, this will still return true,
     # but their penalty should have been reduced to zero, so it won't affect them
-    def speed_penalty(self, owner):
+    def speed_penalty(self, owner: Character):
 
-        if self.armor_type == 'heavy' and self.min_str < owner.get_stat('str'):
-            return True
+        if 'heavy_armor_penalty' in owner.character_tags:
+            return 0
+
+        if self.armor_type == 'heavy' and self.min_str > owner.get_stat('str'):
+            return HEAVY_ARMOR_MOVE_PENALTY
         else:
-            return False
+            return 0
 
     def stealth_penalty(self, owner):
 
@@ -2358,7 +2449,7 @@ class SpellCastingAbility:
                 return True
         return False
 
-    def display(self, owner, show_title=True):
+    def display(self, owner, short=True, show_title=True):
         caster_level = self.get_caster_level(owner)
         if caster_level == 0:
             return None
