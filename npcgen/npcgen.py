@@ -1330,7 +1330,7 @@ class NPCGenerator:
                     hd_size = int(request_dict['hit_dice_size'])
                     assert hd_size in VALID_HD_SIZES
                     clean_dict['hit_dice_size'] = request_dict['hit_dice_size']
-                except (ValueError, AssertionError):
+                except (ValueError, AssertionError, TypeError):
                     is_valid = False
         else:
             is_valid = False
