@@ -103,7 +103,7 @@ ROLL_METHODS = {
         (6, 3, 2, 2,),
         ()
     ),
-    'standard': (
+    'array_standard': (
         'Standard Array (15, 14, 13, 12, 10, 8)',
         (6, 3, 0, 0, ),
         (15, 14, 13, 12, 10, 8),
@@ -122,7 +122,7 @@ ROLL_METHODS_OPTIONS = (
     ('5d6dh2', 'Roll 5d6, drop the two highest',),
     ('7d6dl2dh2', 'Roll 7d6, drop the two lowest and the two highest', ),
     ('@CATEGORY', 'Fixed Arrays'),
-    ('standard', 'Standard Array (15, 14, 13, 12, 10, 8)', ),
+    ('array_standard', 'Standard Array (15, 14, 13, 12, 10, 8)', ),
 )
 
 DEFAULT_ROLL_METHOD = '3d6'
@@ -133,6 +133,7 @@ DEFAULT_HIT_DICE_SIZE = 8
 # Max hit dice a character can have for generating stats
 # Characters may still have bonus hd, which give extra hp but are not used for stat calculations
 HIT_DICE_NUM_CAP = 20
+
 VALID_HD_SIZES = (
     4, 6, 8, 10, 12
 )
@@ -479,17 +480,17 @@ class NPCGenerator:
         # Entries may have the internal name "@CATEGORY", which indicates it is not a valid option, but rather a sorting
         # category, such as for categories in an html drop down menu
         # ???_keys, on the other hand, contain ONLY valid options for new_character() parameters
-        # and can be used for easily grabbing valid random options
+        # and can be used for easily grabbing valid random options or for validating requests
 
         self.race_templates = {}
         self.race_options = []  # For the HTML drop down boxes, includes categories for sorting
-        self.race_keys = []  # For random choices, doesn't include categories
+        self.race_keys = []
         self.race_random_categories = {}
         self.build_race_templates_from_csv(race_templates_file_loc)
 
         self.class_templates = {}
         self.class_options = []  # For the HTML drop down boxes, includes categories for sorting
-        self.class_keys = []  # For random choices, doesn't include categories
+        self.class_keys = []
         self.class_random_categories = {}
         self.build_class_templates_from_csv(class_templates_file_loc)
 
@@ -579,8 +580,8 @@ class NPCGenerator:
                                 tag_name, tag_value = raw_tag.split(':')
                                 # NOTE if you want to give multiple of something like armor or resistances, you need to
                                 # use semicolons to separate them
-                                # Each tag for a trait will ALWAYS have a list associated with it, remember when doing trait
-                                # logic
+                                # Each tag for a trait will ALWAYS have a list associated with it,
+                                # remember when doing trait logic
                                 new_tags_dict[tag_name] = tag_value.split(';')
                             else:
                                 new_tags_dict[raw_tag] = None
@@ -909,7 +910,8 @@ class NPCGenerator:
                         new_class_template.traits = line['traits'].replace(" ", "").split(',')
 
                     if line['spellcasting_profile']:
-                        new_class_template.spell_casting_profile = self.spellcaster_profiles[line['spellcasting_profile']]
+                        new_class_template.spell_casting_profile = \
+                            self.spellcaster_profiles[line['spellcasting_profile']]
 
                     self.class_options.append((new_class_template.int_name, new_class_template.display_name))
                     self.class_templates[new_class_template.int_name] = new_class_template
@@ -1021,7 +1023,7 @@ class NPCGenerator:
                 # the tags, hopefully ensuring things end up in the right order
                 self.give_trait(character, trait_name, rnd_instance=rnd_instance, process_tags=False)
                 for trait_choice in trait_choices:
-                    self.give_trait(character, trait_choice, rnd_instance=rnd_instance,process_tags=True)
+                    self.give_trait(character, trait_choice, rnd_instance=rnd_instance, process_tags=True)
                 give_trait = False
 
         # happens at end because some traits might not actually get added
@@ -1042,10 +1044,10 @@ class NPCGenerator:
         weapon = self.weapons[weapon_name]
         character.weapons[weapon_name] = weapon
 
-    def apply_race_template(self, character: 'Character', race_template, apply_traits=True, rnd_instance=None):
+    def apply_race_template(self, character: 'Character', race_template, apply_traits=True, seed=None):
 
-        if not rnd_instance:
-            rnd_instance = random
+        if not seed:
+            seed = random_string(10)
 
         if type(race_template) == str:
             race_template = self.race_templates[race_template]
@@ -1067,12 +1069,12 @@ class NPCGenerator:
 
         if apply_traits:
             for trait in race_template.traits:
-                self.give_trait(character, trait)
+                self.give_trait(character, trait, rnd_instance=random.Random(seed + trait))
 
-    def apply_class_template(self, character: 'Character', class_template, apply_traits=True, rnd_instance=None):
+    def apply_class_template(self, character: 'Character', class_template, apply_traits=True, seed=None):
 
-        if not rnd_instance:
-            rnd_instance = random
+        if not seed:
+            seed = random_string(10)
 
         if type(class_template) == str:
             class_template = self.class_templates[class_template]
@@ -1085,7 +1087,8 @@ class NPCGenerator:
         for skill in class_template.skills_fixed:
                 character.add_skill(skill)
 
-        chosen_skills = rnd_instance.sample(class_template.skills_random, class_template.num_random_skills)
+        chosen_skills = random.Random(seed + 'skills').sample(class_template.skills_random,
+                                                              class_template.num_random_skills)
         for skill in chosen_skills:
             character.add_skill(skill)
 
@@ -1100,7 +1103,7 @@ class NPCGenerator:
 
         if class_template.loadout_pool:
             loadout_pool = self.loadout_pools[class_template.loadout_pool]
-            loadout = loadout_pool.get_random_loadout(rnd_instance)
+            loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'loadout'))
             if loadout.armors:
                 for armor in loadout.armors:
                     self.give_armor(character, armor)
@@ -1111,83 +1114,73 @@ class NPCGenerator:
 
         if class_template.spell_casting_profile:
             character.spell_casting_ability = \
-                class_template.spell_casting_profile.generate_spell_casting_ability(rnd_instance=rnd_instance)
+                class_template.spell_casting_profile.generate_spell_casting_ability(
+                    rnd_instance=random.Random(seed + 'spellcasting'))
 
         if apply_traits:
             for trait in class_template.traits:
-                self.give_trait(character, trait)
+                self.give_trait(character, trait, rnd_instance=random.Random(seed + trait))
 
     def new_character(self,
+                      seed=None,
+                      race_choice=DEFAULT_RACE,
+                      class_choice=DEFAULT_CLASS,
+                      hit_dice_num=DEFAULT_HIT_DICE_NUM,
                       attribute_roll_method=DEFAULT_ROLL_METHOD,
-                      rerolls_allowed=0, min_total=0,
-                      allow_swapping=True, force_optimize=False,
-                      # fixed_rolls=(),
-                      class_template_name=DEFAULT_CLASS, race_template_name=DEFAULT_RACE,
-                      hit_dice_num=DEFAULT_HIT_DICE_NUM, hit_dice_size=None,
+                      rerolls_allowed=0,
+                      min_total=0,
+                      no_attribute_swapping=False,
+                      force_optimize=False,
+                      hit_dice_size=None,
                       bonus_hd=0,
-                      give_asi=True,
-                      seed=None):
+                      no_asi=False,
+                      ):
 
         if not seed:
             seed = random_string(10)
 
         debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={}'
-                    .format(race_template_name, class_template_name, hit_dice_num, hit_dice_size, bonus_hd,
+                    .format(race_choice, class_choice, hit_dice_num, hit_dice_size, bonus_hd,
                             seed, attribute_roll_method), 1)
 
         rnd_instance = random.Random(seed + 'random_race')
-        if race_template_name in self.race_random_categories:
-            race_template_name = rnd_instance.choice(self.race_random_categories[race_template_name])
+        if race_choice in self.race_random_categories:
+            race_choice = rnd_instance.choice(self.race_random_categories[race_choice])
 
         rnd_instance = random.Random(seed + 'random_class')
-        if class_template_name in self.class_random_categories:
-            class_template_name = rnd_instance.choice(self.class_random_categories[class_template_name])
+        if class_choice in self.class_random_categories:
+            class_choice = rnd_instance.choice(self.class_random_categories[class_choice])
 
         # Sanity checks, better to just return a default guy than risk crashing
         if not 1 <= hit_dice_num <= 20:
             debug_print('Invalid HD_NUM received: {}'.format(hit_dice_num))
             hit_dice_num = DEFAULT_HIT_DICE_SIZE
-        # if hit_dice_size not in VALID_HD_SIZES:
-        #     debug_print('Invalid HD_SIZE received: {}'.format(hit_dice_size))
-        #     hit_dice_size = DEFAULT_HIT_DICE_SIZE
-        if class_template_name not in self.class_keys:
-            debug_print('Invalid class_template: {}'.format(class_template_name))
-            class_template_name = DEFAULT_CLASS
-        if race_template_name not in self.race_keys:
-            debug_print('Invalid race_template: {}'.format(race_template_name))
-            race_template_name = DEFAULT_RACE
+        if class_choice not in self.class_keys:
+            debug_print('Invalid class_template: {}'.format(class_choice))
+            class_choice = DEFAULT_CLASS
+        if race_choice not in self.race_keys:
+            debug_print('Invalid race_template: {}'.format(race_choice))
+            race_choice = DEFAULT_RACE
 
-
-        # rnd_instance = random.seed(seed)
         new_character = Character()
         new_character.seed = seed
 
-        rnd_instance = random.Random(seed + 'race')
-        race_template = self.race_templates[race_template_name]
-        assert isinstance(race_template, RaceTemplate), "new_character(): {} is not race template name"
-        self.apply_race_template(new_character, race_template, rnd_instance=rnd_instance)
+        race_template = self.race_templates[race_choice]
+        assert isinstance(race_template, RaceTemplate), "new_character(): {} is not race_choice template name"
+        self.apply_race_template(new_character, race_template, seed=seed)
 
-        rnd_instance = random.Random(seed + 'class')
-        class_template = self.class_templates[class_template_name]
+        class_template = self.class_templates[class_choice]
         assert isinstance(class_template, ClassTemplate), "new_character(): {} is not class template name"
-        self.apply_class_template(new_character, class_template, rnd_instance=rnd_instance)
+        self.apply_class_template(new_character, class_template, seed=seed)
 
         rnd_instance = random.Random(seed + 'attributes')
         attribute_roll_params = ROLL_METHODS[attribute_roll_method][1]
         attribute_roll_fixed_vals = ROLL_METHODS[attribute_roll_method][2]
         new_character.roll_attributes(*attribute_roll_params,
                                       rerolls_allowed=rerolls_allowed, min_total=min_total,
-                                      allow_swapping=allow_swapping, force_optimize=force_optimize,
+                                      no_attribute_swapping=no_attribute_swapping, force_optimize=force_optimize,
                                       fixed_rolls=attribute_roll_fixed_vals,
                                       rnd_instance=rnd_instance, )
-
-        rnd_instance = random.Random(seed + 'asi')
-        if give_asi:
-            new_character.generate_asi_progression(priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
-                                                   other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT,
-                                                   rnd_instance=rnd_instance)
-            new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
-                                                points_per_increase=ASI_POINTS_PER_INCREASE)
 
         if hit_dice_size and hit_dice_size in VALID_HD_SIZES:
             new_character.set_stat('hit_dice_size', hit_dice_size)
@@ -1197,6 +1190,14 @@ class NPCGenerator:
             new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
         new_character.set_stat('hit_dice_num',  hit_dice_num)
         new_character.set_stat('hit_dice_extra', bonus_hd)
+
+        rnd_instance = random.Random(seed + 'asi')
+        if not no_asi:
+            new_character.generate_asi_progression(priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
+                                                   other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT,
+                                                   rnd_instance=rnd_instance)
+            new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
+                                                points_per_increase=ASI_POINTS_PER_INCREASE)
 
         new_character.update_derived_stats()
 
@@ -1212,14 +1213,30 @@ class NPCGenerator:
         """
         Returns a list of tuples for potential race options: [(internal_name, display_name),...]
         """
-        if options_type == 'race':
+        if options_type == 'race_choice':
             return self.race_options
-        elif options_type == 'class':
+        elif options_type == 'class_choice':
             return self.class_options
-        elif options_type == 'roll':
+        elif options_type == 'attribute_roll_method':
             return self.roll_options
+        elif options_type == 'hit_dice_num':
+            return [(str(x), str(x)) for x in range(1, HIT_DICE_NUM_CAP)]
+        elif options_type == 'hit_dice_bonus':
+            return [(str(x), str(x)) for x in range(0, HIT_DICE_NUM_CAP)]
+        elif options_type == 'hit_dice_size':
+            return [(str(x), str(x)) for x in VALID_HD_SIZES]
         else:
             raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
+
+    def get_options_dict(self):
+        options_dict = {}
+        options_dict['race_options'] = self.get_options('race_choice')
+        options_dict['class_options'] = self.get_options('class_choice')
+        options_dict['attribute_roll_options'] = self.get_options('attribute_roll_method')
+        options_dict['hit_dice_num_options'] = self.get_options('hit_dice_num')
+        options_dict['hit_dice_bonus_options'] = self.get_options('hit_dice_bonus')
+        options_dict['hit_dice_size_options'] = self.get_options('hit_dice_size')
+        return options_dict
 
     def get_random_option(self, option_type):
         if option_type == 'race':
@@ -1232,7 +1249,7 @@ class NPCGenerator:
             raise ValueError("Invalid value type '{}' requested for random option.".format(option_type))
 
     def validate_params(self, class_choice=None, race_choice=None,
-                         hd=None, hd_size=None, roll_choice=None):
+                        hd=None, hd_size=None, roll_choice=None):
 
         if class_choice is not None:
             if class_choice not in self.class_keys:
@@ -1260,6 +1277,72 @@ class NPCGenerator:
                 return False
 
         return True
+
+    # This function takes in a dictionary intended for building a new npc
+    # It goes through and makes sure the dictionary is ready to go
+    # If there are any problems, it will return (False, {New Dictionary})
+    # If the dictionary is good to go, it will return (True, {New dictionary})
+    # If ANYTHING is amiss, including unneeded values, it will return false, so that the request can be made again
+    # with a nice, clean, minimal dictionary
+    # Can also be used to simply generate a random dictionary suitable for a new character request
+    def validate_request_dict(self, request_dict=None):
+        # A request NEEDS race, class, hd_num, and seed
+        # Everything else can go to default values
+
+        is_valid = True
+        clean_dict = {}
+
+        if 'race_choice' in request_dict.keys() and request_dict['race_choice'] in self.race_keys:
+            clean_dict['race_choice'] = request_dict['race_choice']
+        else:
+            is_valid = False
+            clean_dict['race_choice'] = self.get_random_option('race')
+
+        if 'class_choice' in request_dict.keys() and request_dict['class_choice'] in self.class_keys:
+            clean_dict['class_choice'] = request_dict['class_choice']
+        else:
+            is_valid = False
+            clean_dict['class_choice'] = self.get_random_option('class')
+
+        if 'hit_dice_num' in request_dict.keys():
+            try:
+                hd_num = int(request_dict['hit_dice_num'])
+                assert 1 <= hd_num <= 20
+                clean_dict['hit_dice_num'] = int(request_dict['hit_dice_num'])
+            except (ValueError, AssertionError):
+                is_valid = False
+                clean_dict['hit_dice_num'] = random.randint(1, 20)
+        else:
+            is_valid = False
+            clean_dict['hit_dice_num'] = random.randint(1, 20)
+
+        if 'seed' in request_dict.keys():
+            clean_dict['seed'] = request_dict['seed']
+        else:
+            is_valid = False
+            clean_dict['seed'] = random_string(10)
+
+        if 'hit_dice_size' in request_dict.keys():
+            if request_dict['hit_dice_size'] == 'Default':
+                clean_dict['hit_dice_size'] = request_dict['hit_dice_size']
+            else:
+                try:
+                    hd_size = int(request_dict['hit_dice_size'])
+                    assert hd_size in VALID_HD_SIZES
+                    clean_dict['hit_dice_size'] = request_dict['hit_dice_size']
+                except (ValueError, AssertionError):
+                    is_valid = False
+        else:
+            is_valid = False
+            clean_dict['hit_dice_size'] = 'Default'
+
+        if 'attribute_roll_method' in request_dict.keys() and request_dict['attribute_roll_method'] in self.roll_keys:
+            clean_dict['attribute_roll_method'] = request_dict['attribute_roll_method']
+        else:
+            is_valid = False
+            clean_dict['attribute_roll_method'] = DEFAULT_ROLL_METHOD
+
+        return is_valid, clean_dict
 
 
 class Character:
@@ -1322,9 +1405,9 @@ class Character:
 
     def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
-                        allow_swapping=True, force_optimize=False,
+                        no_attribute_swapping=True, force_optimize=False,
                         apply_attribute_bonuses=True,
-                        rnd_instance=None,):
+                        rnd_instance=None, ):
 
         if not rnd_instance:
             rnd_instance = random
@@ -1353,7 +1436,7 @@ class Character:
         debug_print(attribute_dict)
 
         # forcedOptimize means the highest attributes will ALWAYS be the
-        if allow_swapping:
+        if not no_attribute_swapping:
             finalized_attributes = set()
             for priorityAttribute in self.priority_attributes:
                 swap_options = set(STATS_ATTRIBUTES)
@@ -1428,6 +1511,7 @@ class Character:
                               hd_per_increase=ASI_HD_PER_INCREASE,
                               points_per_increase=ASI_POINTS_PER_INCREASE,
                               asi_attribute_cap=ASI_DEFAULT_ATTRIBUTE_CAP):
+
         if not asi_progression:
             asi_progression = self.asi_progression[:]
 
@@ -1441,7 +1525,7 @@ class Character:
             if self.get_stat(attribute_choice) < asi_attribute_cap:
                 debug_print('{}: {} -> {}'.format(attribute_choice,
                                                   str(self.get_stat(attribute_choice)),
-                                                  str(self.get_stat(attribute_choice) + 1), ), 3)
+                                                  str(self.get_stat(attribute_choice) + 1), ), 2)
                 self.set_stat(attribute_choice, self.get_stat(attribute_choice) + 1)
                 asi_points_remaining -= 1
 
@@ -2034,7 +2118,6 @@ class Armor:
 
         return total_ac
 
-
     # This method returns true if a character should take a speed penalty
     # For dwarves or other characters who have heavy armor training, this will still return true,
     # but their penalty should have been reduced to zero, so it won't affect them
@@ -2074,7 +2157,7 @@ class Attack:
         self.int_name = None
         self.display_name = None
 
-    def get_to_hit(self):
+    def get_to_hit(self, owner):
         pass
 
     def get_avg_dmg(self, owner):
@@ -2088,6 +2171,7 @@ class Attack:
 class Weapon(Attack):
     def __init__(self, int_name=None, display_name=None, dmg_dice_num=None, dmg_dice_size=None, damage_type=None,
                  attack_type=None, short_range=None, long_range=None, tags=None, num_targets=DEFAULT_NUM_TARGETS):
+        super().__init__()
         self.int_name = int_name
         self.display_name = display_name
         self.dmg_dice_num = dmg_dice_num
@@ -2158,7 +2242,7 @@ class Weapon(Attack):
         return int(avg_dmg), dmg_dice_num, dmg_dice_size, attack_stat, self.damage_type, avg_dmg
 
     def get_avg_dmg(self, owner):
-        return self.get_damage(use_versatile=True)[5]
+        return self.get_damage(owner, use_versatile=True)[5]
 
     def sheet_display(self, owner, include_name=True):
         outstring = ''
