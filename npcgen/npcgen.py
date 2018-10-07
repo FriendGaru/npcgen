@@ -1316,7 +1316,8 @@ class NPCGenerator:
             is_valid = False
             clean_dict['hit_dice_num'] = random.randint(1, 20)
 
-        if 'seed' in request_dict.keys():
+        if 'seed' in request_dict.keys()\
+                and type(request_dict['seed']) == str and len(type(request_dict['seed'])) > 0:
             clean_dict['seed'] = request_dict['seed']
         else:
             is_valid = False
