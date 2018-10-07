@@ -1309,7 +1309,7 @@ class NPCGenerator:
                 hd_num = int(request_dict['hit_dice_num'])
                 assert 1 <= hd_num <= 20
                 clean_dict['hit_dice_num'] = int(request_dict['hit_dice_num'])
-            except (ValueError, AssertionError):
+            except (ValueError, AssertionError, TypeError):
                 is_valid = False
                 clean_dict['hit_dice_num'] = random.randint(1, 20)
         else:
