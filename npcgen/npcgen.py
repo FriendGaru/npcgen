@@ -1232,7 +1232,7 @@ class NPCGenerator:
             raise ValueError("Invalid value type '{}' requested for random option.".format(option_type))
 
     def validate_params(self, class_choice=None, race_choice=None,
-                         hd=None, roll_choice=None):
+                         hd=None, hd_size=None, roll_choice=None):
 
         if class_choice is not None:
             if class_choice not in self.class_keys:
@@ -1245,6 +1245,15 @@ class NPCGenerator:
         if hd is not None:
             if int(hd) < 1 or int(hd) > 20:
                 return False
+
+        if hd_size is not None:
+            if hd_size != 'Default':
+                try:
+                    hd_size = int(hd_size)
+                    if hd_size not in self.hd_size_options:
+                        return False
+                except ValueError:
+                    return False
 
         if roll_choice is not None:
             if roll_choice not in self.roll_keys:
