@@ -1182,12 +1182,23 @@ class NPCGenerator:
                                       fixed_rolls=attribute_roll_fixed_vals,
                                       rnd_instance=rnd_instance, )
 
-        if hit_dice_size and hit_dice_size in VALID_HD_SIZES:
-            new_character.set_stat('hit_dice_size', hit_dice_size)
+        if hit_dice_size:
+            if hit_dice_size == 'Default' and class_template.hd_size:
+                new_character.set_stat('hit_dice_size', class_template.hd_size)
+            elif hit_dice_size == 'Default' and not class_template.hd_size:
+                new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
+            else:
+                try:
+                    hit_dice_size = int(hit_dice_size)
+                    assert hit_dice_size in VALID_HD_SIZES
+                    new_character.set_stat('hit_dice_size', hit_dice_size)
+                except (ValueError, AssertionError, TypeError):
+                    new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
         elif class_template.hd_size:
             new_character.set_stat('hit_dice_size', class_template.hd_size)
         else:
             new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
+
         new_character.set_stat('hit_dice_num',  hit_dice_num)
         new_character.set_stat('hit_dice_extra', bonus_hd)
 
@@ -1224,7 +1235,7 @@ class NPCGenerator:
         elif options_type == 'hit_dice_bonus':
             return [(str(x), str(x)) for x in range(0, HIT_DICE_NUM_CAP)]
         elif options_type == 'hit_dice_size':
-            return [(str(x), str(x)) for x in VALID_HD_SIZES]
+            return [(str(x), str(x)) for x in itertools.chain(['Default', ], VALID_HD_SIZES)]
         else:
             raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
 
