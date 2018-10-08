@@ -12,7 +12,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 1
+DEBUG_LEVEL = 3
 
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
@@ -31,8 +31,9 @@ STATS_BASE = {
     'proficiency_extra': 0,
     'speed_walk': 30, 'speed_fly': 0, 'speed_burrow': 0, 'speed_swim': 0,
     # These are used for various trait implementations
-    'bonus_hp_per_level': 0,
+    'bonus_hp_per_level': 0,  # Dwarf toughness
     'speed_bonus_universal': 0,
+    'floating_attribute_points': 0,
 }
 
 # STATS_DERIVED = (
@@ -961,7 +962,22 @@ class NPCGenerator:
 
             if 'skill_proficiency' in trait.tags:
                 for skill in trait.tags['skill_proficiency']:
-                    character.add_skill(skill)
+                    if skill not in character.skills:
+                        character.add_skill(skill)
+                    elif len(character.get_non_proficient_skills()) > 0:
+                        random_skill = rnd_instance.choice(character.get_non_proficient_skills())
+                        debug_print('Trait {}: {} already present, adding {} instead'
+                                    .format(trait_name, skill, random_skill))
+                        character.add_skill(random_skill)
+
+            if 'skill_random' in trait.tags:
+                num_random_skills = int(trait.tags['skill_random'][0])
+                for i in range(num_random_skills):
+                    if len(character.get_non_proficient_skills()) > 0:
+                        random_skill = rnd_instance.choice(character.get_non_proficient_skills())
+                        debug_print('Trait {}: giving random skill {}.'
+                                    .format(trait_name, random_skill))
+                        character.add_skill(random_skill)
 
             if 'expertise_random' in trait.tags:
                 num_expertise = int(trait.tags['expertise_random'][0])
@@ -997,6 +1013,10 @@ class NPCGenerator:
             if 'bonus_hp_per_level' in trait.tags:
                 val = int(trait.tags['bonus_hp_per_level'][0])
                 character.stats['bonus_hp_per_level'] += val
+
+            if 'floating_attribute_bonus' in trait.tags:
+                val = int(trait.tags['floating_attribute_bonus'][0])
+                character.stats['floating_attribute_points'] += val
 
             if 'random_language' in trait.tags:
                 num_extra_languages = trait.tags['random_language'][0]
@@ -1084,13 +1104,19 @@ class NPCGenerator:
         character.class_name = class_template.display_name
         character.priority_attributes = class_template.priority_attributes
 
-        for skill in class_template.skills_fixed:
-                character.add_skill(skill)
-
-        chosen_skills = random.Random(seed + 'skills').sample(class_template.skills_random,
+        rnd_instance = random.Random(seed + 'skills')
+        fixed_skills = class_template.skills_fixed
+        randomized_skills = rnd_instance.sample(class_template.skills_random,
                                                               class_template.num_random_skills)
-        for skill in chosen_skills:
-            character.add_skill(skill)
+        skills_to_add = itertools.chain(fixed_skills, randomized_skills)
+        for skill in skills_to_add:
+            if skill in character.skills and len(character.get_non_proficient_skills()) > 0:
+                replacement_skill = rnd_instance.choice(character.get_non_proficient_skills())
+                debug_print('Class {}: Already proficient in {}, adding {} instead.'
+                            .format(class_template.int_name, skill, replacement_skill))
+                character.add_skill(replacement_skill)
+            else:
+                character.add_skill(skill)
 
         for save in class_template.saves:
             character.saves.add(save)
@@ -1173,12 +1199,16 @@ class NPCGenerator:
         assert isinstance(class_template, ClassTemplate), "new_character(): {} is not class template name"
         self.apply_class_template(new_character, class_template, seed=seed)
 
+        # Note, for floating attributes bonuses like half-elves to apply, race traits need to be applied before
+        # Rolling attributes
         rnd_instance = random.Random(seed + 'attributes')
         attribute_roll_params = ROLL_METHODS[attribute_roll_method][1]
         attribute_roll_fixed_vals = ROLL_METHODS[attribute_roll_method][2]
         new_character.roll_attributes(*attribute_roll_params,
-                                      rerolls_allowed=rerolls_allowed, min_total=min_total,
-                                      no_attribute_swapping=no_attribute_swapping, force_optimize=force_optimize,
+                                      rerolls_allowed=rerolls_allowed,
+                                      min_total=min_total,
+                                      no_attribute_swapping=no_attribute_swapping,
+                                      force_optimize=force_optimize,
                                       fixed_rolls=attribute_roll_fixed_vals,
                                       rnd_instance=rnd_instance, )
 
@@ -1417,8 +1447,9 @@ class Character:
 
     def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
-                        no_attribute_swapping=True, force_optimize=False,
-                        apply_attribute_bonuses=True,
+                        no_attribute_swapping=False,
+                        force_optimize=False,
+                        no_racial_bonus=False,
                         rnd_instance=None, ):
 
         if not rnd_instance:
@@ -1445,7 +1476,7 @@ class Character:
         rnd_instance.shuffle(rolls)
         for attribute in STATS_ATTRIBUTES:
             attribute_dict[attribute] = rolls.pop()
-        debug_print(attribute_dict)
+        debug_print('Starting attribute rolls: {}'.format(attribute_dict), 3)
 
         # forcedOptimize means the highest attributes will ALWAYS be the
         if not no_attribute_swapping:
@@ -1456,19 +1487,53 @@ class Character:
                 swap_options -= finalized_attributes
                 if not force_optimize:
                     swap_options -= set(self.priority_attributes)
-                debug_print(swap_options, 2)
                 highest_val = max(*[attribute_dict[x] for x in swap_options], attribute_dict[priorityAttribute])
                 if highest_val > attribute_dict[priorityAttribute]:
                     valid_swaps = ([k for k, v in attribute_dict.items() if k in swap_options and v == highest_val])
                     swap_choice = rnd_instance.choice(valid_swaps)
                     attribute_dict[priorityAttribute], attribute_dict[swap_choice] = \
                         attribute_dict[swap_choice], attribute_dict[priorityAttribute]
-                    debug_print('Swapped: ' + priorityAttribute + ', ' + swap_choice, 2)
+                    debug_print('Attribute swap: ' + priorityAttribute + ', ' + swap_choice, 3)
                 finalized_attributes.add(priorityAttribute)
 
-        if apply_attribute_bonuses:
+        if not no_racial_bonus:
             for attribute, bonus in self.attribute_bonuses.items():
+                debug_print("Racial attribute bonus: {} {} -> {}"
+                            .format(attribute, attribute_dict[attribute], attribute_dict[attribute] + bonus ), 3)
                 attribute_dict[attribute] += bonus
+
+        # Floating attribute bonuses, such as half-elves
+        # Fortunately, those bonuses only ever apply +1, so we can keep this on the simple side
+        floating_points = self.get_stat('floating_attribute_points')
+        # Can't stack them with other racial bonuses
+        floating_options = set(STATS_ATTRIBUTES[:])
+        floating_preference = self.priority_attributes[:]
+        for attribute, bonus in self.attribute_bonuses.items():
+            if bonus > 0:
+                floating_options.remove(attribute)
+        while floating_points > 0:
+            if len(floating_preference) > 0:
+                next_attribute_choice = floating_preference.pop(0)
+                if next_attribute_choice in floating_options:
+                    debug_print('Floating attribute bonus: {} {} -> {}'
+                                .format(next_attribute_choice, attribute_dict[next_attribute_choice],
+                                        attribute_dict[next_attribute_choice] + 1))
+                    attribute_dict[next_attribute_choice] += 1
+                    floating_points -= 1
+                    floating_options.remove(next_attribute_choice)
+                    continue
+            elif len(floating_options) > 0:
+                next_attribute_choice = rnd_instance.choice(list(floating_options))
+                debug_print('Floating attribute bonus: {} {} -> {}'
+                            .format(next_attribute_choice, attribute_dict[next_attribute_choice],
+                                    attribute_dict[next_attribute_choice] + 1))
+                attribute_dict[next_attribute_choice] += 1
+                floating_points -= 1
+                floating_options.remove(next_attribute_choice)
+                continue
+            else:
+                break
+
 
         # Set stats
         for attribute, val in attribute_dict.items():
@@ -1535,9 +1600,9 @@ class Character:
 
             attribute_choice = asi_progression.pop(0)
             if self.get_stat(attribute_choice) < asi_attribute_cap:
-                debug_print('{}: {} -> {}'.format(attribute_choice,
-                                                  str(self.get_stat(attribute_choice)),
-                                                  str(self.get_stat(attribute_choice) + 1), ), 2)
+                debug_print('ASI {}: {} -> {}'.format(attribute_choice,
+                                                      str(self.get_stat(attribute_choice)),
+                                                      str(self.get_stat(attribute_choice) + 1), ), 2)
                 self.set_stat(attribute_choice, self.get_stat(attribute_choice) + 1)
                 asi_points_remaining -= 1
 
@@ -1748,6 +1813,12 @@ class Character:
         self.skills.add(skill)
         if expertise:
             self.skills_expertise.add(skill)
+
+    def get_non_proficient_skills(self):
+        out_skills = set(SKILLS.keys())
+        for prof_skill in self.skills:
+            out_skills.remove(prof_skill)
+        return list(out_skills)
 
     def add_tag(self, tag, tag_val=None):
         self.character_tags[tag] = tag_val

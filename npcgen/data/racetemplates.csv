@@ -3,7 +3,8 @@ internal_name,display_name,attribute_bonuses,speeds,creature_type,size,languages
 humanoid,Humanoid (Any),,,,,common,
 ,,,,,,,
 @CATEGORY,Humans,,,,,,
-human,,"str:1,dex:1,con:1,int:1,wis:1,cha:1",,,,common,
+human,,"str:1,dex:1,con:1,int:1,wis:1,cha:1",,,,common,extra_language
+human_variant,Variant Human,,,,,common,"extra_language,floating_attribute_bonus_double,extra_skill"
 ,,,,,,,
 @CATEGORY,Halflings,,,,,,
 @RANDOM,Random Halfling,,,,,,
