@@ -34,6 +34,7 @@ STATS_BASE = {
     'bonus_hp_per_level': 0,  # Dwarf toughness
     'speed_bonus_universal': 0,
     'floating_attribute_points': 0,
+    'breath_weapon_dice': 2,  # For dragonborn breath weapons
 }
 
 # STATS_DERIVED = (
@@ -180,8 +181,8 @@ LANGUAGES = (
 
 HEAVY_ARMOR_MOVE_PENALTY = -10
 
-WEAPON_REACH_NORMAL = 'reach 5 ft.'
-WEAPON_REACH_W_BONUS = 'reach 10 ft.'
+WEAPON_REACH_NORMAL = 5
+WEAPON_REACH_W_BONUS = 10
 DEFAULT_NUM_TARGETS = 1
 
 
@@ -566,7 +567,13 @@ class NPCGenerator:
                         new_trait.display_name = line['display_name']
                     else:
                         new_trait.display_name = line['internal_name'].replace('_', ' ').title()
+
                     new_trait.trait_type = line['trait_type']
+
+                    if line['visibility']:
+                        new_trait.visibility = int(line['visibility'])
+                    else:
+                        new_trait.visibility = 0
 
                     new_trait.text = line['text'].replace('\\n', '\n\t')
                     if line['text_short']:
@@ -589,7 +596,7 @@ class NPCGenerator:
                         new_trait.tags = new_tags_dict
 
                     self.traits[new_trait.int_name] = new_trait
-                except ValueError:
+                except (ValueError, TypeError):
                     print("Error procession trait {}".format(line['internal_name']))
 
     def build_loadout_pools_from_csv(self, loadout_pools_file_loc):
@@ -1056,9 +1063,12 @@ class NPCGenerator:
             elif trait.trait_type == 'action':
                 character.trait_order_action.append(trait_name)
 
-    def give_armor(self, character, armor_name):
+    def give_armor(self, character, armor_name, extra=False):
         armor = self.armors[armor_name]
-        character.armors[armor_name] = armor
+        if extra:
+            character.extra_armors[armor_name] = armor
+        else:
+            character.armors[armor_name] = armor
 
     def give_weapon(self, character, weapon_name):
         weapon = self.weapons[weapon_name]
@@ -1243,8 +1253,13 @@ class NPCGenerator:
         new_character.update_derived_stats()
 
         rnd_instance = random.Random(seed + 'armor')
-        new_character.choose_armors(rnd_instance=rnd_instance)
+        self.give_armor(new_character, 'unarmored')
+        # Special case for mage armor, has to be given by the generator to get the reference
+        if new_character.has_spell('mage armor'):
+            self.give_armor(new_character, 'mage_armor', extra=True)
         # Remember, speeds have to come after armor selection
+        new_character.choose_armors(rnd_instance=rnd_instance)
+
         new_character.update_speeds()
 
         debug_print('Build success!', 1)
@@ -1423,7 +1438,7 @@ class Character:
         # This way they hopefully won't get any duplicate items
         self.armors = {}
         self.chosen_armor = None
-        self.extra_armors = []
+        self.extra_armors = {}
         self.weapons = {}
         self.has_shield = False
 
@@ -1650,6 +1665,17 @@ class Character:
         else:
             self.stats['attacks_per_round'] = 1
 
+        # Trait specific stuff
+        hit_dice_num = self.stats['hit_dice_num']
+        if hit_dice_num >= 16:
+            self.stats['breath_weapon_dice'] = 5
+        elif hit_dice_num >= 11:
+            self.stats['breath_weapon_dice'] = 4
+        elif hit_dice_num >= 6:
+            self.stats['breath_weapon_dice'] = 3
+        else:
+            self.stats['breath_weapon_dice'] = 2
+
     # Speed is partially dependent on armor, which is determined separately from derived stats
     def update_speeds(self):
         # Python lets us multiply bools by ints, so yay
@@ -1725,7 +1751,7 @@ class Character:
         assert type(self.chosen_armor) == Armor, "Can't get AC before setting armor!"
         best_ac = self.chosen_armor.get_ac(self)
         if self.extra_armors:
-            for extra_armor in self.extra_armors:
+            for extra_armor in self.extra_armors.values():
                 best_ac = max(best_ac, extra_armor.get_ac(self))
         return best_ac
 
@@ -1844,49 +1870,77 @@ class Character:
         if not rnd_instance:
             rnd_instance = random
 
-        all_armors = list(self.armors.values())
-        regular_armors = []
-        extra_armors = []
-        # Separate armors into regular and extras
-        for armor in all_armors:
-            if 'extra' in armor.tags:
-                extra_armors.append(armor)
-            else:
-                regular_armors.append(armor)
-        valid_choices = []
+        best_ac_armors = []
+        # First check for AC
         best_ac = 0
-        for armor in regular_armors:
-            armor_ac = armor.get_ac(self)
+        for armor_obj in self.armors.values():
+            armor_ac = armor_obj.get_ac(self)
             if armor_ac > best_ac:
-                valid_choices = [armor, ]
+                best_ac_armors = [armor_obj, ]
                 best_ac = armor_ac
             elif armor_ac == best_ac:
-                valid_choices.append(armor)
-        # Need to know the regular armor AC before determining if any extras are worthwhile
-        valid_extras = []
-        for armor in extra_armors:
-            armor_ac = armor.get_ac(self)
-            if armor_ac > best_ac:
-                valid_extras.append(armor)
-        if len(valid_extras) == 0:
-            valid_extras = None
-
-        # check for preferred armor
-        preferred_armor_found = False
-        for armor in valid_choices:
-            if 'preferred' in armor.tags:
-                preferred_armor_found = True
-        if preferred_armor_found:
-            new_valid_choices = []
-            for armor in valid_choices:
-                if 'preferred' in armor.tags:
-                    new_valid_choices.append(armor)
-            valid_choices = new_valid_choices
+                best_ac_armors.append(armor_obj)
+        # Next check type, 'none' > 'light' > 'medium' > 'heavy'
+        best_weight = ''
+        for armor_obj in best_ac_armors:
+            if best_weight == 'none' or armor_obj.armor_type == 'none':
+                best_weight = 'none'
+            elif best_weight == 'light' or armor_obj.armor_type == 'light':
+                best_weight = 'light'
+            elif best_weight == 'medium' or armor_obj.armor_type == 'medium':
+                best_weight = 'medium'
+            elif best_weight == 'heavy' or armor_obj.armor_type == 'heavy':
+                best_weight = 'heavy'
+        valid_choices = []
+        for armor_obj in best_ac_armors:
+            if armor_obj.armor_type == best_weight:
+                valid_choices.append(armor_obj)
 
         self.chosen_armor = rnd_instance.choice(valid_choices)
-        self.extra_armors = valid_extras
 
-    def build_stat_block(self, short_traits=True):
+        # all_armors = list(self.armors.values())
+        # regular_armors = []
+        # extra_armors = []
+        # # Separate armors into regular and extras
+        # for armor in all_armors:
+        #     if 'extra' in armor.tags:
+        #         extra_armors.append(armor)
+        #     else:
+        #         regular_armors.append(armor)
+        # valid_choices = []
+        # best_ac = 0
+        # for armor in regular_armors:
+        #     armor_ac = armor.get_ac(self)
+        #     if armor_ac > best_ac:
+        #         valid_choices = [armor, ]
+        #         best_ac = armor_ac
+        #     elif armor_ac == best_ac:
+        #         valid_choices.append(armor)
+        # # Need to know the regular armor AC before determining if any extras are worthwhile
+        # valid_extras = []
+        # for armor in extra_armors:
+        #     armor_ac = armor.get_ac(self)
+        #     if armor_ac > best_ac:
+        #         valid_extras.append(armor)
+        # if len(valid_extras) == 0:
+        #     valid_extras = None
+        #
+        # # check for preferred armor
+        # preferred_armor_found = False
+        # for armor in valid_choices:
+        #     if 'preferred' in armor.tags:
+        #         preferred_armor_found = True
+        # if preferred_armor_found:
+        #     new_valid_choices = []
+        #     for armor in valid_choices:
+        #         if 'preferred' in armor.tags:
+        #             new_valid_choices.append(armor)
+        #     valid_choices = new_valid_choices
+        #
+        # self.chosen_armor = rnd_instance.choice(valid_choices)
+        # self.extra_armors = valid_extras
+
+    def build_stat_block(self, short_traits=True, trait_visibility=1):
         sb = StatBlock()
 
         sb.name = '{} {}'.format(self.race_name, self.class_name)
@@ -1895,7 +1949,7 @@ class Character:
 
         acstring = self.chosen_armor.sheet_display(self)
         if self.extra_armors:
-            for armor in self.extra_armors:
+            for armor in self.extra_armors.values():
                 acstring += ', ' + armor.sheet_display(self)
         sb.armor = acstring
 
@@ -1982,27 +2036,20 @@ class Character:
         if self.condition_immunities:
             sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
-        # passives_list = []
-        # for trait_int_name, trait_obj in self.traits.items():
-        #     assert isinstance(trait_obj, Trait)
-        #     if trait_obj.trait_type != 'passive':
-        #         continue
-        #     passives_list.append((trait_obj.display_name, trait_obj.display(self, include_title=False)))
-        # if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-        #     passives_list.append(('Spellcasting', self.spell_casting_ability.display(self, show_title=False)))
-        # sb.passive_traits = passives_list
-
         passive_traits = []
         for passive_trait_name in self.trait_order_passive:
             trait_obj = self.traits[passive_trait_name]
-            passive_traits.append((trait_obj.display_name,
-                                   trait_obj.display(self, short=short_traits, include_title=False)))
+            assert isinstance(trait_obj, StatBlockFeature)
+            if trait_obj.get_visibility() <= trait_visibility:
+                passive_traits.append((trait_obj.get_title(self),
+                                       trait_obj.get_entry(self, short=short_traits)))
         sb.passive_traits = passive_traits
 
         spellcasting_traits = []
         if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-            spellcasting_traits.append(('Spellcasting',
-                                        self.spell_casting_ability.display(self, short=short_traits, show_title=False)))
+            assert isinstance(self.spell_casting_ability, StatBlockFeature)
+            spellcasting_traits.append((self.spell_casting_ability.get_title(self),
+                                        self.spell_casting_ability.get_entry(self, short=short_traits)))
         sb.spellcasting_traits = spellcasting_traits
 
         if self.get_stat('attacks_per_round') > 1:
@@ -2011,7 +2058,9 @@ class Character:
 
         attacks = []
         for weapon in self.weapons.values():
-            attacks.append((weapon.display_name, weapon.sheet_display(self, include_name=False)))
+            assert isinstance(weapon, StatBlockFeature)
+            attacks.append((weapon.get_title(self),
+                            weapon.get_entry(self, short=short_traits)))
         sb.attacks = attacks
 
         return sb
@@ -2096,13 +2145,32 @@ class StatBlock:
         return self.__dict__
 
 
-class Trait:
+class StatBlockFeature:
+    def __init__(self):
+        self.internal_name = ''
+        self.display_name = ''
+
+    def get_title(self, owner: Character):
+        return ''
+
+    def get_entry(self, owner: Character, short=True):
+        return ''
+
+    def get_category(self):
+        return ''
+
+    def get_visibility(self):
+        return 0
+
+
+class Trait(StatBlockFeature):
     def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
         self.int_name = int_name
         self.display_name = display_name
         self.trait_type = trait_type
         self.text = text
         self.text_short = ''
+        self.visibility = 0
         if not tags:
             self.tags = {}
         else:
@@ -2122,6 +2190,18 @@ class Trait:
         else:
             outstring += self.text.format(**owner.stats)
         return outstring
+
+    def get_title(self, owner=None):
+        return self.display_name
+
+    def get_entry(self, owner: Character, short=True):
+        return self.display(owner, short=short, include_title=False)
+
+    def get_category(self):
+        return self.trait_type
+
+    def get_visibility(self):
+        return self.visibility
 
 
 class RaceTemplate:
@@ -2177,6 +2257,9 @@ class Armor:
         self.stealth_disadvantage = False
         self.tags = set()
 
+    def __repr__(self):
+        return self.int_name
+
     def is_extra(self):
         return 'extra' in self.tags
 
@@ -2222,9 +2305,6 @@ class Armor:
 
         return self.stealth_disadvantage
 
-    def __repr__(self):
-        return self.int_name
-
     def sheet_display(self, owner):
         outstring = str(self.get_ac(owner)) + ' (' + self.display_name
         if owner.has_shield:
@@ -2235,10 +2315,9 @@ class Armor:
 
 # For CR calculations, an attack needs to give its to hit and average damage value
 # And it needs to be able to give a stat block entry when it comes time to render
-class Attack:
+class Attack(StatBlockFeature):
     def __init__(self):
-        self.int_name = None
-        self.display_name = None
+        super().__init__()
 
     def get_to_hit(self, owner):
         pass
@@ -2246,9 +2325,6 @@ class Attack:
     def get_avg_dmg(self, owner):
         avg_dmg = 1
         return avg_dmg
-
-    def sheet_display(self, owner, include_name=True):
-        pass
 
 
 class Weapon(Attack):
@@ -2327,52 +2403,104 @@ class Weapon(Attack):
     def get_avg_dmg(self, owner):
         return self.get_damage(owner, use_versatile=True)[5]
 
-    def sheet_display(self, owner, include_name=True):
-        outstring = ''
-        if include_name:
-            outstring += self.display_name + '. '
+    # def sheet_display(self, owner, include_name=True, short=True):
+    #     outstring = ''
+    #     if include_name:
+    #         outstring += self.display_name + '. '
+    #     is_melee = self.attack_type == 'melee'
+    #     is_ranged = self.attack_type == 'ranged' or 'thrown' in self.tags
+    #     if is_melee and is_ranged:
+    #         outstring += 'Melee or ranged weapon attack: '
+    #     elif is_melee:
+    #         outstring += 'Melee weapon attack: '
+    #     elif is_ranged:
+    #         outstring += 'Ranged weapon attack: '
+    #
+    #     to_hit = self.get_to_hit(owner)
+    #     outstring += num_plusser(to_hit) + ' to hit, '
+    #
+    #     if is_melee and is_ranged:
+    #         if 'reach' in self.tags:
+    #             outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_W_BONUS, self.range_short, self.range_long)
+    #         else:
+    #             outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_NORMAL, self.range_short, self.range_long)
+    #     elif is_melee:
+    #         if 'reach' in self.tags:
+    #             outstring += WEAPON_REACH_W_BONUS + ', '
+    #         else:
+    #             outstring += WEAPON_REACH_NORMAL + ', '
+    #     elif is_ranged:
+    #         outstring += 'range {}/{} ft., '.format(self.range_short, self.range_long)
+    #
+    #     if self.num_targets == 1:
+    #         outstring += 'one target. '
+    #     else:
+    #         outstring += NUM_TO_TEXT.get(self.num_targets) + ' targets. '
+    #     ##
+    #     avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = self.get_damage(owner)
+    #     outstring += 'Hit: {}({}d{} {}) {} damage'\
+    #         .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
+    #
+    #     # Check for versatile, which increases damage with two hands.
+    #     if is_melee and 'versatile' in self.tags:
+    #         avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = \
+    #             self.get_damage(owner, use_versatile=True)
+    #         outstring += ' or {}({}d{} {}) {} damage if used with two hands'\
+    #             .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
+    #     outstring += '.'
+    #     return outstring
+
+    def get_title(self, owner: Character):
+        return self.display_name
+
+    def get_category(self):
+        return 'attack'
+
+    def get_entry(self, owner: Character, short=True):
+        entry = ''
         is_melee = self.attack_type == 'melee'
-        is_ranged = self.attack_type == 'ranged' or 'thrown' in self.tags
+        is_ranged = (self.attack_type == 'ranged' or 'thrown' in self.tags)
         if is_melee and is_ranged:
-            outstring += 'Melee or ranged weapon attack: '
+            entry += 'Melee or ranged weapon attack: '
         elif is_melee:
-            outstring += 'Melee weapon attack: '
+            entry += 'Melee weapon attack: '
         elif is_ranged:
-            outstring += 'Ranged weapon attack: '
+            entry += 'Ranged weapon attack: '
 
-        to_hit = self.get_to_hit(owner)
-        outstring += num_plusser(to_hit) + ' to hit, '
+        entry += '{} to hit, '.format(num_plusser(self.get_to_hit(owner)))
+
+        if is_melee and 'reach' in self.tags:
+            weapon_reach = WEAPON_REACH_W_BONUS
+        else:
+            weapon_reach = WEAPON_REACH_NORMAL
 
         if is_melee and is_ranged:
-            if 'reach' in self.tags:
-                outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_W_BONUS, self.range_short, self.range_long)
-            else:
-                outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_NORMAL, self.range_short, self.range_long)
+            entry += 'reach {} ft. or range {}/{} ft., '.format(weapon_reach, self.range_short, self.range_long)
         elif is_melee:
-            if 'reach' in self.tags:
-                outstring += WEAPON_REACH_W_BONUS + ', '
-            else:
-                outstring += WEAPON_REACH_NORMAL + ', '
+            entry += 'reach {} ft, '.format(weapon_reach)
         elif is_ranged:
-            outstring += 'range {}/{} ft., '.format(self.range_short, self.range_long)
+            entry += 'range {}/{} ft., '.format(self.range_short, self.range_long)
 
         if self.num_targets == 1:
-            outstring += 'one target. '
+            entry += 'one target. '
         else:
-            outstring += NUM_TO_TEXT.get(self.num_targets) + ' targets. '
+            entry += NUM_TO_TEXT.get(self.num_targets) + ' targets. '
         ##
         avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = self.get_damage(owner)
-        outstring += 'Hit: {}({}d{} {}) {} damage'\
+        entry += 'Hit: {}({}d{} {}) {} damage' \
             .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
 
         # Check for versatile, which increases damage with two hands.
         if is_melee and 'versatile' in self.tags:
             avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = \
                 self.get_damage(owner, use_versatile=True)
-            outstring += ' or {}({}d{} {}) {} damage if used with two hands'\
+            entry += ' or {}({}d{} {}) {} damage if used with two hands' \
                 .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
-        outstring += '.'
-        return outstring
+        entry += '.'
+        return entry
+
+    def get_visibility(self):
+        return 0
 
 
 class Spell:
@@ -2526,7 +2654,7 @@ class SpellCasterProfile:
         return new_spell_casting_ability
 
 
-class SpellCastingAbility:
+class SpellCastingAbility(StatBlockFeature):
     """
     SpellcastingAbility is the personalized ability that gets assigned to a character.
     When created, it is level agnostic, and when it comes time to spit out the statblock it needs to be told for what
@@ -2620,6 +2748,8 @@ class SpellCastingAbility:
     # Can improve this if I ever get around to redoing how I handle randomization
     def has_spell(self, owner, spell_name):
         spells_readied = self.get_spells_readied(owner)
+        if not spells_readied:
+            return False
         for spell_level in spells_readied:
             if spell_name in spell_level:
                 return True
@@ -2654,6 +2784,18 @@ class SpellCastingAbility:
                         .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
                 outline += ', '.join(spells_ready[i]) + '\n'
         return outline
+
+    def get_title(self, owner: Character):
+        return 'Spellcasting'
+
+    def get_category(self):
+        return 'spellcasting'
+
+    def get_entry(self, owner: Character, short=True):
+        return self.display(owner, short=short, show_title=False)
+
+    def get_visibility(self):
+        return 0
 
 
 class Loadout:

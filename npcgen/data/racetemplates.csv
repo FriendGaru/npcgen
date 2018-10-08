@@ -8,8 +8,9 @@ human_variant,Variant Human,,,,,common,"extra_language,floating_attribute_bonus_
 ,,,,,,,
 @CATEGORY,Halflings,,,,,,
 @RANDOM,Random Halfling,,,,,,
-halfling_lightfoot,Halfling (Lightfoot),"dex:2,wis:1",walk:25,,small,"common,halfling",lucky
-halfling_stout,Halfling (Stout),"dex:2,con:1",walk:25,,small,"common,halfling",
+halfling_ghostwise,Halfling (Ghostwise),"dex:2,wis:1",walk:25,,small,"common,halfling","lucky,brave,halfling_nimbleness,silent_speech"
+halfling_lightfoot,Halfling (Lightfoot),"dex:2,wis:1",walk:25,,small,"common,halfling","lucky,brave,halfling_nimbleness,naturally_stealthy"
+halfling_stout,Halfling (Stout),"dex:2,con:1",walk:25,,small,"common,halfling","lucky,brave,halfling_nimbleness,stout_resilience"
 ,,,,,,,
 @CATEGORY,Avians,,,,,,
 aarakocra,,"dex:2,wis:2","walk:20,fly:50",,,"common,aarakocra,auran",talons
@@ -40,3 +41,25 @@ elf_wood,Elf (Wood),"dex:2,wis:1",walk:35,,,"common,elvish","darkvision,keen_sen
 gnome_deep_mtf,Gnome (Deep),"dex:1,int:2",walk:25,,small,"common,gnomish,undercommon","superior_darkvision,gnome_cunning,stone_camoflage"
 gnome_forest,Gnome (Forest),"dex:1,int:2",walk:25,,small,"common,gnomish","darkvision,gnome_cunning,natural_illusionist,speak_with_small_beasts"
 gnome_rock,Gnome (Rock),"con:1,int:2",walk:25,,small,"common,gnomish","darkvision,gnome_cunning,artificers_lore,tinker"
+,,,,,,,
+@CATEGORY,Dragonborn,,,,,,
+@RANDOM,Random Dragonborn,,,,,,
+dragonborn_black,Dragonbon (Black),"str:2,con:1",,,,"common,draconic","dragonborn_breath_weapon_black,damage_resistance_acid"
+dragonborn_blue,Dragonbon (Blue),"str:2,con:2",,,,"common,draconic","dragonborn_breath_weapon_blue,damage_resistance_lightning"
+dragonborn_brass,Dragonbon (Brass),"str:2,con:3",,,,"common,draconic","dragonborn_breath_weapon_brass,damage_resistance_fire"
+dragonborn_bronze,Dragonbon (Bronze),"str:2,con:4",,,,"common,draconic","dragonborn_breath_weapon_bronze,damage_resistance_lightning"
+dragonborn_copper,Dragonbon (Copper),"str:2,con:5",,,,"common,draconic","dragonborn_breath_weapon_copper,damage_resistance_acid"
+dragonborn_gold,Dragonbon (Gold),"str:2,con:6",,,,"common,draconic","dragonborn_breath_weapon_gold,damage_resistance_fire"
+dragonborn_green,Dragonbon (Green),"str:2,con:7",,,,"common,draconic","dragonborn_breath_weapon_green,damage_resistance_poison"
+dragonborn_red,Dragonbon (Red),"str:2,con:8",,,,"common,draconic","dragonborn_breath_weapon_red,damage_resistance_fire"
+dragonborn_silver,Dragonbon (Silver),"str:2,con:9",,,,"common,draconic","dragonborn_breath_weapon_silver,damage_resistance_cold"
+dragonborn_white,Dragonbon (White),"str:2,con:10",,,,"common,draconic","dragonborn_breath_weapon_white,damage_resistance_cold"
+,,,,,,,
+@CATEGORY,Half-Elf,,,,,,
+half_elf,Half-Elf,cha:2,,,,"common,elvish","extra_language,floating_attribute_bonus_double,extra_skill,extra_skill,darkvision,fey_ancestry"
+,,,,,,,
+@CATEGORY,Half-Orc,,,,,,
+half_orc,Half-Orc,"str:2,con:1",,,,"common,orc","darkvision,menacing,savage_attack,relentless_endurance"
+,,,,,,,
+@CATEGORY,Tiefling,,,,,,
+tiefling,Tiefling,"int:1,cha:2",,,,"common,infernal","darkvision,hellish_resistance,infernal_legacy"

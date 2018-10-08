@@ -1,7 +1,7 @@
-internal_name,casting_stat,ready_style,hd_per_casting_level,cantrips_per_level,fixed_spells_known_by_level,spells_known_modifier,free_spell_lists,spell_lists
-wizard,int,prepared,,wizard,,,,wizard
-evoker,int,prepared,,wizard,,,,"evoker:50,wizard"
-priest,wis,prepared,,sorcerer,,,,"healer:200,cleric"
-sorcerer,cha,known,,sorcerer,sorcerer,,,"enchanter:50,wizard"
-doofus,cha,known,2,wizard,,,healer,"evoker:1.5,cleric"
-lazy_wizard,int,prepared,3,wizard,,,,wizard
+internal_name,casting_stat,ready_style,hd_per_casting_level,cantrips_per_level,fixed_spells_known_by_level,spells_known_modifier,free_spell_lists,spell_lists,tags
+wizard,int,prepared,,wizard,,,,"wizard_essentials:2,wizard:1",spellbook
+evoker,int,prepared,,wizard,,,,"evoker:3,wizard",
+priest,wis,prepared,,sorcerer,,,,"healer:200,cleric",
+sorcerer,cha,known,,sorcerer,sorcerer,,,"enchanter:50,wizard",
+doofus,cha,known,2,wizard,,,healer,"evoker:1.5,cleric",
+lazy_wizard,int,prepared,3,wizard,,,,wizard,

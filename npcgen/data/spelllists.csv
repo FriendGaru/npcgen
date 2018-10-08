@@ -1,5 +1,6 @@
 name,req_classes,req_schools,req_levels,req_sources,fixed_include,fixed_exclude,spelllists_include,spelllists_exclude
 restricted,,,,,"healing spirit, find familiar",,,
+wizard_essentials,,,,,mage armor,,,
 wizard,wizard,,,,,,,restricted
 cleric,cleric,,,,,,,restricted
 evoker,wizard,evocation,,,,,,restricted
