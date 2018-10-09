@@ -18,6 +18,29 @@ DEBUG_LEVEL = 3
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
+ARMORS_FILE = \
+    pkg.resource_filename(__name__, 'data/armors.csv')
+WEAPONS_FILE = \
+    pkg.resource_filename(__name__, 'data/weapons.csv')
+TRAITS_FILE = \
+    pkg.resource_filename(__name__, 'data/traits.csv')
+SPELLS_FILE = \
+    pkg.resource_filename(__name__, 'data/spells.csv')
+SPELLLISTS_FILE = \
+    pkg.resource_filename(__name__, 'data/spelllists.csv')
+SPELLCASTER_PROFILES_FILE = \
+    pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
+# LOADOUT_POOLS_FILE = \
+#     pkg.resource_filename(__name__, 'data/loadoutpools.csv')
+ARMORS_LOADOUT_POOLS_FILE = \
+    pkg.resource_filename(__name__, 'data/loadoutpools_armors.csv')
+WEAPONS_LOADOUT_POOLS_FILE = \
+    pkg.resource_filename(__name__, 'data/loadoutpools_weapons.csv')
+RACE_TEMPLATES_FILE = \
+    pkg.resource_filename(__name__, 'data/racetemplates.csv')
+CLASS_TEMPLATES_FILE = \
+    pkg.resource_filename(__name__, 'data/classtemplates.csv')
+
 STATS_ATTRIBUTES = ('str', 'dex', 'con', 'int', 'wis', 'cha', )
 DEFAULT_ATTRIBUTE_VALUE = 8
 ATTRIBUTES_ABBREVIATION_TO_FULL_WORD: Dict[str, str] = {
@@ -140,26 +163,6 @@ HIT_DICE_NUM_CAP = 20
 VALID_HD_SIZES = (
     4, 6, 8, 10, 12
 )
-
-ARMORS_FILE = \
-    pkg.resource_filename(__name__, 'data/armors.csv')
-WEAPONS_FILE = \
-    pkg.resource_filename(__name__, 'data/weapons.csv')
-TRAITS_FILE = \
-    pkg.resource_filename(__name__, 'data/traits.csv')
-SPELLS_FILE = \
-    pkg.resource_filename(__name__, 'data/spells.csv')
-SPELLLISTS_FILE = \
-    pkg.resource_filename(__name__, 'data/spelllists.csv')
-SPELLCASTER_PROFILES_FILE = \
-    pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
-LOADOUT_POOLS_FILE = \
-    pkg.resource_filename(__name__, 'data/loadoutpools.csv')
-RACE_TEMPLATES_FILE = \
-    pkg.resource_filename(__name__, 'data/racetemplates.csv')
-CLASS_TEMPLATES_FILE = \
-    pkg.resource_filename(__name__, 'data/classtemplates.csv')
-
 
 TRAIT_TYPES = (
     'hidden', 'passive', 'multiattack', 'action', 'reaction',
@@ -451,7 +454,9 @@ class NPCGenerator:
                  spells_file_loc=SPELLS_FILE,
                  spell_lists_file_loc=SPELLLISTS_FILE,
                  spellcaster_profiles_file_loc=SPELLCASTER_PROFILES_FILE,
-                 loadout_pools_file_loc=LOADOUT_POOLS_FILE,
+                 # loadout_pools_file_loc=LOADOUT_POOLS_FILE,
+                 armors_loadout_pools_file_loc=ARMORS_LOADOUT_POOLS_FILE,
+                 weapons_loadout_pools_file_loc=WEAPONS_LOADOUT_POOLS_FILE,
                  traits_file_loc=TRAITS_FILE,
                  race_templates_file_loc=RACE_TEMPLATES_FILE,
                  class_templates_file_loc=CLASS_TEMPLATES_FILE,
@@ -463,8 +468,14 @@ class NPCGenerator:
         self.armors = {}
         self.build_armors_from_csv(armors_file_loc)
 
-        self.loadout_pools = {}
-        self.build_loadout_pools_from_csv(loadout_pools_file_loc)
+        # self.loadout_pools = {}
+        # self.build_loadout_pools_from_csv(loadout_pools_file_loc)
+
+        self.armors_loadout_pools = {}
+        self.build_armors_loadout_pools_from_csv(armors_loadout_pools_file_loc)
+
+        self.weapons_loadout_pools = {}
+        self.build_weapons_loadout_pools_from_csv(weapons_loadout_pools_file_loc)
 
         self.traits = {}
         self.build_traits_from_csv(traits_file_loc)
@@ -600,7 +611,47 @@ class NPCGenerator:
                 except (ValueError, TypeError):
                     print("Error procession trait {}".format(line['internal_name']))
 
-    def build_loadout_pools_from_csv(self, loadout_pools_file_loc):
+    # def build_loadout_pools_from_csv(self, loadout_pools_file_loc):
+    #     with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
+    #         loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
+    #         new_loadout_pool = None
+    #         for line in loadout_pools_file_reader:
+    #
+    #             # loadout pools are a little different, blank lines mean they get added to the previous pool
+    #             # Hashtag comment lines are still skippable
+    #             if '#' in line['name']:
+    #                 continue
+    #
+    #             if line['name']:
+    #                 if new_loadout_pool:
+    #                     self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
+    #                 new_loadout_pool = LoadoutPool()
+    #                 new_loadout_pool.name = line['name']
+    #             if line['weight']:
+    #                 weight = int(line['weight'])
+    #             else:
+    #                 weight = DEFAULT_LOADOUT_POOL_WEIGHT
+    #
+    #             if line['armors']:
+    #                 armors = line['armors'].replace(" ", "").split(',')
+    #             else:
+    #                 armors = None
+    #
+    #             if line['shield'] == 'TRUE':
+    #                 shield = True
+    #             else:
+    #                 shield = False
+    #
+    #             if line['weapons']:
+    #                 weapons = line['weapons'].replace(" ", "").split(',')
+    #             else:
+    #                 weapons = None
+    #
+    #             new_loadout = Loadout(weapons=weapons, armors=armors, shield=shield)
+    #             new_loadout_pool.add_loadout(new_loadout, weight)
+    #         self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
+
+    def build_armors_loadout_pools_from_csv(self, loadout_pools_file_loc):
         with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
             loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
             new_loadout_pool = None
@@ -608,12 +659,17 @@ class NPCGenerator:
 
                 # loadout pools are a little different, blank lines mean they get added to the previous pool
                 # Hashtag comment lines are still skippable
+                # Completely blank lines should also be skipped
                 if '#' in line['name']:
+                    continue
+                elif not line['name'] and not line['armors']:
                     continue
 
                 if line['name']:
+                    # If we get a new loadout pool, as specified by something int he name column,
+                    # Add the current pool and start a new one
                     if new_loadout_pool:
-                        self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
+                        self.armors_loadout_pools[new_loadout_pool.name] = new_loadout_pool
                     new_loadout_pool = LoadoutPool()
                     new_loadout_pool.name = line['name']
                 if line['weight']:
@@ -621,24 +677,49 @@ class NPCGenerator:
                 else:
                     weight = DEFAULT_LOADOUT_POOL_WEIGHT
 
-                if line['armors']:
-                    armors = line['armors'].replace(" ", "").split(',')
-                else:
-                    armors = None
+                armors = line['armors'].replace(" ", "").split(',')
 
-                if line['shield'] == 'TRUE':
+                new_loadout = Loadout(armors=armors)
+                new_loadout_pool.add_loadout(new_loadout, weight)
+            # When we get to the end, add the last pool
+            self.armors_loadout_pools[new_loadout_pool.name] = new_loadout_pool
+
+    def build_weapons_loadout_pools_from_csv(self, loadout_pools_file_loc):
+        with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
+            loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
+            new_loadout_pool = None
+            for line in loadout_pools_file_reader:
+
+                # loadout pools are a little different, blank lines mean they get added to the previous pool
+                # Hashtag comment lines are still skippable
+                # Completely blank lines should also be skipped
+                if '#' in line['name']:
+                    continue
+                elif not line['name'] and not line['weapons']:
+                    continue
+
+                if line['name']:
+                    # If we get a new loadout pool, as specified by something int he name column,
+                    # Add the current pool and start a new one
+                    if new_loadout_pool:
+                        self.weapons_loadout_pools[new_loadout_pool.name] = new_loadout_pool
+                    new_loadout_pool = LoadoutPool()
+                    new_loadout_pool.name = line['name']
+                if line['weight']:
+                    weight = int(line['weight'])
+                else:
+                    weight = DEFAULT_LOADOUT_POOL_WEIGHT
+
+                weapons = line['weapons'].replace(" ", "").split(',')
+                if line['shield']:
                     shield = True
                 else:
                     shield = False
 
-                if line['weapons']:
-                    weapons = line['weapons'].replace(" ", "").split(',')
-                else:
-                    weapons = None
-
-                new_loadout = Loadout(weapons=weapons, armors=armors, shield=shield)
+                new_loadout = Loadout(weapons=weapons, shield=shield)
                 new_loadout_pool.add_loadout(new_loadout, weight)
-            self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
+            # When we get to the end, add the last pool
+            self.weapons_loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
     def build_spells_from_csv(self, spells_file_loc):
         with open(spells_file_loc, newline='', encoding="utf-8") as spellsFile:
@@ -909,8 +990,14 @@ class NPCGenerator:
                     else:
                         new_class_template.num_random_skills = 0
 
-                    if line['loadout_pool']:
-                        new_class_template.loadout_pool = line['loadout_pool']
+                    # if line['loadout_pool']:
+                    #     new_class_template.loadout_pool = line['loadout_pool']
+
+                    if line['weapons_loadout']:
+                        new_class_template.weapons_loadout_pool = line['weapons_loadout']
+
+                    if line['armors_loadout']:
+                        new_class_template.armors_loadout_pool = line['armors_loadout']
 
                     if line['multiattack_type']:
                         new_class_template.multiattack_type = line['multiattack_type']
@@ -1139,12 +1226,27 @@ class NPCGenerator:
         if class_template.multiattack_type:
             character.multiattack = class_template.multiattack_type
 
-        if class_template.loadout_pool:
-            loadout_pool = self.loadout_pools[class_template.loadout_pool]
-            loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'loadout'))
+        # if class_template.loadout_pool:
+        #     loadout_pool = self.loadout_pools[class_template.loadout_pool]
+        #     loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'loadout'))
+        #     if loadout.armors:
+        #         for armor in loadout.armors:
+        #             self.give_armor(character, armor)
+        #     if loadout.weapons:
+        #         for weapon in loadout.weapons:
+        #             self.give_weapon(character, weapon)
+        #     character.has_shield = loadout.shield
+
+        if class_template.armors_loadout_pool:
+            loadout_pool = self.armors_loadout_pools[class_template.armors_loadout_pool]
+            loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'armorsloadout'))
             if loadout.armors:
                 for armor in loadout.armors:
                     self.give_armor(character, armor)
+
+        if class_template.weapons_loadout_pool:
+            loadout_pool = self.weapons_loadout_pools[class_template.weapons_loadout_pool]
+            loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'weaponsloadout'))
             if loadout.weapons:
                 for weapon in loadout.weapons:
                     self.give_weapon(character, weapon)
@@ -2235,7 +2337,9 @@ class ClassTemplate:
 
         self.multiattack_type = None
 
-        self.loadout_pool = None
+        # self.loadout_pool = None
+        self.armors_loadout_pool = None
+        self.weapons_loadout_pool = None
         self.spell_casting_profile = None
 
         self.traits = []
