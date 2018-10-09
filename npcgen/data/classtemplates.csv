@@ -1,14 +1,15 @@
-internal_name,display_name,priority_attributes,hd_size,saves,skills_fixed,skills_random,num_random_skills,loadout_pool,multiattack_type,spellcasting_profile,traits
-@CATEGORY,Warriors,,,,,,,,,,
-@RANDOM,Random Warrior,,,,,,,,,,
-soldier,,"str,con",10,con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,fighter,,
-monk,,"dex,wis",10,"dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,,,"martial_arts,monk_defense"
-,,,,,,,,,,,
-@CATEGORY,Magic People,,,,,,,,,,
-magicker,,"int,wis",6,int,arcana,"religion,insight,nature,history",2,mage,,wizard,
-helper_guy,Helper Guy,"wis,cha",6,cha,medicine,"acrobatics,persuasion",1,mage,,priest,
-lazy_wizard,Lazy Wizard,"int,cha",6,int,arcana,"religion,insight,nature,history",1,mage,,lazy_wizard,
-,,,,,,,,,,,
-@CATEGORY,Rogues,,,,,,,,,,
-sneaker,,"dex,int",8,"dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,,,"medium_armor_master,expertise_single"
-weirdo,,"cha,con",8,"cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,,,toughy
+internal_name,display_name,priority_attributes,hd_size,saves,skills_fixed,skills_random,num_random_skills,loadout_pool,multiattack_type,spellcasting_profile,cr_calc,traits
+@CATEGORY,Warriors,,,,,,,,,,,
+@RANDOM,Random Warrior,,,,,,,,,,,
+soldier,,"str,con",10,con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,fighter,,attack,
+monk,,"dex,wis",10,"dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,fighter,,attack,"martial_arts,monk_defense"
+bandit_captain,,"dex,con",8,"str,dex,wis","athletics,deception","acrobatics,persuasion,stealth",1,dex_fighter,fighter,,attack,parry
+,,,,,,,,,,,,
+@CATEGORY,Magic People,,,,,,,,,,,
+magicker,,"int,wis",6,int,arcana,"religion,insight,nature,history",2,mage,,wizard,caster,
+helper_guy,Helper Guy,"wis,cha",6,cha,medicine,"acrobatics,persuasion",1,mage,,priest,caster,
+lazy_wizard,Lazy Wizard,"int,cha",6,int,arcana,"religion,insight,nature,history",1,mage,,lazy_wizard,caster,
+,,,,,,,,,,,,
+@CATEGORY,Rogues,,,,,,,,,,,
+sneaker,,"dex,int",8,"dex,int","acrobatics,stealth","insight,investigation,deception",2,rogue,single,,mixed,"medium_armor_master,expertise_single"
+weirdo,,"cha,con",8,"cha,str","acrobatics,athletics","insight,investigation,deception",1,rogue,single,,mixed,toughy

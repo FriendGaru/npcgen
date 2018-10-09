@@ -3,6 +3,7 @@ import csv
 import itertools
 import math
 import string
+import collections
 from typing import Dict
 import pkg_resources as pkg
 
@@ -921,6 +922,11 @@ class NPCGenerator:
                         new_class_template.spell_casting_profile = \
                             self.spellcaster_profiles[line['spellcasting_profile']]
 
+                    if line['cr_calc']:
+                        new_class_template.cr_calc_type = line['cr_calc']
+                    else:
+                        new_class_template.cr_calc_type = 'attack'
+
                     self.class_options.append((new_class_template.int_name, new_class_template.display_name))
                     self.class_templates[new_class_template.int_name] = new_class_template
                     self.class_keys.append(new_class_template.int_name)
@@ -1058,10 +1064,6 @@ class NPCGenerator:
         # Complicated, but this will maintain trait order which can be important for traits with subtraits
         if give_trait:
             character.traits[trait_name] = trait
-            if trait.trait_type == 'passive':
-                character.trait_order_passive.append(trait_name)
-            elif trait.trait_type == 'action':
-                character.trait_order_action.append(trait_name)
 
     def give_armor(self, character, armor_name, extra=False):
         armor = self.armors[armor_name]
@@ -1442,12 +1444,12 @@ class Character:
         self.weapons = {}
         self.has_shield = False
 
-        self.traits = {}
+        self.traits = collections.OrderedDict()
 
         # Just for maintaining consistent trait order
-        self.trait_order_passive = []
-        self.trait_order_action = []
-        self.traits_order_reaction = []
+        # self.trait_order_passive = []
+        # self.trait_order_action = []
+        # self.traits_order_reaction = []
 
         self.damage_vulnerabilities = []
         self.damage_resistances = []
@@ -1974,21 +1976,15 @@ class Character:
         attributes_dict = {}
         for attribute in STATS_ATTRIBUTES:
             attribute_val = self.get_stat(attribute)
-            if attribute_val < 10:
-                extra_space = ' '
-            else:
-                extra_space = ''
-            attributes_dict[attribute] = '{}{} ({})'\
-                .format(attribute_val, extra_space, num_plusser(self.get_stat(attribute + '_mod')))
+            attributes_dict[attribute] = '{} ({})'\
+                .format(attribute_val, num_plusser(self.get_stat(attribute + '_mod')))
         sb.attributes_dict = attributes_dict
 
-        attrstr = ''
-        for attr in STATS_ATTRIBUTES:
-            attrstr += '{} {}({}) '.format(attr.upper(), self.get_stat(attr), num_plusser(self.get_stat(attr + '_mod')))
-        sb.attributes = attrstr
-
-        sb.senses = self.get_senses()
-        sb.cr = self.get_cr()
+        all_attributes_line = ''
+        for attribute in STATS_ATTRIBUTES:
+            all_attributes_line += '{} {}({}) '\
+                .format(attribute.upper(), self.get_stat(attribute), num_plusser(self.get_stat(attribute + '_mod')))
+        sb.attributes = all_attributes_line
 
         sb.saves = ''
         if len(self.saves) > 0:
@@ -2037,10 +2033,8 @@ class Character:
             sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
         passive_traits = []
-        for passive_trait_name in self.trait_order_passive:
-            trait_obj = self.traits[passive_trait_name]
-            assert isinstance(trait_obj, StatBlockFeature)
-            if trait_obj.get_visibility() <= trait_visibility:
+        for trait_obj in self.traits.values():
+            if trait_obj.get_category() == 'passive' and trait_obj.get_visibility() <= trait_visibility:
                 passive_traits.append((trait_obj.get_title(self),
                                        trait_obj.get_entry(self, short=short_traits)))
         sb.passive_traits = passive_traits
@@ -2245,6 +2239,8 @@ class ClassTemplate:
         self.spell_casting_profile = None
 
         self.traits = []
+
+        self.cr_calc_type = ''
 
 
 class Armor:
