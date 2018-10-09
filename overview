@@ -1,0 +1,39 @@
+How this thing works:
+
+Data files:
+All data files are in csv format
+weapons, armor, and spells have no dependencies
+traits also have no dependencies, but the tags are hardcoded in
+weapon and armor loadout pools are dependent on weapons and armor, respectively
+spelllists rely on data from spells
+spellcasting profiles rely on spelllist data
+race and class templates rely on loadout, trait, and spellcasting profile data
+
+NPCGenerator:
+Upon instantiation, NPCGenerator reads the data builds appropriate objects
+File locations are stored as constants, no arguments should be needed for instantiation
+NPCGenerator stores references, usually in the pattern {'internal_name': <object>, ...}
+
+Form Options:
+Calling get_options_dict() will return a dictionary of options, suitable for building an html form
+All options intended for dropdown boxes are in the pattern [(internal_name, Display Name), ...]
+
+Validation:
+Once a new character request is built, such as from arguments from an html get request, you should call validate_request_dict()
+This method will look through the dict and check to see if everything is "good to go" for building a new character
+It relies on lists of valid options collected while building data from the csv files
+If everything is fine, it will return a tuple (True, {Clean_Dict})
+If there is a problem, it will either get rid of unneeded keys or replace bad values with random or default values, as appropriate
+If there is ANY problem with the request dict, it will return (False, {Clean_dict})
+Because it replaces bad values with random values, validate_request_dict() can be used to get a request for a randomized character
+
+The idea here is you build the request with the html form,
+and if there are any problems (like the user screwing with the get arguments) this will catch it and they can be redirected to a good request
+
+Character:
+Calling new_character() requires a class_template, a race_template, and how many hd to give the new character
+
+StatBlock:
+Once the character is built, you must call build_stat_block() to get a StatBlock instance
+StatBlocks have no internal logic, they contain only the text meant to be displayed to the user.
+They can then be passed to the html renderer, which can decide how to display everything
