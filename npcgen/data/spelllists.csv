@@ -1,9 +1,18 @@
 name,req_classes,req_schools,req_levels,req_sources,fixed_include,fixed_exclude,spelllists_include,spelllists_exclude
-restricted,,,,,"healing spirit, find familiar",,,
-wizard_essentials,,,,,mage armor,,,
+restricted,,,,,healing spirit,,,
+wiz_essentials,,,,,mage armor,,,restricted
 wizard,wizard,,,,,,,restricted
 cleric,cleric,,,,,,,restricted
-evoker,wizard,evocation,,,,,,restricted
-conjurer,wizard,conjuration,,,,,,restricted
-enchanter,"wizard,cleric",enchantment,,,,,,restricted
-healer,,,,,"cure wounds,healing word,mass cure wounds,heal",,,
+wiz_abjuration,wizard,abjuration,,,,,,restricted
+wiz_conjuration,wizard,conjuration,,,,,,restricted
+wiz_divination,wizard,divination,,,,,,restricted
+wiz_enchantment,wizard,enchantment,,,,,,restricted
+wiz_evocation,wizard,evocation,,,,,,restricted
+wiz_illusion,wizard,illusion,,,,,,restricted
+wiz_necromancy,wizard,necromancy,,,,,,restricted
+wiz_transmutation,wizard,transmutation,,,,,,restricted
+druid,druid,,,,,,,restricted
+bard,bard,,,,,,,restricted
+paladin,paladin,,,,,,,restricted
+ranger,ranger,,,,,,,restricted
+healing,,,,,"cure wounds,healing word,mass cure wounds,heal",,,restricted

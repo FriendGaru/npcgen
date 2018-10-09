@@ -13,7 +13,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 3
+DEBUG_LEVEL = 1
 
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
@@ -248,9 +248,9 @@ CASTER_FIXED_SPELLS_KNOWN = {
 
 CASTER_CANTRIPS_KNOWN = {
     'none': (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ),
-    'wizard': (-1, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, ),
+    'cleric_wizard': (-1, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, ),
     'sorcerer': (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, ),
-    'bard': (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, ),
+    'bard_druid': (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, ),
 }
 
 CHALLENGE_RATING_CHART = (
@@ -773,57 +773,62 @@ class NPCGenerator:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
             for line in spellcaster_profiles_file_reader:
 
-                # Ignore blank lines or comments using hastags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
+                try:
 
-                new_spellcaster_profile = SpellCasterProfile()
-                new_spellcaster_profile.intName = line['internal_name']
-                new_spellcaster_profile.casting_stat = line['casting_stat']
-                new_spellcaster_profile.ready_style = line['ready_style']
+                    # Ignore blank lines or comments using hastags
+                    if line['internal_name'] == '' or '#' in line['internal_name']:
+                        continue
 
-                # Alternative slots progressions not implemented
-                # Probably not needed, since all casters currently in the game derive their slots from the standard
-                new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
+                    new_spellcaster_profile = SpellCasterProfile()
+                    new_spellcaster_profile.intName = line['internal_name']
+                    new_spellcaster_profile.casting_stat = line['casting_stat']
+                    new_spellcaster_profile.ready_style = line['ready_style']
 
-                if line["hd_per_casting_level"]:
-                    new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
-                else:
-                    new_spellcaster_profile.hd_per_casting_level = 1
+                    # Alternative slots progressions not implemented
+                    # Probably not needed, since all casters currently in the game derive their slots from the standard
+                    new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
 
-                new_spellcaster_profile.cantrips_per_level = CASTER_CANTRIPS_KNOWN[line['cantrips_per_level']]
-
-                if line['fixed_spells_known_by_level']:
-                    new_spellcaster_profile.fixed_spells_known_by_level = \
-                        CASTER_FIXED_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
-                else:
-                    new_spellcaster_profile.fixed_spells_known_by_level = None
-
-                if line['spells_known_modifier']:
-                    new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
-                else:
-                    new_spellcaster_profile.spells_known_modifier = 0
-
-                if line['free_spell_lists']:
-                    for spell_list_name in line['free_spell_lists'].replace(" ", "").split(','):
-                        new_spellcaster_profile.free_spell_lists.append(self.spell_lists[spell_list_name])
-                else:
-                    new_spellcaster_profile.free_spell_lists = None
-
-                new_spell_lists_dict = {}
-                for rawEntry in line['spell_lists'].replace(" ", "").split(','):
-                    if ':' in rawEntry:
-                        spell_list_name, weight = rawEntry.split(':')
-                        new_spell_lists_dict[self.spell_lists[spell_list_name]] = weight
+                    if line["hd_per_casting_level"]:
+                        new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
                     else:
-                        new_spell_lists_dict[self.spell_lists[rawEntry]] = DEFAULT_SPELL_WEIGHT
-                new_spellcaster_profile.spell_lists = new_spell_lists_dict
+                        new_spellcaster_profile.hd_per_casting_level = 1
 
-                # For now, only standard slots progression
-                # In the future, may add support for nonstandard slot progressions, like warlock
-                new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
+                    new_spellcaster_profile.cantrips_per_level = CASTER_CANTRIPS_KNOWN[line['cantrips_per_level']]
 
-                self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
+                    if line['fixed_spells_known_by_level']:
+                        new_spellcaster_profile.fixed_spells_known_by_level = \
+                            CASTER_FIXED_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
+                    else:
+                        new_spellcaster_profile.fixed_spells_known_by_level = None
+
+                    if line['spells_known_modifier']:
+                        new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
+                    else:
+                        new_spellcaster_profile.spells_known_modifier = 0
+
+                    if line['free_spell_lists']:
+                        for spell_list_name in line['free_spell_lists'].replace(" ", "").split(','):
+                            new_spellcaster_profile.free_spell_lists.append(self.spell_lists[spell_list_name])
+                    else:
+                        new_spellcaster_profile.free_spell_lists = None
+
+                    new_spell_lists_dict = {}
+                    for rawEntry in line['spell_lists'].replace(" ", "").split(','):
+                        if ':' in rawEntry:
+                            spell_list_name, weight = rawEntry.split(':')
+                            new_spell_lists_dict[self.spell_lists[spell_list_name]] = weight
+                        else:
+                            new_spell_lists_dict[self.spell_lists[rawEntry]] = DEFAULT_SPELL_WEIGHT
+                    new_spellcaster_profile.spell_lists = new_spell_lists_dict
+
+                    # For now, only standard slots progression
+                    # In the future, may add support for nonstandard slot progressions, like warlock
+                    new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
+
+                    self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
+
+                except (ValueError, TypeError):
+                    debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']),0)
 
     def build_race_templates_from_csv(self, race_templates_file_loc):
         with open(race_templates_file_loc, newline='', encoding="utf-8") as race_templates_file:
@@ -2208,6 +2213,7 @@ class StatBlockFeature:
 
 class Trait(StatBlockFeature):
     def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
+        super().__init__()
         self.int_name = int_name
         self.display_name = display_name
         self.trait_type = trait_type
@@ -2714,6 +2720,7 @@ class SpellCastingAbility(StatBlockFeature):
                  slots_progression=SPELL_SLOTS_TABLE,
                  spells_known_modifier=0,
                  ):
+        super().__init__()
         # NPCs generally either have spells 'prepared' or 'known'
         self.ready_style = ready_style
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips

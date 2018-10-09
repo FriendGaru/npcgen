@@ -34,6 +34,16 @@ minion,,,"shortsword,sling"
 ,,TRUE,"scimitar,shortbow"
 ,,,
 ,,,
+brute,,,maul
+,,,battleaxe
+,,,warhammer
+,,TRUE,morningstar
+,,,
+archer,,,"shortsword,shortbow"
+,,,"shortsword,crossbow_light"
+,4,,"shortsword,longbow"
+,,,"shortsword,crossbow_heavy"
+,,,
 mage,3,,quarterstaff
 ,,,club
 ,,,dagger

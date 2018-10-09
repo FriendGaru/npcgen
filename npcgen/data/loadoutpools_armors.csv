@@ -13,6 +13,11 @@ light_med,,"leather,hide"
 ,,"studded_leather,breastplate"
 ,,"studded_leather,breastplate,chain_mail"
 ,,
+med_heavy,,"chain_shirt,ring_mail"
+,,"scale_mail,chain_mail"
+,,"breastplate,splint"
+,,
+,,
 minion,,unarmored
 ,5,"leather,hide"
 ,,"leather,chain_shirt"
