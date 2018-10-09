@@ -30,8 +30,6 @@ SPELLLISTS_FILE = \
     pkg.resource_filename(__name__, 'data/spelllists.csv')
 SPELLCASTER_PROFILES_FILE = \
     pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
-# LOADOUT_POOLS_FILE = \
-#     pkg.resource_filename(__name__, 'data/loadoutpools.csv')
 ARMORS_LOADOUT_POOLS_FILE = \
     pkg.resource_filename(__name__, 'data/loadoutpools_armors.csv')
 WEAPONS_LOADOUT_POOLS_FILE = \
@@ -468,9 +466,6 @@ class NPCGenerator:
         self.armors = {}
         self.build_armors_from_csv(armors_file_loc)
 
-        # self.loadout_pools = {}
-        # self.build_loadout_pools_from_csv(loadout_pools_file_loc)
-
         self.armors_loadout_pools = {}
         self.build_armors_loadout_pools_from_csv(armors_loadout_pools_file_loc)
 
@@ -610,46 +605,6 @@ class NPCGenerator:
                     self.traits[new_trait.int_name] = new_trait
                 except (ValueError, TypeError):
                     print("Error procession trait {}".format(line['internal_name']))
-
-    # def build_loadout_pools_from_csv(self, loadout_pools_file_loc):
-    #     with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
-    #         loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
-    #         new_loadout_pool = None
-    #         for line in loadout_pools_file_reader:
-    #
-    #             # loadout pools are a little different, blank lines mean they get added to the previous pool
-    #             # Hashtag comment lines are still skippable
-    #             if '#' in line['name']:
-    #                 continue
-    #
-    #             if line['name']:
-    #                 if new_loadout_pool:
-    #                     self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
-    #                 new_loadout_pool = LoadoutPool()
-    #                 new_loadout_pool.name = line['name']
-    #             if line['weight']:
-    #                 weight = int(line['weight'])
-    #             else:
-    #                 weight = DEFAULT_LOADOUT_POOL_WEIGHT
-    #
-    #             if line['armors']:
-    #                 armors = line['armors'].replace(" ", "").split(',')
-    #             else:
-    #                 armors = None
-    #
-    #             if line['shield'] == 'TRUE':
-    #                 shield = True
-    #             else:
-    #                 shield = False
-    #
-    #             if line['weapons']:
-    #                 weapons = line['weapons'].replace(" ", "").split(',')
-    #             else:
-    #                 weapons = None
-    #
-    #             new_loadout = Loadout(weapons=weapons, armors=armors, shield=shield)
-    #             new_loadout_pool.add_loadout(new_loadout, weight)
-    #         self.loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
     def build_armors_loadout_pools_from_csv(self, loadout_pools_file_loc):
         with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
@@ -977,7 +932,7 @@ class NPCGenerator:
                     if line['display_name']:
                         new_class_template.display_name = line['display_name']
                     else:
-                        new_class_template.display_name = line['internal_name'].capitalize()
+                        new_class_template.display_name = line['internal_name'].replace('_', ' ').capitalize()
 
                     new_class_template.priority_attributes = line['priority_attributes'].replace(" ", "").split(',')
                     new_class_template.hd_size = int(line['hd_size'])
@@ -1225,17 +1180,6 @@ class NPCGenerator:
 
         if class_template.multiattack_type:
             character.multiattack = class_template.multiattack_type
-
-        # if class_template.loadout_pool:
-        #     loadout_pool = self.loadout_pools[class_template.loadout_pool]
-        #     loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'loadout'))
-        #     if loadout.armors:
-        #         for armor in loadout.armors:
-        #             self.give_armor(character, armor)
-        #     if loadout.weapons:
-        #         for weapon in loadout.weapons:
-        #             self.give_weapon(character, weapon)
-        #     character.has_shield = loadout.shield
 
         if class_template.armors_loadout_pool:
             loadout_pool = self.armors_loadout_pools[class_template.armors_loadout_pool]
@@ -2148,9 +2092,11 @@ class Character:
                                         self.spell_casting_ability.get_entry(self, short=short_traits)))
         sb.spellcasting_traits = spellcasting_traits
 
+        multiattack = []
         if self.get_stat('attacks_per_round') > 1:
-            sb.multiattack = 'This creatures makes {} attacks when it uses the attack action.'\
-                .format(NUM_TO_TEXT[self.get_stat('attacks_per_round')])
+            multiattack.append(("Multiattack",  'This creatures makes {} attacks when it uses the attack action.'
+                                .format(NUM_TO_TEXT[self.get_stat('attacks_per_round')])))
+        sb.multiattack = multiattack
 
         attacks = []
         for weapon in self.weapons.values():
@@ -2190,7 +2136,7 @@ class StatBlock:
         self.languages = None
         self.passive_traits = []
         self.spellcasting_traits = []
-        self.multiattack = None
+        self.multiattack = []
         self.attacks = []
         self.actions = []
         self.reactions = []
@@ -2198,10 +2144,11 @@ class StatBlock:
     def plain_text(self):
         disp = ''
         disp += self.name + '\n'
-        disp += self.creature_type + '\n'
+        # Subline
+        disp += "{} {}, unaligned".format(self.size, self.creature_type) + '\n'
         disp += 'AC: ' + self.armor + '\n'
         disp += 'Hit Points: ' + self.hp + '\n'
-        disp += 'Size: ' + self.size + '\n'
+        # disp += 'Size: ' + self.size + '\n'
         disp += 'Speed: ' + self.speed + '\n'
         disp += 'Proficiency: ' + self.proficiency + '\n'
         disp += self.attributes + '\n'
@@ -2226,8 +2173,8 @@ class StatBlock:
             disp += trait[0] + '. ' + trait[1] + '\n'
         for spellcasting_trait in self.spellcasting_traits:
             disp += spellcasting_trait[0] + '. ' + spellcasting_trait[1] + '\n'
-        if self.multiattack:
-            disp += 'Multiattack. ' + self.multiattack + '\n'
+        for multiattack in self.multiattack:
+            disp += multiattack[0] + '. ' + multiattack[1] + '\n'
         for attack in self.attacks:
             disp += attack[0] + '. ' + attack[1] + '\n'
         for action in self.actions:
@@ -2337,7 +2284,6 @@ class ClassTemplate:
 
         self.multiattack_type = None
 
-        # self.loadout_pool = None
         self.armors_loadout_pool = None
         self.weapons_loadout_pool = None
         self.spell_casting_profile = None
