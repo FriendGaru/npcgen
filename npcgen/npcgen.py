@@ -647,8 +647,10 @@ class NPCGenerator:
 
                 armors = line['armors'].replace(" ", "").split(',')
 
-                new_loadout = Loadout(armors=armors)
+                new_loadout = Loadout()
+                new_loadout.armors = armors
                 new_loadout_pool.add_loadout(new_loadout, weight)
+                
             # When we get to the end, add the last pool
             self.armors_loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
@@ -684,8 +686,11 @@ class NPCGenerator:
                 else:
                     shield = False
 
-                new_loadout = Loadout(weapons=weapons, shield=shield)
+                new_loadout = Loadout()
+                new_loadout.weapons = weapons
+                new_loadout.shield = shield
                 new_loadout_pool.add_loadout(new_loadout, weight)
+
             # When we get to the end, add the last pool
             self.weapons_loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
@@ -2225,59 +2230,60 @@ class StatBlock:
         return self.__dict__
 
 
+# Everything that can appear as an entry in a stat block musty implement this functionality
+# Features are allowed to change things based on who the owner is
 class StatBlockFeature:
 
+    # The part that is typically in bold with a period at the end.
+    # When using short statblock versions, expect (1/short), etc. for abilities that recharge on a short rest
     def get_title(self, owner: Character, short=True):
         return ''
 
+    # The normal text stuff
     def get_entry(self, owner: Character, short=True):
         return ''
 
+    # Categories are used for organizing the statblock when it comes time for rendering
+    # The renderer is allowed to decide on the order
+    # Features with the 'hidden' category will never be shown, regardless of visibility
     def get_category(self):
         return ''
 
-    def get_visibility(self, owner: Character, short=True):
+    # When building a statblock, visibility determines what makes the cut
+    # 0 - always show
+    # 1 - (default) usually show, but may be hidden to save space
+    # 2 - usually hide, but may be shown if a verbose version is requested
+    # 3 - always hide, probably because the character can't actually use the feature,
+    #     i.e. the feature has a minimum hd requirement the character doesn't meet
+    # Features with the 'hidden' category will never be shown, regardless of visibility
+    def get_visibility(self, owner: Character):
         return 0
 
 
 class Trait(StatBlockFeature):
-    def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
-        self.int_name = int_name
-        self.display_name = display_name
+    def __init__(self):
+        self.int_name = ''
+        self.display_name = ''
         self.recharge = ''
-        self.trait_type = trait_type
-        self.text = text
+        self.trait_type = 'hidden'
+        self.text = ''
         self.text_short = ''
         self.visibility = 0
-        # If a character doesn't have this many hd, it doesn't show up onb the sheet
-        self.min_hd = 0
-        if not tags:
-            self.tags = {}
-        else:
-            self.tags = tags
+        self.tags = {}
 
     def __str__(self):
         return '<{}:{},{},{},{}>'.format(self.int_name, self.display_name, self.trait_type, self.text, str(self.tags))
 
-    def display(self, owner, short=True, include_title=True):
-        if include_title:
-            outstring = self.display_name + '. '
-        else:
-            outstring = ''
-
-        if short:
-            outstring += self.text_short.format(**owner.stats)
-        else:
-            outstring += self.text.format(**owner.stats)
-        return outstring
-
-    def get_title(self, owner=None, short=True):
+    def get_title(self, owner, short=True):
         if short and self.recharge:
             return '{} ({})'.format(self.display_name, self.recharge)
         return self.display_name
 
     def get_entry(self, owner: Character, short=True):
-        return self.display(owner, short=short, include_title=False)
+        if short:
+            return self.text_short.format(**owner.stats)
+        else:
+            return self.text.format(**owner.stats)
 
     def get_category(self):
         return self.trait_type
@@ -2414,18 +2420,17 @@ class Attack(StatBlockFeature):
 
 
 class Weapon(Attack):
-    def __init__(self, int_name=None, display_name=None, dmg_dice_num=None, dmg_dice_size=None, damage_type=None,
-                 attack_type=None, short_range=None, long_range=None, tags=None, num_targets=DEFAULT_NUM_TARGETS):
-        self.int_name = int_name
-        self.display_name = display_name
-        self.dmg_dice_num = dmg_dice_num
-        self.dmg_dice_size = dmg_dice_size
-        self.damage_type = damage_type
-        self.attack_type = attack_type
-        self.range_short = short_range
-        self.range_long = long_range
-        self.tags = tags
-        self.num_targets = num_targets
+    def __init__(self):
+        self.int_name = ''
+        self.display_name = ''
+        self.dmg_dice_num = 0
+        self.dmg_dice_size = 0
+        self.damage_type = ''
+        self.attack_type = ''
+        self.range_short = 0
+        self.range_long = 0
+        self.tags = {}
+        self.num_targets = 1
 
     def __repr__(self):
         outstring = '[{},{},{},{},{},{},{},{},{},{},'\
@@ -2488,54 +2493,7 @@ class Weapon(Attack):
     def get_avg_dmg(self, owner):
         return self.get_damage(owner, use_versatile=True)[5]
 
-    # def sheet_display(self, owner, include_name=True, short=True):
-    #     outstring = ''
-    #     if include_name:
-    #         outstring += self.display_name + '. '
-    #     is_melee = self.attack_type == 'melee'
-    #     is_ranged = self.attack_type == 'ranged' or 'thrown' in self.tags
-    #     if is_melee and is_ranged:
-    #         outstring += 'Melee or ranged weapon attack: '
-    #     elif is_melee:
-    #         outstring += 'Melee weapon attack: '
-    #     elif is_ranged:
-    #         outstring += 'Ranged weapon attack: '
-    #
-    #     to_hit = self.get_to_hit(owner)
-    #     outstring += num_plusser(to_hit) + ' to hit, '
-    #
-    #     if is_melee and is_ranged:
-    #         if 'reach' in self.tags:
-    #             outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_W_BONUS, self.range_short, self.range_long)
-    #         else:
-    #             outstring += '{} or range {}/{} ft., '.format(WEAPON_REACH_NORMAL, self.range_short, self.range_long)
-    #     elif is_melee:
-    #         if 'reach' in self.tags:
-    #             outstring += WEAPON_REACH_W_BONUS + ', '
-    #         else:
-    #             outstring += WEAPON_REACH_NORMAL + ', '
-    #     elif is_ranged:
-    #         outstring += 'range {}/{} ft., '.format(self.range_short, self.range_long)
-    #
-    #     if self.num_targets == 1:
-    #         outstring += 'one target. '
-    #     else:
-    #         outstring += NUM_TO_TEXT.get(self.num_targets) + ' targets. '
-    #     ##
-    #     avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = self.get_damage(owner)
-    #     outstring += 'Hit: {}({}d{} {}) {} damage'\
-    #         .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
-    #
-    #     # Check for versatile, which increases damage with two hands.
-    #     if is_melee and 'versatile' in self.tags:
-    #         avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = \
-    #             self.get_damage(owner, use_versatile=True)
-    #         outstring += ' or {}({}d{} {}) {} damage if used with two hands'\
-    #             .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
-    #     outstring += '.'
-    #     return outstring
-
-    def get_title(self, owner: Character):
+    def get_title(self, owner: Character, short=True):
         return self.display_name
 
     def get_category(self):
@@ -2584,7 +2542,7 @@ class Weapon(Attack):
         entry += '.'
         return entry
 
-    def get_visibility(self):
+    def get_visibility(self, owner: Character):
         return 0
 
 
@@ -2739,7 +2697,22 @@ class SpellCasterProfile:
         return new_spell_casting_ability
 
 
-class SpellCastingAbility(StatBlockFeature):
+# May include non-standard spellcaster profiles, like warlock or innate magic
+# These are fine, they just need to be able to give caster level and spell dc for the sake of CR calculations
+# And they need to share whether they give access to certain spells which other parts of the satblock may need,
+# Like mage armor
+class SpellCastingFeature(StatBlockFeature):
+    def get_caster_level(self, owner: Character):
+        return 0
+
+    def has_spell(self, owner: Character, spell_name):
+        return False
+
+    def get_spell_dc(self, owner: Character):
+        return 0
+
+
+class SpellCastingAbility(SpellCastingFeature):
     """
     SpellcastingAbility is the personalized ability that gets assigned to a character.
     When created, it is level agnostic, and when it comes time to spit out the statblock it needs to be told for what
@@ -2870,7 +2843,7 @@ class SpellCastingAbility(StatBlockFeature):
                 outline += ', '.join(spells_ready[i]) + '\n'
         return outline
 
-    def get_title(self, owner: Character):
+    def get_title(self, owner: Character, short=True):
         return 'Spellcasting'
 
     def get_category(self):
@@ -2879,15 +2852,15 @@ class SpellCastingAbility(StatBlockFeature):
     def get_entry(self, owner: Character, short=True):
         return self.display(owner, short=short, show_title=False)
 
-    def get_visibility(self):
+    def get_visibility(self, owner: Character):
         return 0
 
 
 class Loadout:
-    def __init__(self, weapons=None, armors=None, shield=False):
-        self.weapons = weapons
-        self.armors = armors
-        self.shield = shield
+    def __init__(self):
+        self.weapons = None
+        self.armors = None
+        self.shield = None
 
     def __str__(self):
         return '<{},{},{}>'.format(str(self.weapons), str(self.armors), str(self.shield))
