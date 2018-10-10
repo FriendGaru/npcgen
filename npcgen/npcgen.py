@@ -434,6 +434,16 @@ def num_plusser(num, add_space=False):
         else:
             return str(num)
 
+def nice_list(data):
+    """
+    Takes a list of strings and joins them in a nice, grammatical fashion
+    a
+    a and b
+    a, b, and c
+    a, b, c, and d
+    """
+    return ", ".join(data[:-2] + [" and ".join(data[-2:])])
+
 
 def random_string(length, rnd_instance=None):
     if not rnd_instance:
@@ -574,6 +584,9 @@ class NPCGenerator:
                         new_trait.display_name = line['display_name']
                     else:
                         new_trait.display_name = line['internal_name'].replace('_', ' ').title()
+
+                    if line['recharge']:
+                        new_trait.recharge = line['recharge']
 
                     new_trait.trait_type = line['trait_type']
 
@@ -1066,6 +1079,14 @@ class NPCGenerator:
                 for entry in trait.tags['condition_immunity']:
                     character.add_condition_immunity(entry)
 
+            if 'save_advantage' in trait.tags:
+                for advantage in trait.tags['save_advantage']:
+                    character.add_save_advantage(advantage)
+
+            if 'save_disadvantage' in trait.tags:
+                for disadvantage in trait.tags['save_disadvantage']:
+                    character.add_save_disadvantage(disadvantage)
+
             if 'sense_darkvision' in trait.tags:
                 val = int(trait.tags['sense_darkvision'][0])
                 character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
@@ -1482,10 +1503,13 @@ class Character:
         # Tags are not included in stat blocks at all
         self.character_tags = {}
 
-        # Skills are stored as a dictionary, if the value is true that means the character has expertise
+        # Expertise skills should only every be a subset of skills
         self.skills = set()
         self.skills_expertise = set()
+
         self.saves = set()
+        self.save_advantages = set()
+        self.save_disadvantages = set()
 
         # Armors and weapons are handled as dictionaries of the form {internal_name: object, ...}
         # This way they hopefully won't get any duplicate items
@@ -1495,12 +1519,8 @@ class Character:
         self.weapons = {}
         self.has_shield = False
 
+        # Using an ordered dict to maintain consistency in how traits are displayed
         self.traits = collections.OrderedDict()
-
-        # Just for maintaining consistent trait order
-        # self.trait_order_passive = []
-        # self.trait_order_action = []
-        # self.traits_order_reaction = []
 
         self.damage_vulnerabilities = []
         self.damage_resistances = []
@@ -1888,6 +1908,12 @@ class Character:
         if language not in self.languages:
             self.languages.append(language)
 
+    def add_save_advantage(self, advantage):
+        self.save_advantages.add(advantage)
+
+    def add_save_disadvantage(self, disadvantage):
+        self.save_disadvantages.add(disadvantage)
+
     def add_skill(self, skill, expertise=False):
         self.skills.add(skill)
         if expertise:
@@ -2037,7 +2063,7 @@ class Character:
                 .format(attribute.upper(), self.get_stat(attribute), num_plusser(self.get_stat(attribute + '_mod')))
         sb.attributes = all_attributes_line
 
-        sb.saves = ''
+        saves_line = ''
         if len(self.saves) > 0:
             saves_list = []
             for attribute in STATS_ATTRIBUTES:
@@ -2045,7 +2071,13 @@ class Character:
                     save_val = self.stats[attribute + '_mod'] + self.stats['proficiency']
                     val_str = num_plusser(save_val)
                     saves_list.append(ATTRIBUTES_ABBREVIATION_TO_FULL_WORD[attribute] + ' ' + val_str)
-            sb.saves = ', '.join(saves_list)
+            saves_line = ', '.join(saves_list)
+        if len(self.save_advantages) > 0:
+            saves_line += ' (advantage against {})'.format(nice_list(sorted(list(self.save_advantages))))
+        if len(self.save_disadvantages) > 0:
+            saves_line += ' (disadvantage against {})'.format(nice_list(sorted(list(self.save_disadvantages))))
+
+        sb.saves = saves_line
 
         sb.skills = ''
         if len(self.skills) > 0:
@@ -2085,7 +2117,7 @@ class Character:
 
         passive_traits = []
         for trait_obj in self.traits.values():
-            if trait_obj.get_category() == 'passive' and trait_obj.get_visibility() <= trait_visibility:
+            if trait_obj.get_category() == 'passive' and trait_obj.get_visibility(self) <= trait_visibility:
                 passive_traits.append((trait_obj.get_title(self),
                                        trait_obj.get_entry(self, short=short_traits)))
         sb.passive_traits = passive_traits
@@ -2194,11 +2226,8 @@ class StatBlock:
 
 
 class StatBlockFeature:
-    def __init__(self):
-        self.internal_name = ''
-        self.display_name = ''
 
-    def get_title(self, owner: Character):
+    def get_title(self, owner: Character, short=True):
         return ''
 
     def get_entry(self, owner: Character, short=True):
@@ -2207,19 +2236,21 @@ class StatBlockFeature:
     def get_category(self):
         return ''
 
-    def get_visibility(self):
+    def get_visibility(self, owner: Character, short=True):
         return 0
 
 
 class Trait(StatBlockFeature):
     def __init__(self, int_name='', display_name='', trait_type='', text='', tags=None):
-        super().__init__()
         self.int_name = int_name
         self.display_name = display_name
+        self.recharge = ''
         self.trait_type = trait_type
         self.text = text
         self.text_short = ''
         self.visibility = 0
+        # If a character doesn't have this many hd, it doesn't show up onb the sheet
+        self.min_hd = 0
         if not tags:
             self.tags = {}
         else:
@@ -2240,7 +2271,9 @@ class Trait(StatBlockFeature):
             outstring += self.text.format(**owner.stats)
         return outstring
 
-    def get_title(self, owner=None):
+    def get_title(self, owner=None, short=True):
+        if short and self.recharge:
+            return '{} ({})'.format(self.display_name, self.recharge)
         return self.display_name
 
     def get_entry(self, owner: Character, short=True):
@@ -2249,8 +2282,11 @@ class Trait(StatBlockFeature):
     def get_category(self):
         return self.trait_type
 
-    def get_visibility(self):
-        return self.visibility
+    def get_visibility(self, owner: Character):
+        if 'min_hd' in self.tags and owner.get_stat('hit_dice_num') < int(self.tags['min_hd'][0]):
+            return 3
+        else:
+            return self.visibility
 
 
 class RaceTemplate:
@@ -2368,8 +2404,6 @@ class Armor:
 # For CR calculations, an attack needs to give its to hit and average damage value
 # And it needs to be able to give a stat block entry when it comes time to render
 class Attack(StatBlockFeature):
-    def __init__(self):
-        super().__init__()
 
     def get_to_hit(self, owner):
         pass
@@ -2382,7 +2416,6 @@ class Attack(StatBlockFeature):
 class Weapon(Attack):
     def __init__(self, int_name=None, display_name=None, dmg_dice_num=None, dmg_dice_size=None, damage_type=None,
                  attack_type=None, short_range=None, long_range=None, tags=None, num_targets=DEFAULT_NUM_TARGETS):
-        super().__init__()
         self.int_name = int_name
         self.display_name = display_name
         self.dmg_dice_num = dmg_dice_num
@@ -2720,7 +2753,6 @@ class SpellCastingAbility(StatBlockFeature):
                  slots_progression=SPELL_SLOTS_TABLE,
                  spells_known_modifier=0,
                  ):
-        super().__init__()
         # NPCs generally either have spells 'prepared' or 'known'
         self.ready_style = ready_style
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
