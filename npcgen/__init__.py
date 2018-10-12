@@ -1,1 +1,1 @@
-from .npcgen import NPCGenerator
+from .npcgen import NPCGenerator, StatBlockFeature

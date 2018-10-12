@@ -59,10 +59,6 @@ STATS_BASE = {
     'breath_weapon_dice': 2,  # For dragonborn breath weapons
 }
 
-# STATS_DERIVED = (
-#     'hit_points', 'proficiency', 'attacks_per_round'
-# )
-
 SKILLS = {
     'athletics': 'str',
     'acrobatics': 'dex',
@@ -83,7 +79,6 @@ SKILLS = {
     'performance': 'cha',
     'persuasion': 'cha',
 }
-SKILLS_ORDERED = sorted(SKILLS.keys())
 
 ROLL_METHODS = {
     # 'internal_name': (
@@ -139,12 +134,12 @@ ROLL_METHODS = {
 ROLL_METHODS_OPTIONS = (
     ('@CATEGORY', 'Random'),
     ('3d6', 'Roll 3d6'),
-    ('4d6dl', 'Roll 4d6, drop the lowest'),
-    ('4d6dh', 'Roll 4d6, drop the highest'),
-    ('5d6dldh', 'Roll 5d6, drop the lowest and highest',),
-    ('5d6dl2', 'Roll 5d6, drop the two lowest',),
-    ('5d6dh2', 'Roll 5d6, drop the two highest',),
-    ('7d6dl2dh2', 'Roll 7d6, drop the two lowest and the two highest', ),
+    ('4d6dl', 'Roll 4d6, drop lowest'),
+    ('4d6dh', 'Roll 4d6, drop highest'),
+    ('5d6dldh', 'Roll 5d6, drop lowest and highest',),
+    ('5d6dl2', 'Roll 5d6, drop two lowest',),
+    ('5d6dh2', 'Roll 5d6, drop two highest',),
+    ('7d6dl2dh2', 'Roll 7d6, drop two lowest and highest', ),
     ('@CATEGORY', 'Fixed Arrays'),
     ('array_standard', 'Standard Array (15, 14, 13, 12, 10, 8)', ),
 )
@@ -187,8 +182,8 @@ WEAPON_REACH_NORMAL = 5
 WEAPON_REACH_W_BONUS = 10
 DEFAULT_NUM_TARGETS = 1
 
-
-DEFAULT_LOADOUT_POOL_WEIGHT = 10
+# When building a loadout pool this is the weight applied to loadouts that have no specified weight
+DEFAULT_LOADOUT_WEIGHT = 1
 
 # Ability score increases, how often and how many points per increase
 ASI_HD_PER_INCREASE = 4
@@ -240,17 +235,17 @@ SPELL_SLOTS_TABLE = (
 )
 
 CASTER_FIXED_SPELLS_KNOWN = {
-    'sorcerer': (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15),
-    'bard': (-1, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22),
-    'half': (-1, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11),
-    'third': (-1, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13),
+    'sorcerer':     (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15),
+    'bard':         (-1, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22),
+    'half':         (-1, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11),
+    'third':        (-1, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13),
 }
 
 CASTER_CANTRIPS_KNOWN = {
-    'none': (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ),
+    'none':         (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ),
     'cleric_wizard': (-1, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, ),
-    'sorcerer': (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, ),
-    'bard_druid': (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, ),
+    'sorcerer':     (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, ),
+    'bard_druid':   (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, ),
 }
 
 CHALLENGE_RATING_CHART = (
@@ -516,14 +511,14 @@ class NPCGenerator:
         self.roll_options = ROLL_METHODS_OPTIONS
         self.roll_keys = list(ROLL_METHODS.keys())
 
-        self.hd_size_options = tuple(itertools.chain(['Default'], VALID_HD_SIZES))
+        self.hd_size_options = tuple(itertools.chain(['Default'], ['d' + str(x) for x in VALID_HD_SIZES]))
 
     def build_armors_from_csv(self, armors_file_loc):
         with open(armors_file_loc, newline='', encoding="utf-8") as armors_file:
             armors_file_reader = csv.DictReader(armors_file)
             for line in armors_file_reader:
 
-                # Ignore blank lines or comments using hastags
+                # Ignore blank lines or comments using hashtags
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
 
@@ -604,6 +599,8 @@ class NPCGenerator:
                     if line['tags']:
                         new_tags_dict = {}
                         for raw_tag in line['tags'].replace(' ', '').split(','):
+                            # We want to ignore whitespace in the csv file, but treat underscores as intended spaces
+                            raw_tag = raw_tag.replace('_', ' ')
                             if ':' in raw_tag:
                                 tag_name, tag_value = raw_tag.split(':')
                                 # NOTE if you want to give multiple of something like armor or resistances, you need to
@@ -643,7 +640,7 @@ class NPCGenerator:
                 if line['weight']:
                     weight = int(line['weight'])
                 else:
-                    weight = DEFAULT_LOADOUT_POOL_WEIGHT
+                    weight = DEFAULT_LOADOUT_WEIGHT
 
                 armors = line['armors'].replace(" ", "").split(',')
 
@@ -678,7 +675,7 @@ class NPCGenerator:
                 if line['weight']:
                     weight = int(line['weight'])
                 else:
-                    weight = DEFAULT_LOADOUT_POOL_WEIGHT
+                    weight = DEFAULT_LOADOUT_WEIGHT
 
                 weapons = line['weapons'].replace(" ", "").split(',')
                 if line['shield']:
@@ -1038,8 +1035,10 @@ class NPCGenerator:
                 for character_tag in trait.tags['give_tag']:
                     character.add_tag(character_tag)
 
+            # Tools and skills are considered the same, anything not in SKILLS is considered a tool
             if 'skill_proficiency' in trait.tags:
                 for skill in trait.tags['skill_proficiency']:
+                    skill = skill.replace('_', ' ')
                     if skill not in character.skills:
                         character.add_skill(skill)
                     elif len(character.get_non_proficient_skills()) > 0:
@@ -1237,11 +1236,15 @@ class NPCGenerator:
                 self.give_trait(character, trait, rnd_instance=random.Random(seed + trait))
 
     def new_character(self,
+
                       seed=None,
                       race_choice=DEFAULT_RACE,
                       class_choice=DEFAULT_CLASS,
                       hit_dice_num=DEFAULT_HIT_DICE_NUM,
                       attribute_roll_method=DEFAULT_ROLL_METHOD,
+
+
+                      name='',
                       rerolls_allowed=0,
                       min_total=0,
                       no_attribute_swapping=False,
@@ -1268,17 +1271,20 @@ class NPCGenerator:
 
         # Sanity checks, better to just return a default guy than risk crashing
         if not 1 <= hit_dice_num <= 20:
-            debug_print('Invalid HD_NUM received: {}'.format(hit_dice_num))
+            debug_print('Invalid HD_NUM received: {}'.format(hit_dice_num), 0)
             hit_dice_num = DEFAULT_HIT_DICE_SIZE
         if class_choice not in self.class_keys:
-            debug_print('Invalid class_template: {}'.format(class_choice))
+            debug_print('Invalid class_template: {}'.format(class_choice), 0)
             class_choice = DEFAULT_CLASS
         if race_choice not in self.race_keys:
-            debug_print('Invalid race_template: {}'.format(race_choice))
+            debug_print('Invalid race_template: {}'.format(race_choice), 0)
             race_choice = DEFAULT_RACE
 
         new_character = Character()
         new_character.seed = seed
+
+        if name:
+            new_character.name = name
 
         race_template = self.race_templates[race_choice]
         assert isinstance(race_template, RaceTemplate), "new_character(): {} is not race_choice template name"
@@ -1478,12 +1484,16 @@ class NPCGenerator:
             is_valid = False
             clean_dict['attribute_roll_method'] = DEFAULT_ROLL_METHOD
 
+        if 'name' in request_dict.keys():
+            clean_dict['name'] = request_dict['name']
+
         return is_valid, clean_dict
 
 
 class Character:
     def __init__(self):
         self.seed = None
+        self.name = ''
 
         self.stats = {}
         for attr in STATS_ATTRIBUTES:
@@ -1511,6 +1521,8 @@ class Character:
         # Expertise skills should only every be a subset of skills
         self.skills = set()
         self.skills_expertise = set()
+        self.tool_proficiencies = set()
+        self.tools_expertise = set()
 
         self.saves = set()
         self.save_advantages = set()
@@ -1919,10 +1931,19 @@ class Character:
     def add_save_disadvantage(self, disadvantage):
         self.save_disadvantages.add(disadvantage)
 
+    # Can also add tools, anything that's not in the valid skills list is assumed to be a tool
     def add_skill(self, skill, expertise=False):
-        self.skills.add(skill)
-        if expertise:
-            self.skills_expertise.add(skill)
+        # Tools can have spaces in them, so they use underscores in the csv file
+        # Make sure underscores have become spaces, first
+        skill = skill.replace('_', ' ')
+        if skill in SKILLS:
+            self.skills.add(skill)
+            if expertise:
+                self.skills_expertise.add(skill)
+        else:
+            self.tool_proficiencies.add(skill)
+            if expertise:
+                self.skills_expertise.add(skill)
 
     def get_non_proficient_skills(self):
         out_skills = set(SKILLS.keys())
@@ -2027,7 +2048,13 @@ class Character:
     def build_stat_block(self, short_traits=True, trait_visibility=1):
         sb = StatBlock()
 
-        sb.name = '{} {}'.format(self.race_name, self.class_name)
+        if self.name:
+            sb.name = self.name
+        else:
+            sb.name = '{} {}'.format(self.race_name, self.class_name)
+
+        sb.race = self.race_name
+        sb._class = self.class_name
 
         sb.creature_type = self.creature_type
 
@@ -2087,7 +2114,7 @@ class Character:
         sb.skills = ''
         if len(self.skills) > 0:
             skills_list = []
-            for skill in SKILLS_ORDERED:
+            for skill in sorted(SKILLS):
                 if skill in self.skills:
                     skill_attribute = SKILLS[skill]
                     skill_val = self.stats[skill_attribute + '_mod'] + self.stats['proficiency']
@@ -2100,6 +2127,16 @@ class Character:
                         val_str = ' ' + str(skill_val)
                     skills_list.append(skill.capitalize() + val_str)
             sb.skills = ', '.join(skills_list)
+
+        sb.tools = ''
+        if len(self.tool_proficiencies) > 0:
+            tools_list = []
+            for tool in sorted(self.tool_proficiencies):
+                if tool in self.tools_expertise:
+                    tools_list.append(tool + '*')
+                else:
+                    tools_list.append(tool)
+            sb.tools = ', '.join(tools_list)
 
         sb.cr = self.get_cr()
         sb.senses = self.get_senses()
@@ -2121,11 +2158,17 @@ class Character:
             sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
         passive_traits = []
+        hidden_traits = []
         for trait_obj in self.traits.values():
-            if trait_obj.get_category() == 'passive' and trait_obj.get_visibility(self) <= trait_visibility:
-                passive_traits.append((trait_obj.get_title(self),
-                                       trait_obj.get_entry(self, short=short_traits)))
+            if trait_obj.get_category() == 'passive':
+                if trait_obj.get_visibility(self) <= trait_visibility:
+                    passive_traits.append((trait_obj.get_title(self),
+                                           trait_obj.get_entry(self, short=short_traits)))
+                else:
+                    hidden_traits.append(trait_obj.get_title(self))
+
         sb.passive_traits = passive_traits
+        sb.hidden_traits = nice_list(hidden_traits)
 
         spellcasting_traits = []
         if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
@@ -2174,8 +2217,10 @@ class StatBlock:
         self.senses = ''
         self.saves = ''
         self.skills = ''
+        self.tools = ''
         self.cr = ''
         self.languages = None
+        self.hidden_traits = ''
         self.passive_traits = []
         self.spellcasting_traits = []
         self.multiattack = []
@@ -2186,6 +2231,7 @@ class StatBlock:
     def plain_text(self):
         disp = ''
         disp += self.name + '\n'
+        disp += "{} {}".format(self.race, self._class) + '\n'
         # Subline
         disp += "{} {}, unaligned".format(self.size, self.creature_type) + '\n'
         disp += 'AC: ' + self.armor + '\n'
@@ -2196,6 +2242,8 @@ class StatBlock:
         disp += self.attributes + '\n'
         disp += 'Saves: ' + self.saves + '\n'
         disp += 'Skills: ' + self.skills + '\n'
+        if self.tools:
+            disp += 'Tools: ' + self.tools + '\n'
         if self.damage_vulnerabilities:
             disp += 'Damage Vulnerabilities: ' + self.damage_vulnerabilities + '\n'
         if self.damage_resistances:
@@ -2213,6 +2261,8 @@ class StatBlock:
             disp += 'Challenge: ' + self.cr + '\n'
         for trait in self.passive_traits:
             disp += trait[0] + '. ' + trait[1] + '\n'
+        if self.hidden_traits:
+            disp += 'Hidden Traits: ' + self.hidden_traits + '\n'
         for spellcasting_trait in self.spellcasting_traits:
             disp += spellcasting_trait[0] + '. ' + spellcasting_trait[1] + '\n'
         for multiattack in self.multiattack:
@@ -2872,7 +2922,7 @@ class LoadoutPool:
         self.loadouts = []
         self.weights = []
 
-    def add_loadout(self, loadout: Loadout, weight=DEFAULT_LOADOUT_POOL_WEIGHT):
+    def add_loadout(self, loadout: Loadout, weight=DEFAULT_LOADOUT_WEIGHT):
         self.loadouts.append(loadout)
         self.weights.append(weight)
 
