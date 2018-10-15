@@ -782,6 +782,69 @@ class NPCGenerator:
 
                 self.spell_lists[new_spell_list.name] = new_spell_list
 
+    # def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
+    #     with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
+    #         spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
+    #         for line in spellcaster_profiles_file_reader:
+    #
+    #             try:
+    #
+    #                 # Ignore blank lines or comments using hastags
+    #                 if line['internal_name'] == '' or '#' in line['internal_name']:
+    #                     continue
+    #
+    #                 new_spellcaster_profile = SpellCasterProfile()
+    #                 new_spellcaster_profile.intName = line['internal_name']
+    #                 new_spellcaster_profile.casting_stat = line['casting_stat']
+    #                 new_spellcaster_profile.ready_style = line['ready_style']
+    #
+    #                 # Alternative slots progressions not implemented
+    #                 # Probably not needed, since all casters currently in the game derive their slots from the standard
+    #                 new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
+    #
+    #                 if line["hd_per_casting_level"]:
+    #                     new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
+    #                 else:
+    #                     new_spellcaster_profile.hd_per_casting_level = 1
+    #
+    #                 new_spellcaster_profile.cantrips_per_level = CASTER_CANTRIPS_KNOWN[line['cantrips_per_level']]
+    #
+    #                 if line['fixed_spells_known_by_level']:
+    #                     new_spellcaster_profile.fixed_spells_known_by_level = \
+    #                         CASTER_FIXED_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
+    #                 else:
+    #                     new_spellcaster_profile.fixed_spells_known_by_level = None
+    #
+    #                 if line['spells_known_modifier']:
+    #                     new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
+    #                 else:
+    #                     new_spellcaster_profile.spells_known_modifier = 0
+    #
+    #                 if line['free_spell_lists']:
+    #                     for spell_list_name in line['free_spell_lists'].replace(" ", "").split(','):
+    #                         new_spellcaster_profile.free_spell_lists.append(self.spell_lists[spell_list_name])
+    #                 else:
+    #                     new_spellcaster_profile.free_spell_lists = None
+    #
+    #                 new_spell_lists_dict = {}
+    #                 for rawEntry in line['spell_lists'].replace(" ", "").split(','):
+    #                     if ':' in rawEntry:
+    #                         spell_list_name, weight = rawEntry.split(':')
+    #                         new_spell_lists_dict[self.spell_lists[spell_list_name]] = weight
+    #                     else:
+    #                         new_spell_lists_dict[self.spell_lists[rawEntry]] = DEFAULT_SPELL_WEIGHT
+    #                 new_spellcaster_profile.spell_lists = new_spell_lists_dict
+    #
+    #                 # For now, only standard slots progression
+    #                 # In the future, may add support for nonstandard slot progressions, like warlock
+    #                 new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
+    #
+    #                 self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
+    #
+    #             except (ValueError, TypeError):
+    #                 debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
+
+
     def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
         with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
@@ -798,20 +861,18 @@ class NPCGenerator:
                     new_spellcaster_profile.casting_stat = line['casting_stat']
                     new_spellcaster_profile.ready_style = line['ready_style']
 
-                    # Alternative slots progressions not implemented
-                    # Probably not needed, since all casters currently in the game derive their slots from the standard
-                    new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
-
                     if line["hd_per_casting_level"]:
                         new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
                     else:
                         new_spellcaster_profile.hd_per_casting_level = 1
 
-                    new_spellcaster_profile.cantrips_per_level = CASTER_CANTRIPS_KNOWN[line['cantrips_per_level']]
+                    if line['cantrips_per_level']:
+                        new_spellcaster_profile.cantrips_per_level = line['cantrips_per_level']
+                    else:
+                        new_spellcaster_profile.cantrips_per_level = None
 
                     if line['fixed_spells_known_by_level']:
-                        new_spellcaster_profile.fixed_spells_known_by_level = \
-                            CASTER_FIXED_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
+                        new_spellcaster_profile.fixed_spells_known_by_level = line['fixed_spells_known_by_level']
                     else:
                         new_spellcaster_profile.fixed_spells_known_by_level = None
 
@@ -821,8 +882,7 @@ class NPCGenerator:
                         new_spellcaster_profile.spells_known_modifier = 0
 
                     if line['free_spell_lists']:
-                        for spell_list_name in line['free_spell_lists'].replace(" ", "").split(','):
-                            new_spellcaster_profile.free_spell_lists.append(self.spell_lists[spell_list_name])
+                        new_spellcaster_profile.free_spell_lists = line['free_spell_lists'].replace(" ", "").split(',')
                     else:
                         new_spellcaster_profile.free_spell_lists = None
 
@@ -830,9 +890,9 @@ class NPCGenerator:
                     for rawEntry in line['spell_lists'].replace(" ", "").split(','):
                         if ':' in rawEntry:
                             spell_list_name, weight = rawEntry.split(':')
-                            new_spell_lists_dict[self.spell_lists[spell_list_name]] = weight
+                            new_spell_lists_dict[spell_list_name] = weight
                         else:
-                            new_spell_lists_dict[self.spell_lists[rawEntry]] = DEFAULT_SPELL_WEIGHT
+                            new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_WEIGHT
                     new_spellcaster_profile.spell_lists = new_spell_lists_dict
 
                     # For now, only standard slots progression
@@ -1251,10 +1311,13 @@ class NPCGenerator:
     def build_character_feature(self, feature_string, character, seed, short, args_tup):
         if feature_string == 'multiattack':
             return FeatureMultiattack(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
+        elif feature_string == 'spellcasting':
+            return FeatureSpellcasting(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
         elif feature_string == 'tinker':
             return FeatureTinker(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
         else:
-            debug_print("Couldn't find {}".format(feature_string), 0)
+            debug_print("'{}' has not been associated with CharacterFeature class!".format(feature_string), 0)
+            raise ValueError
 
     def new_character(self,
 
@@ -1291,14 +1354,10 @@ class NPCGenerator:
             class_choice = rnd_instance.choice(self.class_random_categories[class_choice])
 
         # Sanity checks
-        try:
-            assert 1 <= hit_dice_num <= 20, 'Invalid HD_NUM received: {}'.format(hit_dice_num)
-            assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
-            assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
-        except (AssertionError, ValueError):
-            debug_print(ValueError, 0)
-            debug_print(AssertionError, 0)
-            return None
+        assert 1 <= hit_dice_num <= 20, 'Invalid HD_NUM received: {}'.format(hit_dice_num)
+        assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
+        assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
+
 
         new_character = Character()
         new_character.seed = seed
@@ -2983,22 +3042,7 @@ class SpellCasterProfile:
         return new_spell_casting_ability
 
 
-# May include non-standard spellcaster profiles, like warlock or innate magic
-# These are fine, they just need to be able to give caster level and spell dc for the sake of CR calculations
-# And they need to share whether they give access to certain spells which other parts of the satblock may need,
-# Like mage armor
-class SpellCastingFeature(StatBlockEntry):
-    def get_caster_level(self, owner: Character):
-        return 0
-
-    def has_spell(self, owner: Character, spell_name):
-        return False
-
-    def get_spell_dc(self, owner: Character):
-        return 0
-
-
-class SpellCastingAbility(SpellCastingFeature):
+class SpellCastingAbility():
     """
     SpellcastingAbility is the personalized ability that gets assigned to a character.
     When created, it is level agnostic, and when it comes time to spit out the statblock it needs to be told for what
@@ -3196,6 +3240,94 @@ class FeatureMultiattack(CharacterFeature):
             "You may make {} attacks when using the attack action.".format(NUM_TO_TEXT[self.attacks])
         ))
         return entries
+
+
+class FeatureSpellcasting(CharacterFeature):
+    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
+        self.int_name = 'spellcasting'
+        sp_profile = npc_gen.spellcaster_profiles[args_tup[0]]
+        assert isinstance(sp_profile, SpellCasterProfile)
+
+        # NPCs generally either have spells 'prepared' or 'known'
+        self.ready_style = sp_profile.ready_style
+        # Which stat is used for casting
+        self.casting_stat = sp_profile.casting_stat
+        self.hd_per_casting_level = sp_profile.hd_per_casting_level
+        self.spells_readied_progression = DEFAULT_SPELLS_READIED_PROGRESSION
+        self.cantrips_progression = sp_profile.cantrips_per_level
+        self.fixed_spells_known_by_level = sp_profile.fixed_spells_known_by_level
+        self.slots_progression = sp_profile.spell_slots_table
+        self.spells_known_modifier = sp_profile.spells_known_modifier
+        self.free_spell_lists = sp_profile.free_spell_lists
+        self.spell_lists = sp_profile.spell_lists
+
+        # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
+        self.spell_choices = None
+        self.free_spells = self.get_free_spells(npc_gen=npc_gen)
+        self.spell_choices = self.get_spell_choices(npc_gen=npc_gen, seed=seed)
+
+    def get_free_spells(self, npc_gen: 'NPCGenerator'):
+        free_spells = [[], [], [], [], [], [], [], [], [], [], ]
+        if self.free_spell_lists:
+            for free_spell_list_name in self.free_spell_lists:
+                spell_list = npc_gen.spell_lists[free_spell_list_name]
+                for spell in spell_list.spells.values():
+                    free_spells[spell.level].append(spell.name)
+        return free_spells
+
+    def get_spell_choices(self, npc_gen, seed):
+
+        rnd_instance = random.Random(seed + 'spellchoices')
+
+        free_spells = set()
+        for spell_level in self.free_spells:
+            for spell_name in spell_level:
+                free_spells.add(spell_name)
+
+        spell_selections = []
+        # We do this for every spell level
+        for spell_level in range(0, 10):
+            total_spell_count = 0
+            for spell_list_name in self.spell_lists.keys():
+                spell_list = npc_gen.spell_lists[spell_list_name]
+                total_spell_count += spell_list.num_spells_of_level(spell_level)
+
+            spell_options = []
+            spell_weights = []
+
+            for spell_list_name, weight in self.spell_lists.items():
+                spell_list = npc_gen.spell_lists[spell_list_name]
+                num_spells_of_level = spell_list.num_spells_of_level(spell_level)
+                if num_spells_of_level == 0:
+                    continue
+                weight_per_spell = float(weight) / num_spells_of_level
+                for spell_name in spell_list.get_spell_set_of_level(spell_level):
+                    spell_options.append(spell_name)
+                    spell_weights.append(weight_per_spell)
+
+            spell_selections_for_level = []
+            spell_selections_remaining = MAX_SPELL_CHOICES_PER_LEVEL
+            while spell_selections_remaining > 0:
+                # First, check that we still have options
+                if len(spell_options) == 0:
+                    break
+
+                choice_by_index = rnd_instance.choices(range(len(spell_weights)), spell_weights)[0]
+                spell_choice = spell_options[choice_by_index]
+
+                spell_options.pop(choice_by_index)
+                spell_weights.pop(choice_by_index)
+
+                if spell_choice in spell_selections:
+                    continue
+                elif spell_choice in free_spells:
+                    continue
+                else:
+                    spell_selections_for_level.append(spell_choice)
+                    spell_selections_remaining -= 1
+
+            spell_selections.append(spell_selections_for_level)
+        return spell_selections
 
 
 # Below this point are classes for particular Character Features
