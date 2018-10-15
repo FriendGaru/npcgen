@@ -2820,6 +2820,11 @@ class Weapon(Attack):
         if self.attack_type == 'melee':
             if 'finesse' in self.tags:
                 attack_stat = max(owner_str, owner_dex)
+            # Special martial arts case
+            elif 'martial_arts' in owner.character_tags and \
+                    ('monk' in self.tags or
+                     ('simple' in self.tags and '2h' not in self.tags and 'heavy' not in self.tags)):
+                attack_stat = max(owner_str, owner_dex)
             else:
                 attack_stat = owner_str
         elif self.attack_type == 'ranged':
@@ -2849,12 +2854,13 @@ class Weapon(Attack):
             dmg_dice_size += 2
 
         # Check for Martial Arts special case
-        if 'martial_arts' in owner.traits:
+        if 'martial_arts' in owner.character_tags:
             if ('monk' in self.tags) or \
                     (self.attack_type == 'melee' and 'simple' in self.tags
                      and 'heavy' not in self.tags and '2h' not in self.tags):
                 if dmg_dice_num == 1 and dmg_dice_size < MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]:
                     dmg_dice_size = MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]
+                attack_stat = max(owner_str, owner_dex)
 
         avg_dmg = dmg_dice_size / 2 * dmg_dice_num + attack_stat
 

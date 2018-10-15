@@ -37,5 +37,6 @@ should create a generalized method for traits like this
 tools can have spaces and apostrophes in them, (i.e. "tinker's tools"),
 if I implement tool proficiencies in the statblock I'll need to address that
 
-
+- Have characters received modifiable copies of weapons and armors, in anticipation of future features
+- Rework Martial Arts so it
 

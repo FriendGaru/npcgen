@@ -1,6 +1,6 @@
 internal_name,display_name,recharge,trait_type,visibility,text,text_short,tags,cr_changes
 #HARDCODED TRAITS,,,,,,,,
-martial_arts,Martial Arts,,passive,1,Your damage scales with level when attacking unarmed or using monk weapons.,,"give_tag:martial_arts,give_weapon:monk_unarmed",
+martial_arts,Martial Arts,,passive,1,Your damage scales with level when attacking unarmed or using monk weapons.,,give_tag:martial_arts,
 heavy_armor_training,Dwarven Armor Training,,passive,1,Your speed is not reduced by wearing heavy armor. ,,give_tag:heavy_armor_training,
 medium_armor_master,Medium Armor Master,,passive,1,"You have practiced moving in medium armor to gain the following benefits:\nWearing medium armor doesn't impose disadvantage on your Dexterity (Stealth)\nWhen you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher. checks. ",Wearing medium armor does not impose disadvantage on stealth checks for you. You may add 3 to your AC if your dexterity is 16 or higher while wearing medium armor.,give_tag:medium_armor_training,
 floating_attribute_bonus,,,hidden,,,,"floating_attribute_bonus:1,repeatable",
