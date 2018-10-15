@@ -1394,6 +1394,9 @@ class NPCGenerator:
         if name:
             new_character.name = name
 
+        new_character.set_stat('hit_dice_num', hit_dice_num)
+        new_character.set_stat('hit_dice_extra', bonus_hd)
+
         race_template = self.race_templates[race_choice]
         assert isinstance(race_template, RaceTemplate)
         self.apply_race_template(new_character, race_template)
@@ -1452,9 +1455,6 @@ class NPCGenerator:
             new_character.set_stat('hit_dice_size', class_template.hd_size)
         else:
             new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
-
-        new_character.set_stat('hit_dice_num', hit_dice_num)
-        new_character.set_stat('hit_dice_extra', bonus_hd)
 
         rnd_instance = random.Random(seed + 'asi')
         if not no_asi:
@@ -2264,7 +2264,7 @@ class Character:
         for entry in all_block_entries:
             assert isinstance(entry, StatBlockEntry)
             if entry.get_visibility(self) <= trait_visibility:
-                if entry.get_category() in ('passive'):
+                if entry.get_category() == 'passive':
                     passive_entries.append((entry.get_title(self), entry.get_entry(self)))
                 elif entry.get_category() == 'multiattack':
                     multiattack_entries.append((entry.get_title(self), entry.get_entry(self)))
