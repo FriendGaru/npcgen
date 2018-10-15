@@ -39,16 +39,16 @@ gnome_rock,Gnome (Rock),"con:1,int:2",walk:25,,small,"common,gnomish",tinker,"da
 ,,,,,,,,
 @CATEGORY,Dragonborn,,,,,,,
 @RANDOM,Random Dragonborn,,,,,,,
-dragonborn_black,Dragonbon (Black),"str:2,con:1",,,,"common,draconic",dragonborn_feature:black,"dragonborn_breath_weapon_black,damage_resistance_acid"
-dragonborn_blue,Dragonbon (Blue),"str:2,con:1",,,,"common,draconic",dragonborn_feature:blue,"dragonborn_breath_weapon_blue,damage_resistance_lightning"
-dragonborn_brass,Dragonbon (Brass),"str:2,con:1",,,,"common,draconic",dragonborn_feature:brass,"dragonborn_breath_weapon_brass,damage_resistance_fire"
-dragonborn_bronze,Dragonbon (Bronze),"str:2,con:1",,,,"common,draconic",dragonborn_feature:bronze,"dragonborn_breath_weapon_bronze,damage_resistance_lightning"
-dragonborn_copper,Dragonbon (Copper),"str:2,con:1",,,,"common,draconic",dragonborn_feature:copper,"dragonborn_breath_weapon_copper,damage_resistance_acid"
-dragonborn_gold,Dragonbon (Gold),"str:2,con:1",,,,"common,draconic",dragonborn_feature:gold,"dragonborn_breath_weapon_gold,damage_resistance_fire"
-dragonborn_green,Dragonbon (Green),"str:2,con:1",,,,"common,draconic",dragonborn_feature:green,"dragonborn_breath_weapon_green,damage_resistance_poison"
-dragonborn_red,Dragonbon (Red),"str:2,con:1",,,,"common,draconic",dragonborn_feature:red,"dragonborn_breath_weapon_red,damage_resistance_fire"
-dragonborn_silver,Dragonbon (Silver),"str:2,con:1",,,,"common,draconic",dragonborn_feature:silver,"dragonborn_breath_weapon_silver,damage_resistance_cold"
-dragonborn_white,Dragonbon (White),"str:2,con:1",,,,"common,draconic",dragonborn_feature:white,"dragonborn_breath_weapon_white,damage_resistance_cold"
+dragonborn_black,Dragonbon (Black),"str:2,con:1",,,,"common,draconic",dragonborn_feature:black,
+dragonborn_blue,Dragonbon (Blue),"str:2,con:1",,,,"common,draconic",dragonborn_feature:blue,
+dragonborn_brass,Dragonbon (Brass),"str:2,con:1",,,,"common,draconic",dragonborn_feature:brass,
+dragonborn_bronze,Dragonbon (Bronze),"str:2,con:1",,,,"common,draconic",dragonborn_feature:bronze,
+dragonborn_copper,Dragonbon (Copper),"str:2,con:1",,,,"common,draconic",dragonborn_feature:copper,
+dragonborn_gold,Dragonbon (Gold),"str:2,con:1",,,,"common,draconic",dragonborn_feature:gold,
+dragonborn_green,Dragonbon (Green),"str:2,con:1",,,,"common,draconic",dragonborn_feature:green,
+dragonborn_red,Dragonbon (Red),"str:2,con:1",,,,"common,draconic",dragonborn_feature:red,
+dragonborn_silver,Dragonbon (Silver),"str:2,con:1",,,,"common,draconic",dragonborn_feature:silver,
+dragonborn_white,Dragonbon (White),"str:2,con:1",,,,"common,draconic",dragonborn_feature:white,
 ,,,,,,,,
 @CATEGORY,Aasimar,,,,,,,
 @RANDOM,Random Aasimar,,,,,,,

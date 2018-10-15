@@ -7,14 +7,12 @@ import collections
 from typing import Dict
 import pkg_resources as pkg
 
-
 # -1 - Nothing at all
 # 0 - Errors only
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
 DEBUG_LEVEL = 1
-
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
@@ -39,7 +37,7 @@ RACE_TEMPLATES_FILE = \
 CLASS_TEMPLATES_FILE = \
     pkg.resource_filename(__name__, 'data/classtemplates.csv')
 
-STATS_ATTRIBUTES = ('str', 'dex', 'con', 'int', 'wis', 'cha', )
+STATS_ATTRIBUTES = ('str', 'dex', 'con', 'int', 'wis', 'cha',)
 DEFAULT_ATTRIBUTE_VALUE = 8
 ATTRIBUTES_ABBREVIATION_TO_FULL_WORD: Dict[str, str] = {
     'str': 'Strength', 'dex': 'Dexterity', 'con': 'Constitution',
@@ -124,7 +122,7 @@ ROLL_METHODS = {
     ),
     'array_standard': (
         'Standard Array (15, 14, 13, 12, 10, 8)',
-        (6, 3, 0, 0, ),
+        (6, 3, 0, 0,),
         (15, 14, 13, 12, 10, 8),
     ),
 }
@@ -139,9 +137,9 @@ ROLL_METHODS_OPTIONS = (
     ('5d6dldh', 'Roll 5d6, drop lowest and highest',),
     ('5d6dl2', 'Roll 5d6, drop two lowest',),
     ('5d6dh2', 'Roll 5d6, drop two highest',),
-    ('7d6dl2dh2', 'Roll 7d6, drop two lowest and highest', ),
+    ('7d6dl2dh2', 'Roll 7d6, drop two lowest and highest',),
     ('@CATEGORY', 'Fixed Arrays'),
-    ('array_standard', 'Standard Array (15, 14, 13, 12, 10, 8)', ),
+    ('array_standard', 'Standard Array (15, 14, 13, 12, 10, 8)',),
 )
 
 DEFAULT_ROLL_METHOD = '3d6'
@@ -172,7 +170,7 @@ DEFAULT_RACE = 'humanoid'
 DEFAULT_CLASS = 'soldier'
 
 LANGUAGES = (
-    'common', 'dwarvish',  'elvish', 'giant', 'gnomish', 'goblin', 'halfling', 'orc',
+    'common', 'dwarvish', 'elvish', 'giant', 'gnomish', 'goblin', 'halfling', 'orc',
     'abyssal', 'celestial', 'draconic', 'deep speech', 'infernal', 'primordial', 'sylvan', 'undercommon',
 )
 
@@ -206,84 +204,84 @@ DEFAULT_SPELLS_READIED_PROGRESSION = (
 )
 
 SPELL_SLOTS_TABLE = (
-        # SPELL_SLOTS_TABLE[caster_level][spell_level]
-        (),
-        # 1
-        (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
-        (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-        (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-        (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-        (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-        # 6
-        (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-        (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
-        (-1, 4, 3, 3, 2, 0, 0, 0, 0, 0,),
-        (-1, 4, 3, 3, 3, 1, 0, 0, 0, 0,),
-        (-1, 4, 3, 3, 3, 2, 0, 0, 0, 0,),
-        # 11
-        (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
-        (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
-        (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
-        (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
-        (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
-        # 16
-        (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
-        (-1, 4, 3, 3, 3, 2, 1, 1, 1, 1,),
-        (-1, 4, 3, 3, 3, 3, 1, 1, 1, 1,),
-        (-1, 4, 3, 3, 3, 3, 2, 1, 1, 1,),
-        (-1, 4, 3, 3, 3, 3, 2, 2, 1, 1,),
+    # SPELL_SLOTS_TABLE[caster_level][spell_level]
+    (),
+    # 1
+    (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
+    # 6
+    (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 2, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 1, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 0, 0, 0, 0,),
+    # 11
+    (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
+    # 16
+    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 1,),
+    (-1, 4, 3, 3, 3, 3, 1, 1, 1, 1,),
+    (-1, 4, 3, 3, 3, 3, 2, 1, 1, 1,),
+    (-1, 4, 3, 3, 3, 3, 2, 2, 1, 1,),
 )
 
 CASTER_FIXED_SPELLS_KNOWN = {
-    'sorcerer':     (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15),
-    'bard':         (-1, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22),
-    'half':         (-1, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11),
-    'third':        (-1, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13),
+    'sorcerer': (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15),
+    'bard': (-1, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22),
+    'half': (-1, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11),
+    'third': (-1, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13),
 }
 
 CASTER_CANTRIPS_KNOWN = {
-    'none':         (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ),
-    'cleric_wizard': (-1, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, ),
-    'sorcerer':     (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, ),
-    'bard_druid':   (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, ),
+    'none': (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,),
+    'cleric_wizard': (-1, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,),
+    'sorcerer': (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,),
+    'bard_druid': (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,),
 }
 
 CHALLENGE_RATING_CHART = (
     # CR,    prof,  AC, HP,   hit,dpr,  saveDC
-    ('0 (0 or 10 XP)',       2,  13,  6,     3,  1,      13),
-    ('1/8 (25 XP)',     2,  13, 35,     3,  3,      13),
-    ('1/4 (50 XP)',     2,  13, 49,     3,  5,      13),
-    ('1/2 (100 XP)',     2,  13, 70,     3,  8,      13),
-    ('1 (200 XP)',       2,  13, 85,     3,  14,     13),
-    ('2 (450 XP)',       2,  13, 100,    3,  20,     13),
-    ('3 (700 XP)',       2,  13, 115,    4,  26,     13),
-    ('4 (1,100 XP)',       2,  14, 130,    5,  32,     14),
-    ('5 (1,800 XP)',       3,  15, 145,    6,  38,     15),
-    ('6 (2,300 XP)',       3,  15, 160,    6,  44,     15),
-    ('7 (2,900 XP)',       3,  15, 175,    6,  50,     15),
-    ('8 (3,900 XP)',       3,  16, 190,    7,  56,     16),
-    ('9 (5,000 XP)',       4,  16, 205,    7,  62,     16),
-    ('10 (5,900 XP)',      4,  17, 220,    7,  68,     16),
-    ('11 (7,200 XP)',      4,  17, 235,    8,  74,     17),
-    ('12 (8,400 XP)',      4,  17, 250,    8,  80,     17),
-    ('13 (10,000 XP)',      5,  18, 265,    8,  74,     18),
-    ('14 (11,500 XP)',      5,  18, 280,    8,  74,     18),
-    ('15 (13,000 XP)',      5,  18, 295,    8,  74,     18),
-    ('16 (15,000 XP)',      5,  18, 310,    9,  74,     18),
-    ('17 (18,000 XP)',      6,  19, 325,    10, 74,     19),
-    ('18 (20,000 XP)',      6,  19, 340,    10, 74,     19),
-    ('19 (22,000 XP)',      6,  19, 355,    10, 74,     19),
-    ('20 (25,000 XP)',      6,  19, 400,    10, 74,     19),
-    ('21 (33,000 XP)',      7,  19, 445,    11, 74,     20),
-    ('22 (41,000 XP)',      7,  19, 490,    11, 74,     20),
-    ('23 (50,000 XP)',      7,  19, 535,    11, 74,     20),
-    ('24 (62,000 XP)',      7,  19, 580,    12, 74,     21),
-    ('25 (75,000 XP)',      8,  19, 625,    12, 74,     21),
-    ('26 (90,000 XP)',      8,  19, 670,    12, 74,     21),
-    ('27 (105,000 XP)',      8,  19, 715,    13, 74,     22),
-    ('28 (120,000 XP)',      8,  19, 760,    13, 74,     22),
-    ('29 (135,000 XP)',      9,  19, 805,    13, 74,     22),
-    ('30 (155,000 XP)',      9,  19, 850,    14, 74,     23),
+    ('0 (0 or 10 XP)', 2, 13, 6, 3, 1, 13),
+    ('1/8 (25 XP)', 2, 13, 35, 3, 3, 13),
+    ('1/4 (50 XP)', 2, 13, 49, 3, 5, 13),
+    ('1/2 (100 XP)', 2, 13, 70, 3, 8, 13),
+    ('1 (200 XP)', 2, 13, 85, 3, 14, 13),
+    ('2 (450 XP)', 2, 13, 100, 3, 20, 13),
+    ('3 (700 XP)', 2, 13, 115, 4, 26, 13),
+    ('4 (1,100 XP)', 2, 14, 130, 5, 32, 14),
+    ('5 (1,800 XP)', 3, 15, 145, 6, 38, 15),
+    ('6 (2,300 XP)', 3, 15, 160, 6, 44, 15),
+    ('7 (2,900 XP)', 3, 15, 175, 6, 50, 15),
+    ('8 (3,900 XP)', 3, 16, 190, 7, 56, 16),
+    ('9 (5,000 XP)', 4, 16, 205, 7, 62, 16),
+    ('10 (5,900 XP)', 4, 17, 220, 7, 68, 16),
+    ('11 (7,200 XP)', 4, 17, 235, 8, 74, 17),
+    ('12 (8,400 XP)', 4, 17, 250, 8, 80, 17),
+    ('13 (10,000 XP)', 5, 18, 265, 8, 74, 18),
+    ('14 (11,500 XP)', 5, 18, 280, 8, 74, 18),
+    ('15 (13,000 XP)', 5, 18, 295, 8, 74, 18),
+    ('16 (15,000 XP)', 5, 18, 310, 9, 74, 18),
+    ('17 (18,000 XP)', 6, 19, 325, 10, 74, 19),
+    ('18 (20,000 XP)', 6, 19, 340, 10, 74, 19),
+    ('19 (22,000 XP)', 6, 19, 355, 10, 74, 19),
+    ('20 (25,000 XP)', 6, 19, 400, 10, 74, 19),
+    ('21 (33,000 XP)', 7, 19, 445, 11, 74, 20),
+    ('22 (41,000 XP)', 7, 19, 490, 11, 74, 20),
+    ('23 (50,000 XP)', 7, 19, 535, 11, 74, 20),
+    ('24 (62,000 XP)', 7, 19, 580, 12, 74, 21),
+    ('25 (75,000 XP)', 8, 19, 625, 12, 74, 21),
+    ('26 (90,000 XP)', 8, 19, 670, 12, 74, 21),
+    ('27 (105,000 XP)', 8, 19, 715, 13, 74, 22),
+    ('28 (120,000 XP)', 8, 19, 760, 13, 74, 22),
+    ('29 (135,000 XP)', 9, 19, 805, 13, 74, 22),
+    ('30 (155,000 XP)', 9, 19, 850, 14, 74, 23),
 )
 
 ORDINAL_TO_NUM = {
@@ -354,7 +352,7 @@ DEFAULT_SPELL_WEIGHT = 1
 
 # Data for special traits
 MARTIAL_ARTS_DAMAGE = (
-    (-1, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10, )
+    (-1, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10,)
 )
 
 
@@ -447,11 +445,26 @@ def random_string(length, rnd_instance=None):
     return ''.join(rnd_instance.choice(string.ascii_letters) for _ in range(length))
 
 
+# I format my csv tag entries like 'tag_name:tag_val1;tag_val2,second_tag_name'
+# This will break them apart and return dictionaries like {tag_name: [tag_val1, tag_val2], second_tag_name: []}
+def csv_tag_reader(item_line, tag_delimiter=',', tag_value_separator=':', tag_val_delimiter=';'):
+    tags_dict = {}
+    for tag_raw in item_line.replace(" ", "").split(tag_delimiter):
+        if tag_value_separator in tag_raw:
+            tag_name, tag_values_raw = tag_raw.split(tag_value_separator)
+            tag_val_list = tag_values_raw.split(tag_val_delimiter)
+        else:
+            tag_name, tag_val_list = tag_raw, []
+        tags_dict[tag_name] = tag_val_list
+    return tags_dict
+
+
 class NPCGenerator:
     """
     NPC Generator builds all of the necessary data from external files, stores them, and builds instances of the
     Character class based on given parameters.
     """
+
     def __init__(self,
                  weapons_file_loc=WEAPONS_FILE,
                  armors_file_loc=ARMORS_FILE,
@@ -597,19 +610,22 @@ class NPCGenerator:
                     else:
                         new_trait_factory.text_short = new_trait_factory.text
 
+                    # if line['tags']:
+                    #     new_tags_dict = {}
+                    #     for raw_tag in line['tags'].replace(' ', '').split(','):
+                    #         if ':' in raw_tag:
+                    #             tag_name, tag_value = raw_tag.split(':')
+                    #             # NOTE if you want to give multiple of something like armor or resistances, you need to
+                    #             # use semicolons to separate them
+                    #             # Each tag for a trait will ALWAYS have a list associated with it,
+                    #             # remember when doing trait logic
+                    #             new_tags_dict[tag_name] = tag_value.split(';')
+                    #         else:
+                    #             new_tags_dict[raw_tag] = None
+                    #     new_trait_factory.tags = new_tags_dict
+
                     if line['tags']:
-                        new_tags_dict = {}
-                        for raw_tag in line['tags'].replace(' ', '').split(','):
-                            if ':' in raw_tag:
-                                tag_name, tag_value = raw_tag.split(':')
-                                # NOTE if you want to give multiple of something like armor or resistances, you need to
-                                # use semicolons to separate them
-                                # Each tag for a trait will ALWAYS have a list associated with it,
-                                # remember when doing trait logic
-                                new_tags_dict[tag_name] = tag_value.split(';')
-                            else:
-                                new_tags_dict[raw_tag] = None
-                        new_trait_factory.tags = new_tags_dict
+                        new_trait_factory.tags = csv_tag_reader(line['tags'])
 
                     self.traits[new_trait_factory.int_name] = new_trait_factory
                 except (ValueError, TypeError):
@@ -646,7 +662,7 @@ class NPCGenerator:
                 new_loadout = Loadout()
                 new_loadout.armors = armors
                 new_loadout_pool.add_loadout(new_loadout, weight)
-                
+
             # When we get to the end, add the last pool
             self.armors_loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
@@ -844,7 +860,6 @@ class NPCGenerator:
     #             except (ValueError, TypeError):
     #                 debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
 
-
     def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
         with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
@@ -894,6 +909,20 @@ class NPCGenerator:
                         else:
                             new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_WEIGHT
                     new_spellcaster_profile.spell_lists = new_spell_lists_dict
+
+                    if line['tags']:
+                        new_tags_dict = {}
+                        for raw_tag in line['tags'].replace(' ', '').split(','):
+                            if ':' in raw_tag:
+                                tag_name, tag_value = raw_tag.split(':')
+                                # NOTE if you want to give multiple of something like armor or resistances, you need to
+                                # use semicolons to separate them
+                                # Each tag for a trait will ALWAYS have a list associated with it,
+                                # remember when doing trait logic
+                                new_tags_dict[tag_name] = tag_value.split(';')
+                            else:
+                                new_tags_dict[raw_tag] = None
+                        new_spellcaster_profile.tags = new_tags_dict
 
                     # For now, only standard slots progression
                     # In the future, may add support for nonstandard slot progressions, like warlock
@@ -1257,7 +1286,7 @@ class NPCGenerator:
             character.add_language(language)
 
     # Applies everything EXCEPT features/traits
-    def apply_class_template(self, character: 'Character', class_template,  seed=None):
+    def apply_class_template(self, character: 'Character', class_template, seed=None):
 
         if not seed:
             seed = random_string(10)
@@ -1315,6 +1344,8 @@ class NPCGenerator:
             return FeatureSpellcasting(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
         elif feature_string == 'tinker':
             return FeatureTinker(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
+        elif feature_string == 'dragonborn_feature':
+            return FeatureDragonborn(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
         else:
             debug_print("'{}' has not been associated with CharacterFeature class!".format(feature_string), 0)
             raise ValueError
@@ -1326,7 +1357,6 @@ class NPCGenerator:
                       class_choice=DEFAULT_CLASS,
                       hit_dice_num=DEFAULT_HIT_DICE_NUM,
                       attribute_roll_method=DEFAULT_ROLL_METHOD,
-
 
                       name='',
                       rerolls_allowed=0,
@@ -1357,7 +1387,6 @@ class NPCGenerator:
         assert 1 <= hit_dice_num <= 20, 'Invalid HD_NUM received: {}'.format(hit_dice_num)
         assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
         assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
-
 
         new_character = Character()
         new_character.seed = seed
@@ -1424,7 +1453,7 @@ class NPCGenerator:
         else:
             new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
 
-        new_character.set_stat('hit_dice_num',  hit_dice_num)
+        new_character.set_stat('hit_dice_num', hit_dice_num)
         new_character.set_stat('hit_dice_extra', bonus_hd)
 
         rnd_instance = random.Random(seed + 'asi')
@@ -1450,9 +1479,6 @@ class NPCGenerator:
 
         rnd_instance = random.Random(seed + 'armor')
         self.give_armor(new_character, 'unarmored')
-        # Special case for mage armor, has to be given by the generator to get the reference
-        if new_character.has_spell('mage armor'):
-            self.give_armor(new_character, 'mage_armor', extra=True)
         # Remember, speeds have to come after armor selection
         new_character.choose_armors(rnd_instance=rnd_instance)
 
@@ -1568,7 +1594,7 @@ class NPCGenerator:
             is_valid = False
             clean_dict['hit_dice_num'] = random.randint(1, 20)
 
-        if 'seed' in request_dict.keys()\
+        if 'seed' in request_dict.keys() \
                 and type(request_dict['seed']) == str and len(request_dict['seed']) > 0:
             clean_dict['seed'] = request_dict['seed']
         else:
@@ -1883,7 +1909,7 @@ class Character:
         # This val should only be nonzero if a character is wearing heavy armor, doesn't have enough strength,
         # and hasn't has their penalty reduced, such as by the heavy_armor_training_trait
         armor_move_penalty = self.chosen_armor.speed_penalty(self)
-        
+
         # If the base move for any is zero, that means they don't have that ype of movement at all
         # Technically, I guess if speed is reduced below zero they should lose that movement, so let's do that too
         if self.get_stat('speed_walk') > 0:
@@ -1894,7 +1920,7 @@ class Character:
         else:
             self.set_stat('speed_walk_final', 0)
         self.set_stat('speed_walk_final', max(0, self.get_stat('speed_walk_final')))
-            
+
         if self.get_stat('speed_swim') > 0:
             self.set_stat('speed_swim_final',
                           self.get_stat('speed_swim')
@@ -1903,7 +1929,7 @@ class Character:
         else:
             self.set_stat('speed_swim_final', 0)
         self.set_stat('speed_swim_final', max(0, self.get_stat('speed_swim_final')))
-        
+
         if self.get_stat('speed_fly') > 0:
             self.set_stat('speed_fly_final',
                           self.get_stat('speed_fly')
@@ -1912,7 +1938,7 @@ class Character:
         else:
             self.set_stat('speed_fly_final', 0)
         self.set_stat('speed_fly_final', max(0, self.get_stat('speed_fly_final')))
-        
+
         if self.get_stat('speed_burrow') > 0:
             self.set_stat('speed_burrow_final',
                           self.get_stat('speed_burrow')
@@ -1924,15 +1950,6 @@ class Character:
 
     def get_stat(self, stat):
         return self.stats[stat]
-
-    # Checks to see if a charcter has access to a given spell
-    # Mainly for mage armor and eldritch blast
-    # Could expand to include innate magice
-    def has_spell(self, spell_name):
-        if self.spell_casting_ability:
-            assert isinstance(self.spell_casting_ability, SpellCastingAbility)
-            return self.spell_casting_ability.has_spell(self, spell_name)
-        return False
 
     def set_stat(self, stat, value):
         self.stats[stat] = value
@@ -2034,7 +2051,7 @@ class Character:
 
     def add_character_feature(self, character_feature: 'CharacterFeature'):
         self.character_features[character_feature.int_name] = character_feature
-    
+
     def add_language(self, language):
         if language not in self.languages:
             self.languages.append(language)
@@ -2067,19 +2084,19 @@ class Character:
 
     def add_tag(self, tag, tag_val=None):
         self.character_tags[tag] = tag_val
-            
+
     def add_damage_resistance(self, damage_resistance):
         if damage_resistance not in self.damage_resistances:
             self.damage_resistances.append(damage_resistance)
-            
+
     def add_damage_immunity(self, damage_immunity):
         if damage_immunity not in self.damage_immunities:
             self.damage_immunities.append(damage_immunity)
-            
+
     def add_damage_vulnerability(self, damage_vulnerability):
         if damage_vulnerability not in self.damage_vulnerabilities:
             self.damage_vulnerabilities.append(damage_vulnerability)
-            
+
     def add_condition_immunity(self, condition_immunity):
         if condition_immunity not in self.condition_immunities:
             self.condition_immunities.append(condition_immunity)
@@ -2166,13 +2183,13 @@ class Character:
         attributes_dict = {}
         for attribute in STATS_ATTRIBUTES:
             attribute_val = self.get_stat(attribute)
-            attributes_dict[attribute] = '{} ({})'\
+            attributes_dict[attribute] = '{} ({})' \
                 .format(attribute_val, num_plusser(self.get_stat(attribute + '_mod')))
         sb.attributes_dict = attributes_dict
 
         all_attributes_line = ''
         for attribute in STATS_ATTRIBUTES:
-            all_attributes_line += '{} {}({}) '\
+            all_attributes_line += '{} {}({}) ' \
                 .format(attribute.upper(), self.get_stat(attribute), num_plusser(self.get_stat(attribute + '_mod')))
         sb.attributes = all_attributes_line
 
@@ -2241,14 +2258,20 @@ class Character:
         all_block_entries = self.get_all_stat_block_entries(short=short_traits)
         passive_entries = []
         multiattack_entries = []
+        action_entries = []
+        spellcasting_entries = []
         hidden_entries = []
         for entry in all_block_entries:
             assert isinstance(entry, StatBlockEntry)
             if entry.get_visibility(self) <= trait_visibility:
-                if entry.get_category() in ('passive', 'spellcasting'):
+                if entry.get_category() in ('passive'):
                     passive_entries.append((entry.get_title(self), entry.get_entry(self)))
                 elif entry.get_category() == 'multiattack':
                     multiattack_entries.append((entry.get_title(self), entry.get_entry(self)))
+                elif entry.get_category() == 'spellcasting':
+                    spellcasting_entries.append((entry.get_title(self), entry.get_entry(self)))
+                elif entry.get_category() == 'action':
+                    action_entries.append((entry.get_title(self), entry.get_entry(self)))
             else:
                 hidden_entries.append(entry.get_title(self))
 
@@ -2261,6 +2284,8 @@ class Character:
 
         sb.passive_traits = passive_entries
         sb.multiattack = multiattack_entries
+        sb.actions = action_entries
+        sb.spellcasting_traits = spellcasting_entries
         sb.hidden_traits = nice_list(hidden_entries)
 
         return sb
@@ -2402,7 +2427,7 @@ class CharacterFeature:
 # Everything that can appear as an entry in a stat block musty implement this functionality
 # Features are allowed to change things based on who the owner is
 class StatBlockEntry:
-    def __init__(self, title, category, visibility, text,):
+    def __init__(self, title, category, visibility, text, ):
         self.title = title
         self.text = text
         self.category = category
@@ -2588,7 +2613,7 @@ class FeatureTrait(CharacterFeature):
         text = self.text.format(**character.stats)
         sb_entries = []
         sb_entries.append(StatBlockEntry(
-            title=self.title, text=text, category=self.trait_type, visibility=self.visibility,))
+            title=self.title, text=text, category=self.trait_type, visibility=self.visibility, ))
         return sb_entries
 
 
@@ -2778,7 +2803,7 @@ class Weapon(Attack):
         self.num_targets = 1
 
     def __repr__(self):
-        outstring = '[{},{},{},{},{},{},{},{},{},{},'\
+        outstring = '[{},{},{},{},{},{},{},{},{},{},' \
             .format(self.int_name, self.display_name, self.dmg_dice_num, self.dmg_dice_size, self.damage_type,
                     self.attack_type, str(self.range_short), str(self.range_long), str(self.tags),
                     str(self.num_targets))
@@ -2826,8 +2851,8 @@ class Weapon(Attack):
         # Check for Martial Arts special case
         if 'martial_arts' in owner.traits:
             if ('monk' in self.tags) or \
-                (self.attack_type == 'melee' and 'simple' in self.tags
-                 and 'heavy' not in self.tags and '2h' not in self.tags):
+                    (self.attack_type == 'melee' and 'simple' in self.tags
+                     and 'heavy' not in self.tags and '2h' not in self.tags):
                 if dmg_dice_num == 1 and dmg_dice_size < MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]:
                     dmg_dice_size = MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]
 
@@ -2959,6 +2984,7 @@ class SpellCasterProfile:
         # For now, only the standard slots table is supported
         # spell_slots_table[caster_level][spell_level]
         self.spell_slots_table = None
+        self.tags = {}
 
     def get_free_spells(self):
         free_spells = [[], [], [], [], [], [], [], [], [], [], ]
@@ -3023,168 +3049,6 @@ class SpellCasterProfile:
             spell_selections.append(spell_selections_for_level)
         return spell_selections
 
-    def generate_spell_casting_ability(self, rnd_instance=None):
-        new_spell_casting_ability = SpellCastingAbility(
-            ready_style=self.ready_style, casting_stat=self.casting_stat,
-            hd_per_casting_level=self.hd_per_casting_level,
-            spells_readied_progression=DEFAULT_SPELLS_READIED_PROGRESSION,
-            fixed_spells_known_by_level=self.fixed_spells_known_by_level,
-            cantrips_progression=self.cantrips_per_level,
-            slots_progression=self.spell_slots_table,
-            spells_known_modifier=self.spells_known_modifier,
-        )
-
-        if not rnd_instance:
-            rnd_instance = random
-
-        new_spell_casting_ability.spell_choices = self.get_random_spells(rnd_instance=rnd_instance)
-        new_spell_casting_ability.free_spells = self.get_free_spells()
-        return new_spell_casting_ability
-
-
-class SpellCastingAbility():
-    """
-    SpellcastingAbility is the personalized ability that gets assigned to a character.
-    When created, it is level agnostic, and when it comes time to spit out the statblock it needs to be told for what
-    level. This way, potentially you could tweak a character's level and not have to get an entirely new randomized
-    statblock entry.
-    """
-    def __init__(self, ready_style='known', casting_stat='int', hd_per_casting_level=1,
-                 spells_readied_progression=DEFAULT_SPELLS_READIED_PROGRESSION,
-                 fixed_spells_known_by_level=None,
-                 cantrips_progression=CASTER_CANTRIPS_KNOWN['none'],
-                 slots_progression=SPELL_SLOTS_TABLE,
-                 spells_known_modifier=0,
-                 ):
-        # NPCs generally either have spells 'prepared' or 'known'
-        self.ready_style = ready_style
-        # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
-        self.spell_choices = None
-        self.free_spells = [[], [], [], [], [], [], [], [], [], [], ]
-        # Which stat is used for casting
-        self.casting_stat = casting_stat
-        self.hd_per_casting_level = hd_per_casting_level
-        self.spells_readied_progression = spells_readied_progression
-        self.cantrips_progression = cantrips_progression
-        self.fixed_spells_known_by_level = fixed_spells_known_by_level
-        self.slots_progression = slots_progression
-        self.spells_known_modifier = spells_known_modifier
-
-    def get_spell_dc(self, owner):
-        return owner.get_stat(self.casting_stat + '_dc')
-
-    # Caster level is actually a bit weird for half and third casters like paladins and eldritch knights
-    # They only get their first casting level at 2 or 3 hd, respectively
-    # BUT, the next hd they gets bumps them up to the next spellcaster level regardless
-    # So, that's why this function looks weird
-    def get_caster_level(self, owner):
-        hit_dice = owner.get_stat('hit_dice_num')
-        if self.hd_per_casting_level == 1:
-            caster_level = hit_dice
-        else:
-            if hit_dice < self.hd_per_casting_level:
-                caster_level = 0
-            elif hit_dice == self.hd_per_casting_level:
-                caster_level = 1
-            else:
-                caster_level = (hit_dice + self.hd_per_casting_level - 1) // self.hd_per_casting_level
-        return caster_level
-
-    # returns a list of lists, [[level 1 spells, ], [level 2 spells, ], ...]
-    def get_spells_readied(self, owner):
-        caster_level = self.get_caster_level(owner)
-        if caster_level == 0:
-            return None
-
-        if self.fixed_spells_known_by_level:
-            # spells_known = self.fixed_spells_known_by_level[caster_level]
-            # Technically, for fixed spells know progressions, it's by HD and not 'caster level'
-            hd = owner.get_stat('hit_dice_num')
-            spells_known = self.fixed_spells_known_by_level[hd]
-        else:
-            spells_known = owner.get_stat(self.casting_stat + '_mod') + caster_level
-
-        spells_known += self.spells_known_modifier
-
-        spell_slots = self.slots_progression
-        max_spell_level = 9
-        for spellLevel in range(1, 10):
-            if spell_slots[caster_level][spellLevel] == 0:
-                max_spell_level = spellLevel - 1
-                break
-
-        cantrips_readied = self.cantrips_progression[caster_level]
-        num_spells_readied_by_level = [cantrips_readied, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]
-
-        for spellLevelChoice in self.spells_readied_progression:
-            if spellLevelChoice > max_spell_level:
-                continue
-            num_spells_readied_by_level[spellLevelChoice] += 1
-            spells_known -= 1
-            if spells_known <= 0:
-                break
-
-        spells_readied = [[], [], [], [], [], [], [], [], [], [], ]
-        for spellLevel in range(0, 10):
-            spells_readied[spellLevel] = list(itertools.chain(
-                self.free_spells[spellLevel],
-                self.spell_choices[spellLevel][0:num_spells_readied_by_level[spellLevel]]))
-
-        return spells_readied
-
-    # This is a bit expensive, but I do it this way to keep instances level agnostic
-    # Can improve this if I ever get around to redoing how I handle randomization
-    def has_spell(self, owner, spell_name):
-        spells_readied = self.get_spells_readied(owner)
-        if not spells_readied:
-            return False
-        for spell_level in spells_readied:
-            if spell_name in spell_level:
-                return True
-        return False
-
-    def display(self, owner, short=True, show_title=True):
-        caster_level = self.get_caster_level(owner)
-        if caster_level == 0:
-            return None
-        spells_ready = self.get_spells_readied(owner)
-        # Header part
-        outline = ''
-        if show_title:
-            outline += 'Spellcasting. '
-        outline += "This character is a {}-level spellcaster. " \
-                   "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
-                   "It has the following spells {}:"\
-            .format(NUM_TO_ORDINAL[caster_level],
-                    ATTRIBUTES_ABBREVIATION_TO_FULL_WORD[self.casting_stat], owner.get_stat(self.casting_stat + '_dc'),
-                    num_plusser(owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'
-        # Cantrips
-        if len(spells_ready[0]) > 0:
-            outline += 'Cantrips (at-will): ' + ', '.join(spells_ready[0]) + '\n'
-        for i in range(1, 10):
-            if len(spells_ready[i]) > 0 and self.slots_progression[caster_level][i] > 0:
-                # Pluralize 'slot' or not
-                if self.slots_progression[caster_level][i] == 1:
-                    outline += '{} level ({} slot): '\
-                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
-                else:
-                    outline += '{} level ({} slots): '\
-                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
-                outline += ', '.join(spells_ready[i]) + '\n'
-        return outline
-
-    def get_title(self, owner: Character, short=True):
-        return 'Spellcasting'
-
-    def get_category(self):
-        return 'spellcasting'
-
-    def get_entry(self, owner: Character, short=True):
-        return self.display(owner, short=short, show_title=False)
-
-    def get_visibility(self, owner: Character):
-        return 0
-
 
 class Loadout:
     def __init__(self):
@@ -3207,7 +3071,6 @@ class LoadoutPool:
         self.weights.append(weight)
 
     def get_random_loadout(self, rnd_instance=None):
-
         if not rnd_instance:
             rnd_instance = random
 
@@ -3244,6 +3107,7 @@ class FeatureMultiattack(CharacterFeature):
 
 class FeatureSpellcasting(CharacterFeature):
     def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
+        super().__init__(character, npc_gen, seed, short=True, args_tup=())
         self.int_name = 'spellcasting'
         sp_profile = npc_gen.spellcaster_profiles[args_tup[0]]
         assert isinstance(sp_profile, SpellCasterProfile)
@@ -3254,7 +3118,7 @@ class FeatureSpellcasting(CharacterFeature):
         self.casting_stat = sp_profile.casting_stat
         self.hd_per_casting_level = sp_profile.hd_per_casting_level
         self.spells_readied_progression = DEFAULT_SPELLS_READIED_PROGRESSION
-        self.cantrips_progression = sp_profile.cantrips_per_level
+        self.cantrips_progression = CASTER_CANTRIPS_KNOWN[sp_profile.cantrips_per_level]
         self.fixed_spells_known_by_level = sp_profile.fixed_spells_known_by_level
         self.slots_progression = sp_profile.spell_slots_table
         self.spells_known_modifier = sp_profile.spells_known_modifier
@@ -3265,6 +3129,8 @@ class FeatureSpellcasting(CharacterFeature):
         self.spell_choices = None
         self.free_spells = self.get_free_spells(npc_gen=npc_gen)
         self.spell_choices = self.get_spell_choices(npc_gen=npc_gen, seed=seed)
+        self.spells_known = [[], [], [], [], [], [], [], [], [], [], ]
+        self.spells_known_set = set()
 
     def get_free_spells(self, npc_gen: 'NPCGenerator'):
         free_spells = [[], [], [], [], [], [], [], [], [], [], ]
@@ -3275,6 +3141,8 @@ class FeatureSpellcasting(CharacterFeature):
                     free_spells[spell.level].append(spell.name)
         return free_spells
 
+    # We pre-select all the possible spell choices a caster can make.
+    # This is where we weight the choices by spell list
     def get_spell_choices(self, npc_gen, seed):
 
         rnd_instance = random.Random(seed + 'spellchoices')
@@ -3329,6 +3197,109 @@ class FeatureSpellcasting(CharacterFeature):
             spell_selections.append(spell_selections_for_level)
         return spell_selections
 
+    def get_spell_dc(self, owner):
+        return owner.get_stat(self.casting_stat + '_dc')
+
+    # Caster level is actually a bit weird for half and third casters like paladins and eldritch knights
+    # They only get their first casting level at 2 or 3 hd, respectively
+    # BUT, the next hd they gets bumps them up to the next spellcaster level regardless
+    # So, that's why this function looks weird
+    def get_caster_level(self, owner):
+        hit_dice = owner.get_stat('hit_dice_num')
+        if self.hd_per_casting_level == 1:
+            caster_level = hit_dice
+        else:
+            if hit_dice < self.hd_per_casting_level:
+                caster_level = 0
+            elif hit_dice == self.hd_per_casting_level:
+                caster_level = 1
+            else:
+                caster_level = (hit_dice + self.hd_per_casting_level - 1) // self.hd_per_casting_level
+        return caster_level
+
+    # Here's wehre we do all the major stuff
+    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        rnd_instance = random.Random(seed + self.int_name + 'spellpicking')
+        char_hd = character.get_stat('hit_dice_num')
+        caster_level = self.get_caster_level(character)
+        if self.fixed_spells_known_by_level:
+            spells_readied_remaining = self.fixed_spells_known_by_level[char_hd]
+        else:
+            spells_readied_remaining = caster_level + character.get_stat(self.casting_stat + '_mod') + self.spells_known_modifier
+
+        spell_slots = self.slots_progression
+        max_spell_level = 9
+        for spell_level in range(1, 10):
+            if spell_slots[caster_level][spell_level] <= 0:
+                max_spell_level = spell_level - 1
+                break
+            else:
+                for free_spell in self.free_spells[spell_level]:
+                    self.spells_known[spell_level].append(free_spell)
+
+        cantrips_remaining = int(self.cantrips_progression[char_hd])
+        while cantrips_remaining > 0:
+            self.spells_known[0].append(self.spell_choices[0].pop(0))
+            cantrips_remaining -= 1
+
+        # First, go through and make sure the caster has at least one spell from each level
+        for spell_level in range(1, max_spell_level + 1):
+            if spells_readied_remaining > 0:
+                self.spells_known[spell_level].append(self.spell_choices[spell_level].pop(0))
+                spells_readied_remaining -= 1
+
+        while spells_readied_remaining > 0:
+            weights = [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]
+            for spell_level in range(1, max_spell_level + 1):
+                weights[spell_level] = sum(self.slots_progression[caster_level][spell_level:])
+                weights[spell_level] /= len(self.spells_known[spell_level])
+            spell_level_choice = rnd_instance.choices(range(1, max_spell_level + 1), weights[1:max_spell_level + 1])[0]
+            self.spells_known[spell_level_choice].append(self.spell_choices[spell_level_choice].pop(0))
+            spells_readied_remaining -= 1
+
+        for spell_level in range(0, 10):
+            for spell_name in self.spells_known[spell_level]:
+                self.spells_known_set.add(spell_name)
+
+        # It's wacky and confusing and I don't understand it, but now self.spells_known should have an appropriate
+        # set of randomly generated spells know by level and self.spells_known_set should have a set of all spells
+
+        # Now, we can do some of those special case things
+        if 'mage armor' in self.spells_known_set:
+            npc_gen.give_armor(character, 'mage_armor', extra=True)
+
+    def get_main_stat_block_entry(self, owner, short=True):
+        caster_level = self.get_caster_level(owner)
+        if caster_level == 0:
+            return None
+
+        text = "This character is a {}-level spellcaster. " \
+               "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
+               "It has the following spells {}:" \
+               .format(NUM_TO_ORDINAL[caster_level],
+                       ATTRIBUTES_ABBREVIATION_TO_FULL_WORD[self.casting_stat],
+                       owner.get_stat(self.casting_stat + '_dc'),
+                       num_plusser(owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'
+        # Cantrips
+        if len(self.spells_known[0]) > 0:
+            text += 'Cantrips (at-will): ' + ', '.join(self.spells_known[0])
+        for i in range(1, 10):
+            if len(self.spells_known[i]) > 0 and self.slots_progression[caster_level][i] > 0:
+                # Pluralize 'slot' or not
+                if self.slots_progression[caster_level][i] == 1:
+                    text += '\n{} level ({} slot): ' \
+                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
+                else:
+                    text += '\n{} level ({} slots): ' \
+                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
+                text += ', '.join(self.spells_known[i])
+        return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
+
+    def get_stat_block_entries(self, character: 'Character', short=True):
+        entries = []
+        entries.append(self.get_main_stat_block_entry(character, short))
+        return entries
+
 
 # Below this point are classes for particular Character Features
 FEATURE_TINKER_OPTIONS = {
@@ -3351,12 +3322,56 @@ class FeatureTinker(CharacterFeature):
     def get_stat_block_entries(self, character: 'Character', short=True):
         entries = []
         entries.append(StatBlockEntry('Tinker', 'passive', 2,
-                                      "You have proficiency with artisan's tools (tinker's tools). Using those tools, \
-                                      you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork \
-                                      device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you \
-                                      spend 1 hour repairing it to keep the device functioning), or when you use your \
-                                      action to dismantle it; at that time, you can reclaim the materials used to \
-                                      create it. You can have up to three such devices active at a time."))
+                                      "You have proficiency with artisan's tools (tinker's tools). Using those tools, "
+                                      "you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork "
+                                      "device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you "
+                                      "spend 1 hour repairing it to keep the device functioning), or when you use your "
+                                      "action to dismantle it; at that time, you can reclaim the materials used to "
+                                      "create it. You can have up to three such devices active at a time."))
         entries.append(StatBlockEntry(self.choice.title(), 'passive', 0,
                                       FEATURE_TINKER_OPTIONS[self.choice]))
+        return entries
+
+
+FEATURE_DRAGONBORN_CHART = {
+    'black': ('acid', '5 by 30 ft. line', 'dex'),
+    'blue': ('lightning', '5 by 30 ft. line', 'dex'),
+    'brass': ('fire', '5 by 30 ft. line', 'dex'),
+    'bronze': ('lightning', '5 by 30 ft. line', 'dex'),
+    'copper': ('acid', '5 by 30 ft. line', 'dex'),
+    'gold': ('fire', '15 ft. cone', 'dex'),
+    'green': ('poison', '15 ft. cone', 'con'),
+    'red': ('fire', '15 ft. cone', 'dex'),
+    'silver': ('cold', '15 ft. cone', 'con'),
+    'white': ('cold', '15 ft. cone', 'con'),
+}
+
+
+class FeatureDragonborn(CharacterFeature):
+    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
+        super().__init__(character, npc_gen, seed, short=True, args_tup=())
+        self.int_name = 'dragonborn_feature'
+        self.lineage_type = args_tup[0]
+
+    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        character.add_damage_resistance(FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
+
+    def get_stat_block_entries(self, character: 'Character', short=True):
+        entries = []
+        hd = character.get_stat('hit_dice_num')
+        if hd >= 16:
+            dmg_dice = 5
+        elif hd >= 11:
+            dmg_dice = 4
+        elif hd >= 6:
+            dmg_dice = 3
+        else:
+            dmg_dice = 2
+        text = "When you use your breath weapon, each creature in a {} must make a DC {} {} saving throw. " \
+               "A creature takes {}d6 {} damage on a failed save, and half as much damage on a successful one." \
+            .format(FEATURE_DRAGONBORN_CHART[self.lineage_type][1], character.get_stat('con_dc'),
+                    FEATURE_DRAGONBORN_CHART[self.lineage_type][2], dmg_dice,
+                    FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
+        breath_weapon_entry = StatBlockEntry('Breath Weapon (1/short)', 'action', 0, text)
+        entries.append(breath_weapon_entry)
         return entries
