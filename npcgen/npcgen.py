@@ -350,16 +350,12 @@ NUM_TIMES_TO_TEXT = {
     10: 'ten times',
 }
 
-DEFAULT_SPELL_WEIGHT = 10
+DEFAULT_SPELL_WEIGHT = 1
 
 # Data for special traits
 MARTIAL_ARTS_DAMAGE = (
     (-1, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10, )
 )
-
-CHARACTER_FEATURES_REFERENCE = {
-    # 'spellcasting': SpellCasterProfile(),
-}
 
 
 # Random functions can accept an instance of random,
@@ -914,6 +910,20 @@ class NPCGenerator:
                     if line['languages']:
                         new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
+                    if line['features']:
+                        new_features_dict = {}
+                        for raw_feature in line['features'].replace(' ', '').split(','):
+                            if ':' in raw_feature:
+                                feature_name, feature_value = raw_feature.split(':')
+                                # NOTE if you want to give multiple of something like armor or resistances, you need to
+                                # use semicolons to separate them
+                                # Each tag for a trait will ALWAYS have a list associated with it,
+                                # remember when doing trait logic
+                                new_features_dict[feature_name] = feature_value.split(';')
+                            else:
+                                new_features_dict[raw_feature] = []
+                        new_race_template.features = new_features_dict
+
                     self.race_options.append((new_race_template.int_name, new_race_template.display_name))
                     self.race_templates[new_race_template.int_name] = new_race_template
                     self.race_keys.append(new_race_template.int_name)
@@ -991,6 +1001,20 @@ class NPCGenerator:
                         new_class_template.cr_calc_type = line['cr_calc']
                     else:
                         new_class_template.cr_calc_type = 'attack'
+
+                    if line['features']:
+                        new_features_dict = {}
+                        for raw_feature in line['features'].replace(' ', '').split(','):
+                            if ':' in raw_feature:
+                                feature_name, feature_value = raw_feature.split(':')
+                                # NOTE if you want to give multiple of something like armor or resistances, you need to
+                                # use semicolons to separate them
+                                # Each tag for a trait will ALWAYS have a list associated with it,
+                                # remember when doing trait logic
+                                new_features_dict[feature_name] = feature_value.split(';')
+                            else:
+                                new_features_dict[raw_feature] = []
+                        new_class_template.features = new_features_dict
 
                     self.class_options.append((new_class_template.int_name, new_class_template.display_name))
                     self.class_templates[new_class_template.int_name] = new_class_template
@@ -1223,6 +1247,15 @@ class NPCGenerator:
                     self.give_weapon(character, weapon)
             character.has_shield = loadout.shield
 
+    # Take a string, grab the correct CharacterFeatureFactory, and get the CharacterFeature
+    def build_character_feature(self, feature_string, character, seed, short, args_tup):
+        if feature_string == 'multiattack':
+            return FeatureMultiattack(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
+        elif feature_string == 'tinker':
+            return FeatureTinker(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
+        else:
+            debug_print("Couldn't find {}".format(feature_string), 0)
+
     def new_character(self,
 
                       seed=None,
@@ -1286,18 +1319,16 @@ class NPCGenerator:
         for trait_name in itertools.chain(race_template.traits, class_template.traits):
             trait_factory = self.traits[trait_name]
             assert isinstance(trait_factory, TraitFactory)
-            trait_feature = trait_factory.get_character_feature(new_character, self)
-            new_character.add_character_feature(trait_feature)
+            trait_feature = trait_factory.get_character_feature(new_character, self, seed=seed, short=True, args_tup=())
+            trait_feature.give_to_character(new_character)
         for feature_name, feature_args in race_template.features.items():
-            feature_factory_class = CHARACTER_FEATURES_REFERENCE[feature_name]
-            assert isinstance(feature_factory_class, CharacterFeatureFactory)
-            feature_instance = feature_factory_class.get_character_feature(new_character, self, *feature_args)
-            new_character.add_character_feature(feature_instance)
+            feature_instance = self.build_character_feature(
+                feature_name, new_character, seed=seed, short=True, args_tup=feature_args)
+            feature_instance.give_to_character(new_character)
         for feature_name, feature_args in class_template.features.items():
-            feature_factory_class = CHARACTER_FEATURES_REFERENCE[feature_name]
-            assert isinstance(feature_factory_class, CharacterFeatureFactory)
-            feature_instance = feature_factory_class.get_character_feature(new_character, self, *feature_args)
-            new_character.add_character_feature(feature_instance)
+            feature_instance = self.build_character_feature(
+                feature_name, new_character, seed=seed, short=True, args_tup=feature_args)
+            feature_instance.give_to_character(new_character)
 
         # Do the pre-attribute rolling first pass of features
         for feature in new_character.character_features.values():
@@ -1391,7 +1422,7 @@ class NPCGenerator:
             raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
 
     def get_options_dict(self):
-        options_dict = {}
+        options_dict = Dict[str, list]
         options_dict['race_options'] = self.get_options('race_choice')
         options_dict['class_options'] = self.get_options('class_choice')
         options_dict['attribute_roll_options'] = self.get_options('attribute_roll_method')
@@ -1626,7 +1657,7 @@ class Character:
         if not no_racial_bonus:
             for attribute, bonus in self.attribute_bonuses.items():
                 debug_print("Racial attribute bonus: {} {} -> {}"
-                            .format(attribute, attribute_dict[attribute], attribute_dict[attribute] + bonus ), 3)
+                            .format(attribute, attribute_dict[attribute], attribute_dict[attribute] + bonus), 3)
                 attribute_dict[attribute] += bonus
 
         # Floating attribute bonuses, such as half-elves
@@ -1660,7 +1691,6 @@ class Character:
                 continue
             else:
                 break
-
 
         # Set stats
         for attribute, val in attribute_dict.items():
@@ -2149,40 +2179,17 @@ class Character:
         if self.condition_immunities:
             sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
-        # passive_traits = []
-        # hidden_traits = []
-        # for trait_obj in self.traits.values():
-        #     if trait_obj.get_category() == 'passive':
-        #         if trait_obj.get_visibility(self) <= trait_visibility:
-        #             passive_traits.append((trait_obj.get_title(self),
-        #                                    trait_obj.get_entry(self, short=short_traits)))
-        #         else:
-        #             hidden_traits.append(trait_obj.get_title(self))
-        #
-        # sb.passive_traits = passive_traits
-        # sb.hidden_traits = nice_list(hidden_traits)
-        #
-        # spellcasting_traits = []
-        # if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-        #     assert isinstance(self.spell_casting_ability, StatBlockEntry)
-        #     spellcasting_traits.append((self.spell_casting_ability.get_title(self),
-        #                                 self.spell_casting_ability.get_entry(self, short=short_traits)))
-        # sb.spellcasting_traits = spellcasting_traits
-        #
-        # multiattack = []
-        # if self.get_stat('attacks_per_round') > 1:
-        #     multiattack.append(("Multiattack",  'This creatures makes {} attacks when it uses the attack action.'
-        #                         .format(NUM_TO_TEXT[self.get_stat('attacks_per_round')])))
-        # sb.multiattack = multiattack
-
         all_block_entries = self.get_all_stat_block_entries(short=short_traits)
         passive_entries = []
+        multiattack_entries = []
         hidden_entries = []
         for entry in all_block_entries:
             assert isinstance(entry, StatBlockEntry)
             if entry.get_visibility(self) <= trait_visibility:
                 if entry.get_category() in ('passive', 'spellcasting'):
                     passive_entries.append((entry.get_title(self), entry.get_entry(self)))
+                elif entry.get_category() == 'multiattack':
+                    multiattack_entries.append((entry.get_title(self), entry.get_entry(self)))
             else:
                 hidden_entries.append(entry.get_title(self))
 
@@ -2194,6 +2201,7 @@ class Character:
         sb.attacks = attacks
 
         sb.passive_traits = passive_entries
+        sb.multiattack = multiattack_entries
         sb.hidden_traits = nice_list(hidden_entries)
 
         return sb
@@ -2286,27 +2294,18 @@ class StatBlock:
         return self.__dict__
 
 
-# Everything that can be a character feature starts out as a CharacterFeatureFactory
-# When it comes time to add the feature to a character, call the get_character_feature() method with the
-# appropriate arguments
-# The factory will return a CharacterFeature, which may or may not have randomized elements or be otherwise unique
-# to that character
-# CharacterFeatureFactories are allowed to look at the character when generating CharacterFeatures
-# Generally, this is just to check hit dice or attributes
-# They are also allowed to look at NPCGenerator, because that's where all the data is held
-# The short parameter indicates that any text should be abbreviated as best as possible
-class CharacterFeatureFactory:
-    def get_character_feature(self, character: 'Character', npc_gen: 'NPCGenerator', seed=None, short=True, *args):
-        return CharacterFeature('dummy')
-
-
+# When it comes time to give a character a feature, you must instantiate that feature
 # When doing anything involving randomness, the rng should use the seed plus a method specific salt
 # to instantiate random
 # Character features are provided a reference to NPCGenerator, so that they can use functions that rely on its
 # reference dictionaries
 class CharacterFeature:
-    def __init__(self, int_name):
-        self.int_name = int_name
+    def __init__(self, character: 'Character', npc_gen: 'NPCGenerator', seed=None, short=True, args_tup=()):
+        self.int_name = 'dummy'
+
+    # Shouldn't need to be overriden, but can be if there needs to be some kind of merginge function
+    def give_to_character(self, character):
+        character.add_character_feature(self)
 
     # first_pass() is called just after race/class templates have been applied,
     # before attributes are rolled or ASI applied
@@ -2344,7 +2343,7 @@ class CharacterFeature:
 # Everything that can appear as an entry in a stat block musty implement this functionality
 # Features are allowed to change things based on who the owner is
 class StatBlockEntry:
-    def __init__(self, title, text, category, visibility):
+    def __init__(self, title, category, visibility, text,):
         self.title = title
         self.text = text
         self.category = category
@@ -2387,7 +2386,7 @@ class StatBlockEntry:
 # generate only a single StatBlock entry
 # That stat block entry text may insert values from the character's stats dictionary, but is otherwise static
 # Anything requiring additional functionality must be implemented as a custom CharacterFeature
-class TraitFactory(CharacterFeatureFactory):
+class TraitFactory:
     def __init__(self):
         self.int_name = ''
         self.display_name = ''
@@ -2398,7 +2397,7 @@ class TraitFactory(CharacterFeatureFactory):
         self.visibility = 0
         self.tags = {}
 
-    def get_character_feature(self, character: 'Character', npc_gen: 'NPCGenerator', short=True, *args):
+    def get_character_feature(self, character, npc_gen, seed=None, short=True, args_tup=()):
         if short:
             text = self.text_short
         else:
@@ -2409,7 +2408,7 @@ class TraitFactory(CharacterFeatureFactory):
         else:
             title = self.display_name
 
-        return RevisedTrait(
+        return FeatureTrait(
             int_name=self.int_name,
             title=title,
             trait_type=self.trait_type,
@@ -2419,9 +2418,10 @@ class TraitFactory(CharacterFeatureFactory):
         )
 
 
-class RevisedTrait(CharacterFeature):
+class FeatureTrait(CharacterFeature):
     def __init__(self, int_name, title, trait_type, text, visibility, tags):
-        super().__init__(int_name)
+        super().__init__(character=None, npc_gen=None, seed=None, short=True, args_tup=())
+        self.int_name = int_name
         self.title = title
         self.trait_type = trait_type
         self.text = text
@@ -3168,3 +3168,63 @@ class LoadoutPool:
             rnd_instance = random
 
         return rnd_instance.choices(self.loadouts, self.weights)[0]
+
+
+class FeatureMultiattack(CharacterFeature):
+    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
+        super().__init__(character, npc_gen, seed, short=True, args_tup=())
+        self.int_name = 'multiattack'
+
+        self.multiattack_type = args_tup[0]
+        self.attacks = 1
+        char_hd = character.get_stat('hit_dice_num')
+        if self.multiattack_type == 'fighter':
+            if char_hd >= 20:
+                self.attacks = 4
+            elif char_hd >= 11:
+                self.attacks = 3
+            elif char_hd >= 5:
+                self.attacks = 2
+        elif self.multiattack_type == 'single':
+            if char_hd >= 5:
+                self.attacks = 2
+
+    def get_stat_block_entries(self, character: 'Character', short=True):
+        entries = []
+        entries.append(StatBlockEntry(
+            'Multiattack', 'multiattack', 0,
+            "You may make {} attacks when using the attack action.".format(NUM_TO_TEXT[self.attacks])
+        ))
+        return entries
+
+
+# Below this point are classes for particular Character Features
+FEATURE_TINKER_OPTIONS = {
+    'clockwork toy': 'This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. When placed on the ground, the toy moves 5 feet across the ground on each of your turns in a random direction. It makes noises as appropriate to the creature it represents.',
+    'fire box': 'The device produces a miniature flame, which you can use to light a candle, torch, or campfire. Using the device requires your action.',
+    'music box': "When opened, this music box plays a single song at a moderate volume. The box stops playing when it reaches the song's end or when it is closed.",
+}
+
+
+class FeatureTinker(CharacterFeature):
+    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
+        super().__init__(character, npc_gen, seed, short=True, args_tup=())
+        self.int_name = 'tinker'
+        rnd_instance = random.Random(seed + self.int_name + 'init')
+        self.choice = rnd_instance.choice(list(FEATURE_TINKER_OPTIONS.keys()))
+
+    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        character.add_skill('tinkers_tools')
+
+    def get_stat_block_entries(self, character: 'Character', short=True):
+        entries = []
+        entries.append(StatBlockEntry('Tinker', 'passive', 2,
+                                      "You have proficiency with artisan's tools (tinker's tools). Using those tools, \
+                                      you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork \
+                                      device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you \
+                                      spend 1 hour repairing it to keep the device functioning), or when you use your \
+                                      action to dismantle it; at that time, you can reclaim the materials used to \
+                                      create it. You can have up to three such devices active at a time."))
+        entries.append(StatBlockEntry(self.choice.title(), 'passive', 0,
+                                      FEATURE_TINKER_OPTIONS[self.choice]))
+        return entries

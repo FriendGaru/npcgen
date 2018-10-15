@@ -1,67 +1,67 @@
-internal_name,display_name,attribute_bonuses,speeds,creature_type,size,languages,traits
-@CATEGORY,Generic,,,,,,
-humanoid,Humanoid (Any),,,,,common,
-,,,,,,,
-@CATEGORY,Humans,,,,,,
-human,,"str:1,dex:1,con:1,int:1,wis:1,cha:1",,,,common,extra_language
-human_variant,Variant Human,,,,,common,"extra_language,floating_attribute_bonus_double,extra_skill"
-,,,,,,,
-@CATEGORY,Halflings,,,,,,
-@RANDOM,Random Halfling,,,,,,
-halfling_ghostwise,Halfling (Ghostwise),"dex:2,wis:1",walk:25,,small,"common,halfling","lucky,brave,halfling_nimbleness,silent_speech"
-halfling_lightfoot,Halfling (Lightfoot),"dex:2,wis:1",walk:25,,small,"common,halfling","lucky,brave,halfling_nimbleness,naturally_stealthy"
-halfling_stout,Halfling (Stout),"dex:2,con:1",walk:25,,small,"common,halfling","lucky,brave,halfling_nimbleness,stout_resilience"
-,,,,,,,
-@CATEGORY,Half-Elves,,,,,,
-half_elf,Half-Elf,cha:2,,,,"common,elvish","extra_language,floating_attribute_bonus_double,extra_skill,extra_skill,darkvision,fey_ancestry"
-,,,,,,,
-@CATEGORY,Half-Orc,,,,,,
-half_orc,Half-Orc,"str:2,con:1",,,,"common,orc","darkvision,menacing,savage_attack,relentless_endurance"
-,,,,,,,
-@CATEGORY,Dwarves,,,,,,
-@RANDOM,Random Dwarf,,,,,,
-dwarf_duergar,Dwarf (Duergar),"str:1,con:2",walk:25,,,"common,dwarvish,undercommon","heavy_armor_training,superior_darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,duergar_resilience,duergar_magic,sunlight_sensitivity"
-dwarf_hill,Dwarf (Hill),"con:2,wis:1",walk:25,,,"common,dwarvish","heavy_armor_training,darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,dwarven_toughness"
-dwarf_mountain,Dwarf (Mountain),"str:2,con:2",walk:25,,,"common,dwarvish","heavy_armor_training,darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,dwarven_armor_training"
-,,,,,,,
-@CATEGORY,Elves,,,,,,
-@RANDOM,Random Elf,,,,,,
-elf_drow,Elf (Drow),"dex:2,cha:1",,,,"common,elvish","superior_darkvision,keen_senses,fey_ancestry,trance,sunlight_sensitivity,drow_magic,drow_weapon_training"
-elf_eladrin,Elf (Eladrin),"dex:2,int:1",,,,"common,elvish","darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,fey_step"
-elf_high,Elf (High),"dex:2,int:1",,,,"common,elvish","darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,extra_cantrip,extra_language"
-elf_wood,Elf (Wood),"dex:2,wis:1",walk:35,,,"common,elvish","darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,fleet_of_foot,mask_of_the_wild"
-,,,,,,,
-@CATEGORY,Gnomes,,,,,,
-@RANDOM,Random Gnome,,,,,,
-gnome_deep_mtf,Gnome (Deep),"dex:1,int:2",walk:25,,small,"common,gnomish,undercommon","superior_darkvision,gnome_cunning,stone_camoflage"
-gnome_forest,Gnome (Forest),"dex:1,int:2",walk:25,,small,"common,gnomish","darkvision,gnome_cunning,natural_illusionist,speak_with_small_beasts"
-gnome_rock,Gnome (Rock),"con:1,int:2",walk:25,,small,"common,gnomish","darkvision,gnome_cunning,artificers_lore,tinker"
-,,,,,,,
-@CATEGORY,Dragonborn,,,,,,
-@RANDOM,Random Dragonborn,,,,,,
-dragonborn_black,Dragonbon (Black),"str:2,con:1",,,,"common,draconic","dragonborn_breath_weapon_black,damage_resistance_acid"
-dragonborn_blue,Dragonbon (Blue),"str:2,con:2",,,,"common,draconic","dragonborn_breath_weapon_blue,damage_resistance_lightning"
-dragonborn_brass,Dragonbon (Brass),"str:2,con:3",,,,"common,draconic","dragonborn_breath_weapon_brass,damage_resistance_fire"
-dragonborn_bronze,Dragonbon (Bronze),"str:2,con:4",,,,"common,draconic","dragonborn_breath_weapon_bronze,damage_resistance_lightning"
-dragonborn_copper,Dragonbon (Copper),"str:2,con:5",,,,"common,draconic","dragonborn_breath_weapon_copper,damage_resistance_acid"
-dragonborn_gold,Dragonbon (Gold),"str:2,con:6",,,,"common,draconic","dragonborn_breath_weapon_gold,damage_resistance_fire"
-dragonborn_green,Dragonbon (Green),"str:2,con:7",,,,"common,draconic","dragonborn_breath_weapon_green,damage_resistance_poison"
-dragonborn_red,Dragonbon (Red),"str:2,con:8",,,,"common,draconic","dragonborn_breath_weapon_red,damage_resistance_fire"
-dragonborn_silver,Dragonbon (Silver),"str:2,con:9",,,,"common,draconic","dragonborn_breath_weapon_silver,damage_resistance_cold"
-dragonborn_white,Dragonbon (White),"str:2,con:10",,,,"common,draconic","dragonborn_breath_weapon_white,damage_resistance_cold"
-,,,,,,,
-@CATEGORY,Aasimar,,,,,,
-@RANDOM,Random Aasimar,,,,,,
-aasimar,Aasimar,"wis:1,cha:2",,,,"common,celestial","darkvision,celestial_resistance,celestial_legacy"
-aasimar_fallen,Aasimar (Fallen),"str:1,cha:2",,,,"common,celestial","darkvision,celestial_resistance,healing_hands,light_bearer,necrotic_shroud"
-aasimar_protector,Aasimar (Protector),"wis:1,cha:2",,,,"common,celestial","darkvision,celestial_resistance,healing_hands,light_bearer,radiant_soul"
-aasimar_scourge,Aasimar (Scourge),"con:1,cha:2",,,,"common,celestial","darkvision,celestial_resistance,healing_hands,light_bearer,radiant_consumption"
-,,,,,,,
-@CATEGORY,Tieflings,,,,,,
-tiefling,Tiefling,"int:1,cha:2",,,,"common,infernal","darkvision,hellish_resistance,infernal_legacy"
-,,,,,,,
-@CATEGORY,Avians,,,,,,
-aarakocra,,"dex:2,wis:2","walk:20,fly:50",,,"common,aarakocra,auran",talons
-,,,,,,,
-@CATEGORY,Monstrous Races,,,,,,
-lizardfolk,,"con:2,wis:1",swim:30,,,"common,draconic",natural_armor
+internal_name,display_name,attribute_bonuses,speeds,creature_type,size,languages,features,traits
+@CATEGORY,Generic,,,,,,,
+humanoid,Humanoid (Any),,,,,common,,
+,,,,,,,,
+@CATEGORY,Humans,,,,,,,
+human,,"str:1,dex:1,con:1,int:1,wis:1,cha:1",,,,common,,extra_language
+human_variant,Variant Human,,,,,common,,"extra_language,floating_attribute_bonus_double,extra_skill"
+,,,,,,,,
+@CATEGORY,Halflings,,,,,,,
+@RANDOM,Random Halfling,,,,,,,
+halfling_ghostwise,Halfling (Ghostwise),"dex:2,wis:1",walk:25,,small,"common,halfling",,"lucky,brave,halfling_nimbleness,silent_speech"
+halfling_lightfoot,Halfling (Lightfoot),"dex:2,wis:1",walk:25,,small,"common,halfling",,"lucky,brave,halfling_nimbleness,naturally_stealthy"
+halfling_stout,Halfling (Stout),"dex:2,con:1",walk:25,,small,"common,halfling",,"lucky,brave,halfling_nimbleness,stout_resilience"
+,,,,,,,,
+@CATEGORY,Half-Elves,,,,,,,
+half_elf,Half-Elf,cha:2,,,,"common,elvish",,"extra_language,floating_attribute_bonus_double,extra_skill,extra_skill,darkvision,fey_ancestry"
+,,,,,,,,
+@CATEGORY,Half-Orc,,,,,,,
+half_orc,Half-Orc,"str:2,con:1",,,,"common,orc",,"darkvision,menacing,savage_attack,relentless_endurance"
+,,,,,,,,
+@CATEGORY,Dwarves,,,,,,,
+@RANDOM,Random Dwarf,,,,,,,
+dwarf_duergar,Dwarf (Duergar),"str:1,con:2",walk:25,,,"common,dwarvish,undercommon",,"heavy_armor_training,superior_darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,duergar_resilience,duergar_magic,sunlight_sensitivity"
+dwarf_hill,Dwarf (Hill),"con:2,wis:1",walk:25,,,"common,dwarvish",,"heavy_armor_training,darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,dwarven_toughness"
+dwarf_mountain,Dwarf (Mountain),"str:2,con:2",walk:25,,,"common,dwarvish",,"heavy_armor_training,darkvision,dwarven_combat_training,tool_proficiency_dwarven,stonecunning,dwarven_armor_training"
+,,,,,,,,
+@CATEGORY,Elves,,,,,,,
+@RANDOM,Random Elf,,,,,,,
+elf_drow,Elf (Drow),"dex:2,cha:1",,,,"common,elvish",,"superior_darkvision,keen_senses,fey_ancestry,trance,sunlight_sensitivity,drow_magic,drow_weapon_training"
+elf_eladrin,Elf (Eladrin),"dex:2,int:1",,,,"common,elvish",,"darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,fey_step"
+elf_high,Elf (High),"dex:2,int:1",,,,"common,elvish",,"darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,extra_cantrip,extra_language"
+elf_wood,Elf (Wood),"dex:2,wis:1",walk:35,,,"common,elvish",,"darkvision,keen_senses,fey_ancestry,trance,elf_weapon_training,fleet_of_foot,mask_of_the_wild"
+,,,,,,,,
+@CATEGORY,Gnomes,,,,,,,
+@RANDOM,Random Gnome,,,,,,,
+gnome_deep_mtf,Gnome (Deep),"dex:1,int:2",walk:25,,small,"common,gnomish,undercommon",,"superior_darkvision,gnome_cunning,stone_camoflage"
+gnome_forest,Gnome (Forest),"dex:1,int:2",walk:25,,small,"common,gnomish",,"darkvision,gnome_cunning,natural_illusionist,speak_with_small_beasts"
+gnome_rock,Gnome (Rock),"con:1,int:2",walk:25,,small,"common,gnomish",tinker,"darkvision,gnome_cunning,artificers_lore"
+,,,,,,,,
+@CATEGORY,Dragonborn,,,,,,,
+@RANDOM,Random Dragonborn,,,,,,,
+dragonborn_black,Dragonbon (Black),"str:2,con:1",,,,"common,draconic",dragonborn_feature:black,"dragonborn_breath_weapon_black,damage_resistance_acid"
+dragonborn_blue,Dragonbon (Blue),"str:2,con:1",,,,"common,draconic",dragonborn_feature:blue,"dragonborn_breath_weapon_blue,damage_resistance_lightning"
+dragonborn_brass,Dragonbon (Brass),"str:2,con:1",,,,"common,draconic",dragonborn_feature:brass,"dragonborn_breath_weapon_brass,damage_resistance_fire"
+dragonborn_bronze,Dragonbon (Bronze),"str:2,con:1",,,,"common,draconic",dragonborn_feature:bronze,"dragonborn_breath_weapon_bronze,damage_resistance_lightning"
+dragonborn_copper,Dragonbon (Copper),"str:2,con:1",,,,"common,draconic",dragonborn_feature:copper,"dragonborn_breath_weapon_copper,damage_resistance_acid"
+dragonborn_gold,Dragonbon (Gold),"str:2,con:1",,,,"common,draconic",dragonborn_feature:gold,"dragonborn_breath_weapon_gold,damage_resistance_fire"
+dragonborn_green,Dragonbon (Green),"str:2,con:1",,,,"common,draconic",dragonborn_feature:green,"dragonborn_breath_weapon_green,damage_resistance_poison"
+dragonborn_red,Dragonbon (Red),"str:2,con:1",,,,"common,draconic",dragonborn_feature:red,"dragonborn_breath_weapon_red,damage_resistance_fire"
+dragonborn_silver,Dragonbon (Silver),"str:2,con:1",,,,"common,draconic",dragonborn_feature:silver,"dragonborn_breath_weapon_silver,damage_resistance_cold"
+dragonborn_white,Dragonbon (White),"str:2,con:1",,,,"common,draconic",dragonborn_feature:white,"dragonborn_breath_weapon_white,damage_resistance_cold"
+,,,,,,,,
+@CATEGORY,Aasimar,,,,,,,
+@RANDOM,Random Aasimar,,,,,,,
+aasimar,Aasimar,"wis:1,cha:2",,,,"common,celestial",,"darkvision,celestial_resistance,celestial_legacy"
+aasimar_fallen,Aasimar (Fallen),"str:1,cha:2",,,,"common,celestial",,"darkvision,celestial_resistance,healing_hands,light_bearer,necrotic_shroud"
+aasimar_protector,Aasimar (Protector),"wis:1,cha:2",,,,"common,celestial",,"darkvision,celestial_resistance,healing_hands,light_bearer,radiant_soul"
+aasimar_scourge,Aasimar (Scourge),"con:1,cha:2",,,,"common,celestial",,"darkvision,celestial_resistance,healing_hands,light_bearer,radiant_consumption"
+,,,,,,,,
+@CATEGORY,Tieflings,,,,,,,
+tiefling,Tiefling,"int:1,cha:2",,,,"common,infernal",,"darkvision,hellish_resistance,infernal_legacy"
+,,,,,,,,
+@CATEGORY,Avians,,,,,,,
+aarakocra,,"dex:2,wis:2","walk:20,fly:50",,,"common,aarakocra,auran",,talons
+,,,,,,,,
+@CATEGORY,Monstrous Races,,,,,,,
+lizardfolk,,"con:2,wis:1",swim:30,,,"common,draconic",,natural_armor
