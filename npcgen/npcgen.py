@@ -357,6 +357,10 @@ MARTIAL_ARTS_DAMAGE = (
     (-1, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10, )
 )
 
+CHARACTER_FEATURES_REFERENCE = {
+    # 'spellcasting': SpellCasterProfile(),
+}
+
 
 # Random functions can accept an instance of random,
 # If they don't get one, they default to the global random
@@ -428,6 +432,7 @@ def num_plusser(num, add_space=False):
             return '- ' + str(abs(num))
         else:
             return str(num)
+
 
 def nice_list(data):
     """
@@ -573,34 +578,32 @@ class NPCGenerator:
                 if line['internal_name'] == '' or '#' in line['internal_name']:
                     continue
                 try:
-                    new_trait = Trait()
-                    new_trait.int_name = line['internal_name']
+                    new_trait_factory = TraitFactory()
+                    new_trait_factory.int_name = line['internal_name']
                     if line['display_name']:
-                        new_trait.display_name = line['display_name']
+                        new_trait_factory.display_name = line['display_name']
                     else:
-                        new_trait.display_name = line['internal_name'].replace('_', ' ').title()
+                        new_trait_factory.display_name = line['internal_name'].replace('_', ' ').title()
 
                     if line['recharge']:
-                        new_trait.recharge = line['recharge']
+                        new_trait_factory.recharge = line['recharge']
 
-                    new_trait.trait_type = line['trait_type']
+                    new_trait_factory.trait_type = line['trait_type']
 
                     if line['visibility']:
-                        new_trait.visibility = int(line['visibility'])
+                        new_trait_factory.visibility = int(line['visibility'])
                     else:
-                        new_trait.visibility = 0
+                        new_trait_factory.visibility = 0
 
-                    new_trait.text = line['text'].replace('\\n', '\n\t')
+                    new_trait_factory.text = line['text'].replace('\\n', '\n\t')
                     if line['text_short']:
-                        new_trait.text_short = line['text_short'].replace('\\n', '\n\t')
+                        new_trait_factory.text_short = line['text_short'].replace('\\n', '\n\t')
                     else:
-                        new_trait.text_short = new_trait.text
+                        new_trait_factory.text_short = new_trait_factory.text
 
                     if line['tags']:
                         new_tags_dict = {}
                         for raw_tag in line['tags'].replace(' ', '').split(','):
-                            # We want to ignore whitespace in the csv file, but treat underscores as intended spaces
-                            raw_tag = raw_tag.replace('_', ' ')
                             if ':' in raw_tag:
                                 tag_name, tag_value = raw_tag.split(':')
                                 # NOTE if you want to give multiple of something like armor or resistances, you need to
@@ -610,9 +613,9 @@ class NPCGenerator:
                                 new_tags_dict[tag_name] = tag_value.split(';')
                             else:
                                 new_tags_dict[raw_tag] = None
-                        new_trait.tags = new_tags_dict
+                        new_trait_factory.tags = new_tags_dict
 
-                    self.traits[new_trait.int_name] = new_trait
+                    self.traits[new_trait_factory.int_name] = new_trait_factory
                 except (ValueError, TypeError):
                     print("Error procession trait {}".format(line['internal_name']))
 
@@ -843,7 +846,7 @@ class NPCGenerator:
                     self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
 
                 except (ValueError, TypeError):
-                    debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']),0)
+                    debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
 
     def build_race_templates_from_csv(self, race_templates_file_loc):
         with open(race_templates_file_loc, newline='', encoding="utf-8") as race_templates_file:
@@ -996,146 +999,146 @@ class NPCGenerator:
                 except ValueError:
                     print("Error processing class template {}.".format(line['internal_name']))
 
-    def give_trait(self, character: 'Character', trait_name, rnd_instance=None, process_tags=True):
-
-        # Process tags means the trait will execute tag stuff
-        # This allows a handful of traits to basically give themselves to the character for the sake of ordering
-
-        if not rnd_instance:
-            rnd_instance = random
-
-        assert trait_name in self.traits, "Trait {} not found!".format(trait_name)
-
-        trait = self.traits[trait_name]
-
-        # If a character already has the trait from another source,
-        # and doesn't have the repeatable tag, don't give again
-        if trait_name in character.traits and 'repeatable' not in trait.tags:
-            return
-
-        # Remember,
-        # trait.tags = {tag_name: [tag_val_1, tag_val_2, ...], ...}
-        # each tag ALWAYS has a list associated with it even if it's for a single value
-
-        # Some tags might implicitly require that the trait should not be given to the character
-        # Traits that give other traits, for example
-        # They can set this flag to false to block the giving at the end
-        give_trait = True
-
-        if process_tags:
-            if 'give_armor' in trait.tags:
-                for armor in trait.tags['give_armor']:
-                    self.give_armor(character, armor)
-
-            if 'give_weapon' in trait.tags:
-                for weapon in trait.tags['give_weapon']:
-                    self.give_weapon(character, weapon)
-
-            if 'give_tag' in trait.tags:
-                for character_tag in trait.tags['give_tag']:
-                    character.add_tag(character_tag)
-
-            # Tools and skills are considered the same, anything not in SKILLS is considered a tool
-            if 'skill_proficiency' in trait.tags:
-                for skill in trait.tags['skill_proficiency']:
-                    skill = skill.replace('_', ' ')
-                    if skill not in character.skills:
-                        character.add_skill(skill)
-                    elif len(character.get_non_proficient_skills()) > 0:
-                        random_skill = rnd_instance.choice(character.get_non_proficient_skills())
-                        debug_print('Trait {}: {} already present, adding {} instead'
-                                    .format(trait_name, skill, random_skill))
-                        character.add_skill(random_skill)
-
-            if 'skill_random' in trait.tags:
-                num_random_skills = int(trait.tags['skill_random'][0])
-                for i in range(num_random_skills):
-                    if len(character.get_non_proficient_skills()) > 0:
-                        random_skill = rnd_instance.choice(character.get_non_proficient_skills())
-                        debug_print('Trait {}: giving random skill {}.'
-                                    .format(trait_name, random_skill))
-                        character.add_skill(random_skill)
-
-            if 'expertise_random' in trait.tags:
-                num_expertise = int(trait.tags['expertise_random'][0])
-                expertise_choices = rnd_instance.sample(character.skills, num_expertise)
-                for choice in expertise_choices:
-                    character.add_skill(choice, expertise=True)
-
-            if 'expertise_fixed' in trait.tags:
-                expertise_choices = trait.tags['expertise_random']
-                for choice in expertise_choices:
-                    character.add_skill(choice, expertise=True)
-
-            if 'damage_immunity' in trait.tags:
-                for entry in trait.tags['damage_immunity']:
-                    character.add_damage_immunity(entry)
-
-            if 'damage_vulnerability' in trait.tags:
-                for entry in trait.tags['damage_vulnerability']:
-                    character.add_damage_vulnerability(entry)
-
-            if 'damage_resistance' in trait.tags:
-                for entry in trait.tags['damage_resistance']:
-                    character.add_damage_resistance(entry)
-
-            if 'condition_immunity' in trait.tags:
-                for entry in trait.tags['condition_immunity']:
-                    character.add_condition_immunity(entry)
-
-            if 'save_advantage' in trait.tags:
-                for advantage in trait.tags['save_advantage']:
-                    character.add_save_advantage(advantage)
-
-            if 'save_disadvantage' in trait.tags:
-                for disadvantage in trait.tags['save_disadvantage']:
-                    character.add_save_disadvantage(disadvantage)
-
-            if 'sense_darkvision' in trait.tags:
-                val = int(trait.tags['sense_darkvision'][0])
-                character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
-
-            if 'bonus_hp_per_level' in trait.tags:
-                val = int(trait.tags['bonus_hp_per_level'][0])
-                character.stats['bonus_hp_per_level'] += val
-
-            if 'floating_attribute_bonus' in trait.tags:
-                val = int(trait.tags['floating_attribute_bonus'][0])
-                character.stats['floating_attribute_points'] += val
-
-            if 'random_language' in trait.tags:
-                num_extra_languages = trait.tags['random_language'][0]
-                language_options = set(LANGUAGES)
-                for language in character.languages:
-                    language_options.remove(language)
-                language_choices = rnd_instance.sample(language_options, num_extra_languages)
-                for language in language_choices:
-                    character.add_language(language)
-
-            if 'random_subtraits' in trait.tags:
-                # If the first val is an int, then that's how many subtraits to give
-                # If it's not, assume we need only one
-                try:
-                    num_subtraits = int(trait.tags['random_subtraits'][0])
-                    trait_options = trait.tags['random_subtraits'][1:]
-                except ValueError:
-                    num_subtraits = 1
-                    trait_options = trait.tags['random_subtraits'][:]
-                assert num_subtraits <= len(trait_options), \
-                    "Trait {} doesn't have enough subtrait options!!".format(trait_name)
-                trait_choices = rnd_instance.sample(trait_options, num_subtraits)
-                # We're going to call this function again to give this trait to the character, but without processing
-                # the tags, hopefully ensuring things end up in the right order
-                self.give_trait(character, trait_name, rnd_instance=rnd_instance, process_tags=False)
-                for trait_choice in trait_choices:
-                    self.give_trait(character, trait_choice, rnd_instance=rnd_instance, process_tags=True)
-                give_trait = False
-
-        # happens at end because some traits might not actually get added
-        # All traits get added to the character's dictionary, and non-hidden ones get added to the order attributes
-        # Complicated, but this will maintain trait order which can be important for traits with subtraits
-        if give_trait:
-            character.traits[trait_name] = trait
+    # def give_trait(self, character: 'Character', trait_name, rnd_instance=None, process_tags=True):
+    #
+    #     # Process tags means the trait will execute tag stuff
+    #     # This allows a handful of traits to basically give themselves to the character for the sake of ordering
+    #
+    #     if not rnd_instance:
+    #         rnd_instance = random
+    #
+    #     assert trait_name in self.traits, "Trait {} not found!".format(trait_name)
+    #
+    #     trait = self.traits[trait_name]
+    #
+    #     # If a character already has the trait from another source,
+    #     # and doesn't have the repeatable tag, don't give again
+    #     if trait_name in character.traits and 'repeatable' not in trait.tags:
+    #         return
+    #
+    #     # Remember,
+    #     # trait.tags = {tag_name: [tag_val_1, tag_val_2, ...], ...}
+    #     # each tag ALWAYS has a list associated with it even if it's for a single value
+    #
+    #     # Some tags might implicitly require that the trait should not be given to the character
+    #     # Traits that give other traits, for example
+    #     # They can set this flag to false to block the giving at the end
+    #     give_trait = True
+    #
+    #     if process_tags:
+    #         if 'give_armor' in trait.tags:
+    #             for armor in trait.tags['give_armor']:
+    #                 self.give_armor(character, armor)
+    #
+    #         if 'give_weapon' in trait.tags:
+    #             for weapon in trait.tags['give_weapon']:
+    #                 self.give_weapon(character, weapon)
+    #
+    #         if 'give_tag' in trait.tags:
+    #             for character_tag in trait.tags['give_tag']:
+    #                 character.add_tag(character_tag)
+    #
+    #         # Tools and skills are considered the same, anything not in SKILLS is considered a tool
+    #         if 'skill_proficiency' in trait.tags:
+    #             for skill in trait.tags['skill_proficiency']:
+    #                 skill = skill.replace('_', ' ')
+    #                 if skill not in character.skills:
+    #                     character.add_skill(skill)
+    #                 elif len(character.get_non_proficient_skills()) > 0:
+    #                     random_skill = rnd_instance.choice(character.get_non_proficient_skills())
+    #                     debug_print('Trait {}: {} already present, adding {} instead'
+    #                                 .format(trait_name, skill, random_skill))
+    #                     character.add_skill(random_skill)
+    #
+    #         if 'skill_random' in trait.tags:
+    #             num_random_skills = int(trait.tags['skill_random'][0])
+    #             for i in range(num_random_skills):
+    #                 if len(character.get_non_proficient_skills()) > 0:
+    #                     random_skill = rnd_instance.choice(character.get_non_proficient_skills())
+    #                     debug_print('Trait {}: giving random skill {}.'
+    #                                 .format(trait_name, random_skill))
+    #                     character.add_skill(random_skill)
+    #
+    #         if 'expertise_random' in trait.tags:
+    #             num_expertise = int(trait.tags['expertise_random'][0])
+    #             expertise_choices = rnd_instance.sample(character.skills, num_expertise)
+    #             for choice in expertise_choices:
+    #                 character.add_skill(choice, expertise=True)
+    #
+    #         if 'expertise_fixed' in trait.tags:
+    #             expertise_choices = trait.tags['expertise_random']
+    #             for choice in expertise_choices:
+    #                 character.add_skill(choice, expertise=True)
+    #
+    #         if 'damage_immunity' in trait.tags:
+    #             for entry in trait.tags['damage_immunity']:
+    #                 character.add_damage_immunity(entry)
+    #
+    #         if 'damage_vulnerability' in trait.tags:
+    #             for entry in trait.tags['damage_vulnerability']:
+    #                 character.add_damage_vulnerability(entry)
+    #
+    #         if 'damage_resistance' in trait.tags:
+    #             for entry in trait.tags['damage_resistance']:
+    #                 character.add_damage_resistance(entry)
+    #
+    #         if 'condition_immunity' in trait.tags:
+    #             for entry in trait.tags['condition_immunity']:
+    #                 character.add_condition_immunity(entry)
+    #
+    #         if 'save_advantage' in trait.tags:
+    #             for advantage in trait.tags['save_advantage']:
+    #                 character.add_save_advantage(advantage)
+    #
+    #         if 'save_disadvantage' in trait.tags:
+    #             for disadvantage in trait.tags['save_disadvantage']:
+    #                 character.add_save_disadvantage(disadvantage)
+    #
+    #         if 'sense_darkvision' in trait.tags:
+    #             val = int(trait.tags['sense_darkvision'][0])
+    #             character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
+    #
+    #         if 'bonus_hp_per_level' in trait.tags:
+    #             val = int(trait.tags['bonus_hp_per_level'][0])
+    #             character.stats['bonus_hp_per_level'] += val
+    #
+    #         if 'floating_attribute_bonus' in trait.tags:
+    #             val = int(trait.tags['floating_attribute_bonus'][0])
+    #             character.stats['floating_attribute_points'] += val
+    #
+    #         if 'random_language' in trait.tags:
+    #             num_extra_languages = trait.tags['random_language'][0]
+    #             language_options = set(LANGUAGES)
+    #             for language in character.languages:
+    #                 language_options.remove(language)
+    #             language_choices = rnd_instance.sample(language_options, num_extra_languages)
+    #             for language in language_choices:
+    #                 character.add_language(language)
+    #
+    #         if 'random_subtraits' in trait.tags:
+    #             # If the first val is an int, then that's how many subtraits to give
+    #             # If it's not, assume we need only one
+    #             try:
+    #                 num_subtraits = int(trait.tags['random_subtraits'][0])
+    #                 trait_options = trait.tags['random_subtraits'][1:]
+    #             except ValueError:
+    #                 num_subtraits = 1
+    #                 trait_options = trait.tags['random_subtraits'][:]
+    #             assert num_subtraits <= len(trait_options), \
+    #                 "Trait {} doesn't have enough subtrait options!!".format(trait_name)
+    #             trait_choices = rnd_instance.sample(trait_options, num_subtraits)
+    #             # We're going to call this function again to give this trait to the character, but without processing
+    #             # the tags, hopefully ensuring things end up in the right order
+    #             self.give_trait(character, trait_name, rnd_instance=rnd_instance, process_tags=False)
+    #             for trait_choice in trait_choices:
+    #                 self.give_trait(character, trait_choice, rnd_instance=rnd_instance, process_tags=True)
+    #             give_trait = False
+    #
+    #     # happens at end because some traits might not actually get added
+    #     # All traits get added to the character's dictionary, and non-hidden ones get added to the order attributes
+    #     # Complicated, but this will maintain trait order which can be important for traits with subtraits
+    #     if give_trait:
+    #         character.traits[trait_name] = trait
 
     def give_armor(self, character, armor_name, extra=False):
         armor = self.armors[armor_name]
@@ -1148,10 +1151,8 @@ class NPCGenerator:
         weapon = self.weapons[weapon_name]
         character.weapons[weapon_name] = weapon
 
-    def apply_race_template(self, character: 'Character', race_template, apply_traits=True, seed=None):
-
-        if not seed:
-            seed = random_string(10)
+    # Applies everything EXCEPT features/traits
+    def apply_race_template(self, character: 'Character', race_template):
 
         if type(race_template) == str:
             race_template = self.race_templates[race_template]
@@ -1171,11 +1172,8 @@ class NPCGenerator:
         for language in race_template.languages:
             character.add_language(language)
 
-        if apply_traits:
-            for trait in race_template.traits:
-                self.give_trait(character, trait, rnd_instance=random.Random(seed + trait))
-
-    def apply_class_template(self, character: 'Character', class_template, apply_traits=True, seed=None):
+    # Applies everything EXCEPT features/traits
+    def apply_class_template(self, character: 'Character', class_template,  seed=None):
 
         if not seed:
             seed = random_string(10)
@@ -1190,8 +1188,7 @@ class NPCGenerator:
 
         rnd_instance = random.Random(seed + 'skills')
         fixed_skills = class_template.skills_fixed
-        randomized_skills = rnd_instance.sample(class_template.skills_random,
-                                                              class_template.num_random_skills)
+        randomized_skills = rnd_instance.sample(class_template.skills_random, class_template.num_random_skills)
         skills_to_add = itertools.chain(fixed_skills, randomized_skills)
         for skill in skills_to_add:
             if skill in character.skills and len(character.get_non_proficient_skills()) > 0:
@@ -1225,15 +1222,6 @@ class NPCGenerator:
                 for weapon in loadout.weapons:
                     self.give_weapon(character, weapon)
             character.has_shield = loadout.shield
-
-        if class_template.spell_casting_profile:
-            character.spell_casting_ability = \
-                class_template.spell_casting_profile.generate_spell_casting_ability(
-                    rnd_instance=random.Random(seed + 'spellcasting'))
-
-        if apply_traits:
-            for trait in class_template.traits:
-                self.give_trait(character, trait, rnd_instance=random.Random(seed + trait))
 
     def new_character(self,
 
@@ -1269,16 +1257,15 @@ class NPCGenerator:
         if class_choice in self.class_random_categories:
             class_choice = rnd_instance.choice(self.class_random_categories[class_choice])
 
-        # Sanity checks, better to just return a default guy than risk crashing
-        if not 1 <= hit_dice_num <= 20:
-            debug_print('Invalid HD_NUM received: {}'.format(hit_dice_num), 0)
-            hit_dice_num = DEFAULT_HIT_DICE_SIZE
-        if class_choice not in self.class_keys:
-            debug_print('Invalid class_template: {}'.format(class_choice), 0)
-            class_choice = DEFAULT_CLASS
-        if race_choice not in self.race_keys:
-            debug_print('Invalid race_template: {}'.format(race_choice), 0)
-            race_choice = DEFAULT_RACE
+        # Sanity checks
+        try:
+            assert 1 <= hit_dice_num <= 20, 'Invalid HD_NUM received: {}'.format(hit_dice_num)
+            assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
+            assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
+        except (AssertionError, ValueError):
+            debug_print(ValueError, 0)
+            debug_print(AssertionError, 0)
+            return None
 
         new_character = Character()
         new_character.seed = seed
@@ -1287,12 +1274,35 @@ class NPCGenerator:
             new_character.name = name
 
         race_template = self.race_templates[race_choice]
-        assert isinstance(race_template, RaceTemplate), "new_character(): {} is not race_choice template name"
-        self.apply_race_template(new_character, race_template, seed=seed)
+        assert isinstance(race_template, RaceTemplate)
+        self.apply_race_template(new_character, race_template)
 
         class_template = self.class_templates[class_choice]
-        assert isinstance(class_template, ClassTemplate), "new_character(): {} is not class template name"
-        self.apply_class_template(new_character, class_template, seed=seed)
+        assert isinstance(class_template, ClassTemplate)
+        self.apply_class_template(new_character, class_template)
+
+        # Get all the traits and features from the templates, have the factories instantiate them,
+        # then give them to the new character
+        for trait_name in itertools.chain(race_template.traits, class_template.traits):
+            trait_factory = self.traits[trait_name]
+            assert isinstance(trait_factory, TraitFactory)
+            trait_feature = trait_factory.get_character_feature(new_character, self)
+            new_character.add_character_feature(trait_feature)
+        for feature_name, feature_args in race_template.features.items():
+            feature_factory_class = CHARACTER_FEATURES_REFERENCE[feature_name]
+            assert isinstance(feature_factory_class, CharacterFeatureFactory)
+            feature_instance = feature_factory_class.get_character_feature(new_character, self, *feature_args)
+            new_character.add_character_feature(feature_instance)
+        for feature_name, feature_args in class_template.features.items():
+            feature_factory_class = CHARACTER_FEATURES_REFERENCE[feature_name]
+            assert isinstance(feature_factory_class, CharacterFeatureFactory)
+            feature_instance = feature_factory_class.get_character_feature(new_character, self, *feature_args)
+            new_character.add_character_feature(feature_instance)
+
+        # Do the pre-attribute rolling first pass of features
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.first_pass(new_character, self, seed)
 
         # Note, for floating attributes bonuses like half-elves to apply, race traits need to be applied before
         # Rolling attributes
@@ -1335,6 +1345,17 @@ class NPCGenerator:
             new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
                                                 points_per_increase=ASI_POINTS_PER_INCREASE)
 
+        new_character.update_derived_stats()
+
+        # Second and third passes for CharacterFeatures
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.second_pass(new_character, self, seed)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.third_pass(new_character, self, seed)
+
+        # Update again, just to be sure
         new_character.update_derived_stats()
 
         rnd_instance = random.Random(seed + 'armor')
@@ -1537,6 +1558,7 @@ class Character:
         self.has_shield = False
 
         # Using an ordered dict to maintain consistency in how traits are displayed
+        self.character_features = collections.OrderedDict()
         self.traits = collections.OrderedDict()
 
         self.damage_vulnerabilities = []
@@ -1920,6 +1942,9 @@ class Character:
                 senses_string += '{} {} ft., '.format(k, v)
         senses_string += 'passive Perception {}'.format(passive_perception)
         return senses_string
+
+    def add_character_feature(self, character_feature: 'CharacterFeature'):
+        self.character_features[character_feature.int_name] = character_feature
     
     def add_language(self, language):
         if language not in self.languages:
@@ -2003,47 +2028,14 @@ class Character:
 
         self.chosen_armor = rnd_instance.choice(valid_choices)
 
-        # all_armors = list(self.armors.values())
-        # regular_armors = []
-        # extra_armors = []
-        # # Separate armors into regular and extras
-        # for armor in all_armors:
-        #     if 'extra' in armor.tags:
-        #         extra_armors.append(armor)
-        #     else:
-        #         regular_armors.append(armor)
-        # valid_choices = []
-        # best_ac = 0
-        # for armor in regular_armors:
-        #     armor_ac = armor.get_ac(self)
-        #     if armor_ac > best_ac:
-        #         valid_choices = [armor, ]
-        #         best_ac = armor_ac
-        #     elif armor_ac == best_ac:
-        #         valid_choices.append(armor)
-        # # Need to know the regular armor AC before determining if any extras are worthwhile
-        # valid_extras = []
-        # for armor in extra_armors:
-        #     armor_ac = armor.get_ac(self)
-        #     if armor_ac > best_ac:
-        #         valid_extras.append(armor)
-        # if len(valid_extras) == 0:
-        #     valid_extras = None
-        #
-        # # check for preferred armor
-        # preferred_armor_found = False
-        # for armor in valid_choices:
-        #     if 'preferred' in armor.tags:
-        #         preferred_armor_found = True
-        # if preferred_armor_found:
-        #     new_valid_choices = []
-        #     for armor in valid_choices:
-        #         if 'preferred' in armor.tags:
-        #             new_valid_choices.append(armor)
-        #     valid_choices = new_valid_choices
-        #
-        # self.chosen_armor = rnd_instance.choice(valid_choices)
-        # self.extra_armors = valid_extras
+    def get_all_stat_block_entries(self, short=True):
+        all_entries = []
+        for feature in self.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature_entries = feature.get_stat_block_entries(self, short)
+            for stat_block_entry in feature_entries:
+                all_entries.append(stat_block_entry)
+        return all_entries
 
     def build_stat_block(self, short_traits=True, trait_visibility=1):
         sb = StatBlock()
@@ -2157,38 +2149,52 @@ class Character:
         if self.condition_immunities:
             sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
-        passive_traits = []
-        hidden_traits = []
-        for trait_obj in self.traits.values():
-            if trait_obj.get_category() == 'passive':
-                if trait_obj.get_visibility(self) <= trait_visibility:
-                    passive_traits.append((trait_obj.get_title(self),
-                                           trait_obj.get_entry(self, short=short_traits)))
-                else:
-                    hidden_traits.append(trait_obj.get_title(self))
+        # passive_traits = []
+        # hidden_traits = []
+        # for trait_obj in self.traits.values():
+        #     if trait_obj.get_category() == 'passive':
+        #         if trait_obj.get_visibility(self) <= trait_visibility:
+        #             passive_traits.append((trait_obj.get_title(self),
+        #                                    trait_obj.get_entry(self, short=short_traits)))
+        #         else:
+        #             hidden_traits.append(trait_obj.get_title(self))
+        #
+        # sb.passive_traits = passive_traits
+        # sb.hidden_traits = nice_list(hidden_traits)
+        #
+        # spellcasting_traits = []
+        # if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
+        #     assert isinstance(self.spell_casting_ability, StatBlockEntry)
+        #     spellcasting_traits.append((self.spell_casting_ability.get_title(self),
+        #                                 self.spell_casting_ability.get_entry(self, short=short_traits)))
+        # sb.spellcasting_traits = spellcasting_traits
+        #
+        # multiattack = []
+        # if self.get_stat('attacks_per_round') > 1:
+        #     multiattack.append(("Multiattack",  'This creatures makes {} attacks when it uses the attack action.'
+        #                         .format(NUM_TO_TEXT[self.get_stat('attacks_per_round')])))
+        # sb.multiattack = multiattack
 
-        sb.passive_traits = passive_traits
-        sb.hidden_traits = nice_list(hidden_traits)
-
-        spellcasting_traits = []
-        if self.spell_casting_ability and self.spell_casting_ability.get_caster_level(self) > 0:
-            assert isinstance(self.spell_casting_ability, StatBlockFeature)
-            spellcasting_traits.append((self.spell_casting_ability.get_title(self),
-                                        self.spell_casting_ability.get_entry(self, short=short_traits)))
-        sb.spellcasting_traits = spellcasting_traits
-
-        multiattack = []
-        if self.get_stat('attacks_per_round') > 1:
-            multiattack.append(("Multiattack",  'This creatures makes {} attacks when it uses the attack action.'
-                                .format(NUM_TO_TEXT[self.get_stat('attacks_per_round')])))
-        sb.multiattack = multiattack
+        all_block_entries = self.get_all_stat_block_entries(short=short_traits)
+        passive_entries = []
+        hidden_entries = []
+        for entry in all_block_entries:
+            assert isinstance(entry, StatBlockEntry)
+            if entry.get_visibility(self) <= trait_visibility:
+                if entry.get_category() in ('passive', 'spellcasting'):
+                    passive_entries.append((entry.get_title(self), entry.get_entry(self)))
+            else:
+                hidden_entries.append(entry.get_title(self))
 
         attacks = []
         for weapon in self.weapons.values():
-            assert isinstance(weapon, StatBlockFeature)
+            assert isinstance(weapon, StatBlockEntry)
             attacks.append((weapon.get_title(self),
                             weapon.get_entry(self, short=short_traits)))
         sb.attacks = attacks
+
+        sb.passive_traits = passive_entries
+        sb.hidden_traits = nice_list(hidden_entries)
 
         return sb
 
@@ -2280,24 +2286,90 @@ class StatBlock:
         return self.__dict__
 
 
+# Everything that can be a character feature starts out as a CharacterFeatureFactory
+# When it comes time to add the feature to a character, call the get_character_feature() method with the
+# appropriate arguments
+# The factory will return a CharacterFeature, which may or may not have randomized elements or be otherwise unique
+# to that character
+# CharacterFeatureFactories are allowed to look at the character when generating CharacterFeatures
+# Generally, this is just to check hit dice or attributes
+# They are also allowed to look at NPCGenerator, because that's where all the data is held
+# The short parameter indicates that any text should be abbreviated as best as possible
+class CharacterFeatureFactory:
+    def get_character_feature(self, character: 'Character', npc_gen: 'NPCGenerator', seed=None, short=True, *args):
+        return CharacterFeature('dummy')
+
+
+# When doing anything involving randomness, the rng should use the seed plus a method specific salt
+# to instantiate random
+# Character features are provided a reference to NPCGenerator, so that they can use functions that rely on its
+# reference dictionaries
+class CharacterFeature:
+    def __init__(self, int_name):
+        self.int_name = int_name
+
+    # first_pass() is called just after race/class templates have been applied,
+    # before attributes are rolled or ASI applied
+    # At this point, hit dice are known but no attributes or derived stats have been set
+    # Feature should call this method if wants to affect how a character rolls for attributes or generates basic stats
+    # or if it can figure out everything it wants using ONLY hit dice
+    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        pass
+
+    # second_pass() is called after attributes have been rolled and stats derived
+    # At this point, the bulk of stats have been set
+    # This is where most action should happen
+    # However, a CharacterFeature cannot rely on other features to have gotten their shit together by this point
+    # Basically, any feature that does stuff that relies on character stats
+    #  but not other features should do their stuff here
+    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        pass
+
+    # third_pass() is called right after second_pass()
+    # At this point, a CharacterFeature can expect other CharacterFeatures to have their shit mostly together
+    # Character features that depend on other features or modify other features can do their stuff here
+    def third_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        pass
+
+    # When it comes time to build a statblock, every feature will have this function called
+    # and the results will be pooled together
+    # The StatBlock will then get to decide how to organize and format the results
+    # Note, this is where the short parameter is called,
+    # which if true means shortened versions of entries should be used
+    # Visibility and which entries should be hidden is handled by the StatBlock
+    def get_stat_block_entries(self, character: 'Character', short=True):
+        return []
+
+
 # Everything that can appear as an entry in a stat block musty implement this functionality
 # Features are allowed to change things based on who the owner is
-class StatBlockFeature:
+class StatBlockEntry:
+    def __init__(self, title, text, category, visibility):
+        self.title = title
+        self.text = text
+        self.category = category
+        self.visibility = visibility
+
+    def __str__(self):
+        return "{}. {}".format(self.title, self.text)
+
+    def __repr__(self):
+        return "<StatBlockEntry:{}>".format(self.title)
 
     # The part that is typically in bold with a period at the end.
     # When using short statblock versions, expect (1/short), etc. for abilities that recharge on a short rest
     def get_title(self, owner: Character, short=True):
-        return ''
+        return self.title
 
     # The normal text stuff
     def get_entry(self, owner: Character, short=True):
-        return ''
+        return self.text
 
     # Categories are used for organizing the statblock when it comes time for rendering
     # The renderer is allowed to decide on the order
     # Features with the 'hidden' category will never be shown, regardless of visibility
     def get_category(self):
-        return ''
+        return self.category
 
     # When building a statblock, visibility determines what makes the cut
     # 0 - always show
@@ -2307,42 +2379,204 @@ class StatBlockFeature:
     #     i.e. the feature has a minimum hd requirement the character doesn't meet
     # Features with the 'hidden' category will never be shown, regardless of visibility
     def get_visibility(self, owner: Character):
-        return 0
+        return self.visibility
 
 
-class Trait(StatBlockFeature):
+# Traits are the most common and simplest form of CharacterFeature
+# Traits are allowed to make simple changes to a character based on the tags they've been given and will always
+# generate only a single StatBlock entry
+# That stat block entry text may insert values from the character's stats dictionary, but is otherwise static
+# Anything requiring additional functionality must be implemented as a custom CharacterFeature
+class TraitFactory(CharacterFeatureFactory):
     def __init__(self):
         self.int_name = ''
         self.display_name = ''
         self.recharge = ''
         self.trait_type = 'hidden'
-        self.text = ''
+        self.text_long = ''
         self.text_short = ''
         self.visibility = 0
         self.tags = {}
 
-    def __str__(self):
-        return '<{}:{},{},{},{}>'.format(self.int_name, self.display_name, self.trait_type, self.text, str(self.tags))
-
-    def get_title(self, owner, short=True):
-        if short and self.recharge:
-            return '{} ({})'.format(self.display_name, self.recharge)
-        return self.display_name
-
-    def get_entry(self, owner: Character, short=True):
+    def get_character_feature(self, character: 'Character', npc_gen: 'NPCGenerator', short=True, *args):
         if short:
-            return self.text_short.format(**owner.stats)
+            text = self.text_short
         else:
-            return self.text.format(**owner.stats)
+            text = self.text_long
 
-    def get_category(self):
-        return self.trait_type
-
-    def get_visibility(self, owner: Character):
-        if 'min_hd' in self.tags and owner.get_stat('hit_dice_num') < int(self.tags['min_hd'][0]):
-            return 3
+        if short and self.recharge:
+            title = "{} ({})".format(self.display_name, self.recharge)
         else:
-            return self.visibility
+            title = self.display_name
+
+        return RevisedTrait(
+            int_name=self.int_name,
+            title=title,
+            trait_type=self.trait_type,
+            text=text,
+            visibility=self.visibility,
+            tags=self.tags,
+        )
+
+
+class RevisedTrait(CharacterFeature):
+    def __init__(self, int_name, title, trait_type, text, visibility, tags):
+        super().__init__(int_name)
+        self.title = title
+        self.trait_type = trait_type
+        self.text = text
+        self.visibility = visibility
+        self.tags = tags
+
+    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+
+        rnd_instance = random.Random(seed + self.int_name + 'first')
+
+        if 'give_armor' in self.tags:
+            for armor in self.tags['give_armor']:
+                npc_gen.give_armor(character, armor)
+
+        if 'give_weapon' in self.tags:
+            for weapon in self.tags['give_weapon']:
+                npc_gen.give_weapon(character, weapon)
+
+        if 'give_tag' in self.tags:
+            for character_tag in self.tags['give_tag']:
+                character.add_tag(character_tag)
+
+        # Tools and skills are considered the same, anything not in SKILLS is considered a tool
+        if 'skill_proficiency' in self.tags:
+            for skill in self.tags['skill_proficiency']:
+                skill = skill.replace('_', ' ')
+                if skill not in character.skills:
+                    character.add_skill(skill)
+                elif len(character.get_non_proficient_skills()) > 0:
+                    random_skill = rnd_instance.choice(character.get_non_proficient_skills())
+                    debug_print('Trait {}: {} already present, adding {} instead'
+                                .format(self.int_name, skill, random_skill))
+                    character.add_skill(random_skill)
+
+        if 'skill_random' in self.tags:
+            num_random_skills = int(self.tags['skill_random'][0])
+            for i in range(num_random_skills):
+                if len(character.get_non_proficient_skills()) > 0:
+                    random_skill = rnd_instance.choice(character.get_non_proficient_skills())
+                    debug_print('Trait {}: giving random skill {}.'
+                                .format(self.int_name, random_skill))
+                    character.add_skill(random_skill)
+
+        if 'expertise_random' in self.tags:
+            num_expertise = int(self.tags['expertise_random'][0])
+            expertise_choices = rnd_instance.sample(character.skills, num_expertise)
+            for choice in expertise_choices:
+                character.add_skill(choice, expertise=True)
+
+        if 'expertise_fixed' in self.tags:
+            expertise_choices = self.tags['expertise_random']
+            for choice in expertise_choices:
+                character.add_skill(choice, expertise=True)
+
+        if 'damage_immunity' in self.tags:
+            for entry in self.tags['damage_immunity']:
+                character.add_damage_immunity(entry)
+
+        if 'damage_vulnerability' in self.tags:
+            for entry in self.tags['damage_vulnerability']:
+                character.add_damage_vulnerability(entry)
+
+        if 'damage_resistance' in self.tags:
+            for entry in self.tags['damage_resistance']:
+                character.add_damage_resistance(entry)
+
+        if 'condition_immunity' in self.tags:
+            for entry in self.tags['condition_immunity']:
+                character.add_condition_immunity(entry)
+
+        if 'save_advantage' in self.tags:
+            for advantage in self.tags['save_advantage']:
+                character.add_save_advantage(advantage)
+
+        if 'save_disadvantage' in self.tags:
+            for disadvantage in self.tags['save_disadvantage']:
+                character.add_save_disadvantage(disadvantage)
+
+        if 'sense_darkvision' in self.tags:
+            val = int(self.tags['sense_darkvision'][0])
+            character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
+
+        if 'bonus_hp_per_level' in self.tags:
+            val = int(self.tags['bonus_hp_per_level'][0])
+            character.stats['bonus_hp_per_level'] += val
+
+        if 'floating_attribute_bonus' in self.tags:
+            val = int(self.tags['floating_attribute_bonus'][0])
+            character.stats['floating_attribute_points'] += val
+
+        if 'random_language' in self.tags:
+            num_extra_languages = self.tags['random_language'][0]
+            language_options = set(LANGUAGES)
+            for language in character.languages:
+                language_options.remove(language)
+            language_choices = rnd_instance.sample(language_options, num_extra_languages)
+            for language in language_choices:
+                character.add_language(language)
+
+    # Traits shouldn't need to do anything on the second pass
+    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        pass
+
+    def get_stat_block_entries(self, character: 'Character', short=True):
+        text = self.text.format(**character.stats)
+        sb_entries = []
+        sb_entries.append(StatBlockEntry(
+            title=self.title, text=text, category=self.trait_type, visibility=self.visibility,))
+        return sb_entries
+
+
+# class Trait(StatBlockEntry):
+#     def __init__(self):
+#         self.int_name = ''
+#         self.display_name = ''
+#         self.recharge = ''
+#         self.trait_type = 'hidden'
+#         self.text = ''
+#         self.text_short = ''
+#         self.visibility = 0
+#         self.tags = {}
+#
+#     def __str__(self):
+#         return '<{}:{},{},{},{}>'.format(self.int_name, self.display_name, self.trait_type, self.text, str(self.tags))
+#
+#     def get_title(self, owner, short=True):
+#         if short and self.recharge:
+#             return '{} ({})'.format(self.display_name, self.recharge)
+#         return self.display_name
+#
+#     def get_entry(self, owner: Character, short=True):
+#         if short:
+#             return self.text_short.format(**owner.stats)
+#         else:
+#             return self.text.format(**owner.stats)
+#
+#     def get_category(self):
+#         return self.trait_type
+#
+#     def get_visibility(self, owner: Character):
+#         if 'min_hd' in self.tags and owner.get_stat('hit_dice_num') < int(self.tags['min_hd'][0]):
+#             return 3
+#         else:
+#             return self.visibility
+#
+#     def get_character_feature(self):
+#         new_feature = RevisedTrait(
+#             title = self.display_name,
+#             recharge = self.recharge,
+#             short_text = self.text_short,
+#             long_text = self.text,
+#             visibility= self.visibility,
+#             tags = self.tags,
+#             )
+#         return new_feature
 
 
 class RaceTemplate:
@@ -2362,6 +2596,7 @@ class RaceTemplate:
         self.languages = []
 
         self.traits = []
+        self.features = collections.OrderedDict()
 
 
 class ClassTemplate:
@@ -2387,6 +2622,7 @@ class ClassTemplate:
         self.spell_casting_profile = None
 
         self.traits = []
+        self.features = collections.OrderedDict()
 
         self.cr_calc_type = ''
 
@@ -2459,7 +2695,7 @@ class Armor:
 
 # For CR calculations, an attack needs to give its to hit and average damage value
 # And it needs to be able to give a stat block entry when it comes time to render
-class Attack(StatBlockFeature):
+class Attack(StatBlockEntry):
 
     def get_to_hit(self, owner):
         pass
@@ -2751,7 +2987,7 @@ class SpellCasterProfile:
 # These are fine, they just need to be able to give caster level and spell dc for the sake of CR calculations
 # And they need to share whether they give access to certain spells which other parts of the satblock may need,
 # Like mage armor
-class SpellCastingFeature(StatBlockFeature):
+class SpellCastingFeature(StatBlockEntry):
     def get_caster_level(self, owner: Character):
         return 0
 
