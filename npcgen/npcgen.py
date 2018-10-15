@@ -1507,7 +1507,7 @@ class NPCGenerator:
             raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
 
     def get_options_dict(self):
-        options_dict = Dict[str, list]
+        options_dict = {}
         options_dict['race_options'] = self.get_options('race_choice')
         options_dict['class_options'] = self.get_options('class_choice')
         options_dict['attribute_roll_options'] = self.get_options('attribute_roll_method')
