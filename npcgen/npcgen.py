@@ -446,7 +446,7 @@ def random_string(length, rnd_instance=None):
 
 # I format my csv tag entries like 'tag_name:tag_val1;tag_val2,second_tag_name'
 # This will break them apart and return dictionaries like {tag_name: [tag_val1, tag_val2], second_tag_name: []}
-def csv_tag_reader(item_line, tag_delimiter=',', tag_value_separator=':', tag_val_delimiter=';'):
+def csv_tag_reader(item_line, tag_delimiter=';', tag_value_separator=':', tag_val_delimiter=','):
     if item_line == '':
         return {}
     tags_dict = {}
