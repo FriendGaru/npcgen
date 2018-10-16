@@ -12,7 +12,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 1
+DEBUG_LEVEL = 2
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
@@ -1656,7 +1656,7 @@ class Character:
     def set_stat(self, stat, value):
         self.stats[stat] = value
 
-    def get_best_attack(self):
+    def get_best_weapon_hit_dmg(self):
         best_to_hit = 0
         best_avg_dmg = 0
         for weapon in self.weapons.values():
@@ -1676,70 +1676,104 @@ class Character:
         return best_ac
 
     def get_cr(self):
-        effective_to_hit, effective_attack_dmg = self.get_best_attack()
-        # effective_dmg_per_round = effective_attack_dmg * self.stats['attacks_per_round']
-        effective_dmg_per_round = effective_attack_dmg * 1
-        effective_hp = self.stats['hit_points_total']
-        effective_ac = self.get_best_ac()
 
-        # For now, we'll just say that if a character's spellcasting level is greater than half its hit dice,
-        # we'll treat it like a caster for CR purposes
-        # if self.spell_casting_ability:
-        #     effective_caster_level = self.spell_casting_ability.get_caster_level(self)
-        #     effective_spell_dc = self.spell_casting_ability.get_spell_dc(self)
-        #     if self.spell_casting_ability.get_caster_level(self) > self.stats['hit_dice_num'] / 2:
-        #         cr_focus = 'caster'
-        #     else:
-        #         cr_focus = 'not_caster'
-        # else:
-        #     effective_caster_level = 0
-        #     effective_spell_dc = 0
-        cr_focus = 'not_caster'
+        cr_factors_all = []
+        # From weapons
+        for weapon in self.weapons.values():
+            for weapon_cr_factor in weapon.get_cr_factors(self):
+                cr_factors_all.append(weapon_cr_factor)
+        # From features
+        for character_feature in self.character_features.values():
+            for feature_cr_factor in character_feature.get_cr_factors(self):
+                cr_factors_all.append(feature_cr_factor)
 
-        # Note, we're using row index for CR math instead of the actual number,
-        # This should accommodate fractional CRs
-        # Get the character's defensive challenge rating
-        # Start with the max vals, in case we can't find on chart
-        cr_index_def = len(CHALLENGE_RATING_CHART)
-        expected_ac = 19
-        for row_num in range(len(CHALLENGE_RATING_CHART)):
-            row_hp = CHALLENGE_RATING_CHART[row_num][3]  # index 3 is hp
-            if row_hp > effective_hp:
-                cr_index_def = row_num
-                expected_ac = CHALLENGE_RATING_CHART[row_num][2]
+        best_attack_damage = -1
+        best_attack_to_hit = -1
+        best_ability_level = -1
+        best_ability_dc = -1
+        effective_damage_bonus = 0
+        effective_ac_bonus = 0
+        effective_hp_bonus = 0
+
+        for cr_factor in cr_factors_all:
+            assert isinstance(cr_factor, CRFactor)
+            if cr_factor.cr_type == 'attack':
+                if cr_factor.damage > best_attack_damage:
+                    best_attack_damage = cr_factor.damage
+                    best_attack_to_hit = cr_factor.to_hit
+            elif cr_factor.cr_type == 'ability':
+                if cr_factor.ability_level > best_ability_dc:
+                    best_ability_level = cr_factor.ability_level
+                    best_ability_dc = cr_factor.dc
+            elif cr_factor.cr_type == 'effective_damage_bonus':
+                effective_damage_bonus += cr_factor.extra_damage
+            elif cr_factor.cr_type == 'effective_ac_bonus':
+                effective_ac_bonus += cr_factor.extra_ac
+            elif cr_factor.cr_type == 'effective_hp_bonus':
+                effective_hp_bonus += cr_factor.extra_ac
+            else:
+                debug_print('!!!ERROR!!! Invalid cr_factory type {} received'.format(cr_factor.cr_type), 0)
+
+        effective_hp = self.stats['hit_points_total'] + effective_hp_bonus
+        effective_ac = self.get_best_ac() + effective_ac_bonus
+
+        starting_defensive_rating = 33
+        for i in range(0, len(CHALLENGE_RATING_CHART)):
+            if CHALLENGE_RATING_CHART[i][3] > effective_hp:
+                starting_defensive_rating = i
                 break
-        # For every two points, shift up or down one row
-        cr_def_shift = int(float(effective_ac - expected_ac) / 2)
-        cr_index_def += cr_def_shift
+        expected_ac = CHALLENGE_RATING_CHART[starting_defensive_rating][2]
+        def_rating_shift = int(float(effective_ac - expected_ac) / 2)
+        defensive_rating = starting_defensive_rating + def_rating_shift
 
-        # Get the character's offensive challenge rating
-        # Start with the max vals, in case we can't find on chart
-        cr_index_off = len(CHALLENGE_RATING_CHART)
-        expected_to_hit = 14
-        expected_dc = 23
-        # So, we don't really have a good way to get avg damage for casters at the moment, so we're going to use a hack
-        # For casters, we'll just start them at caster level -3 on the chart
-        # Conveniently, that happens to be the row's index number
-        if cr_focus == 'caster':
-            cr_index_off = effective_caster_level
-            expected_dc = CHALLENGE_RATING_CHART[cr_index_off][6]
-            cr_off_shift = int(float(effective_spell_dc - expected_dc) / 2)
-        else:
-            for row_num in range(len(CHALLENGE_RATING_CHART)):
-                if CHALLENGE_RATING_CHART[row_num][5] > effective_dmg_per_round:
-                    cr_index_off = row_num
-                    expected_to_hit = CHALLENGE_RATING_CHART[row_num][4]
+        offensive_attack_rating = -1
+        effective_best_damage = -1
+        effective_best_to_hit = -1
+        if best_attack_damage > 0:
+            effective_best_damage = best_attack_damage + effective_damage_bonus
+            effective_best_to_hit = best_attack_to_hit  # Might have other influences later
+            starting_offensive_attack_rating = 33
+            for i in range(0, len(CHALLENGE_RATING_CHART)):
+                if CHALLENGE_RATING_CHART[i][5] > effective_best_damage:
+                    starting_offensive_attack_rating = i
                     break
-            cr_off_shift = int(float(effective_to_hit - expected_to_hit) / 2)
-        cr_index_off += cr_off_shift
+            expected_to_hit = CHALLENGE_RATING_CHART[starting_offensive_attack_rating][4]
+            off_attack_rating_shift = int(float(effective_best_to_hit - expected_to_hit) / 2)
+            offensive_attack_rating = starting_offensive_attack_rating + off_attack_rating_shift
 
-        avg_cr_index = math.ceil((cr_index_off + cr_index_def) / 2)
+        offensive_ability_rating = -1
+        effective_best_ability_level = -1
+        effective_best_ability_dc = -1
+        if best_ability_level > 0:
+            effective_best_ability_level = best_ability_level
+            effective_best_ability_dc = best_ability_dc
+            starting_offensive_ability_rating = max(effective_best_ability_level, 0)
+            expected_dc = CHALLENGE_RATING_CHART[starting_offensive_ability_rating][6]
+            off_ability_rating_shift = int(float(effective_best_ability_dc - expected_dc) / 2)
+            offensive_ability_rating = starting_offensive_ability_rating + off_ability_rating_shift
 
-        # Make sure we didn't pop out of the table somehow
-        avg_cr_index = max(avg_cr_index, 0)
-        avg_cr_index = min(avg_cr_index, len(CHALLENGE_RATING_CHART) - 1)
+        if offensive_attack_rating >= 0 and offensive_ability_rating >= 0:
+            combined_attack_rating = offensive_attack_rating + offensive_ability_rating
+            offensive_rating = combined_attack_rating // 2 + combined_attack_rating % 2
+        else:
+            offensive_rating = max(offensive_attack_rating, offensive_ability_rating)
 
-        return CHALLENGE_RATING_CHART[avg_cr_index][0]
+        combined_cr_rating = (defensive_rating + offensive_rating) // 2
+
+        expected_proficiency = CHALLENGE_RATING_CHART[combined_cr_rating][1]
+
+        actual_proficiency = self.get_stat('proficiency')
+        if actual_proficiency > expected_proficiency:
+            combined_cr_rating += 1
+        elif actual_proficiency < expected_proficiency:
+            combined_cr_rating -= 1
+
+        debug_print('CR Calc: hp{} ac{} dmg{} hit{} caster{} dc{}'
+                    .format(effective_hp, effective_ac, effective_best_damage, effective_best_to_hit,
+                            effective_best_ability_level, effective_best_ability_dc), 2)
+        debug_print('CR Calc: def{} off{} combined{}'.format(defensive_rating, offensive_rating, combined_cr_rating), 2)
+
+        return CHALLENGE_RATING_CHART[combined_cr_rating][0]
 
     def get_senses(self):
         passive_perception = 10 + self.get_stat('wis_mod')
@@ -1780,6 +1814,9 @@ class Character:
                 self.skills.add(skill)
                 if expertise:
                     self.skills_expertise.add(skill)
+            elif skill in self.skills and not expertise:
+                replacement_skill = rnd_instance.choice(self.get_non_proficient_skills())
+                self.add_skill(replacement_skill, rnd_instance=rnd_instance)
             elif expertise and skill not in self.skills_expertise:
                 self.skills_expertise.add(skill)
                 if allow_replacement:
@@ -2147,6 +2184,11 @@ class CharacterFeature:
     def third_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
         pass
 
+    # If the feature should impact the character's CR calculations, this should be overriden to provide an appropriate
+    # list of CRFactor objects
+    def get_cr_factors(self, character: 'Character'):
+        return []
+
     # When it comes time to build a statblock, every feature will have this function called
     # and the results will be pooled together
     # The StatBlock will then get to decide how to organize and format the results
@@ -2448,6 +2490,21 @@ class ClassTemplate:
         self.cr_calc_type = ''
 
 
+# When it comes time for the CR calculation, each ClassFeature may choose to provide one or more CRFactor instances
+# The method for calculating CR will collect them and figure out how to use them
+class CRFactor:
+    def __init__(self, cr_type, importance=0, damage=0, ability_level=0, to_hit=0, dc=0, extra_damage=0, extra_ac=0):
+        # Valid types: attack, ability, effective_damage_bonus, effective_ac_bonus
+        self.cr_type = cr_type
+        self.importance = importance
+        self.damage = damage
+        self.ability_level = ability_level
+        self.to_hit = to_hit
+        self.dc = dc
+        self.extra_damage = extra_damage
+        self.extra_ac = extra_ac
+
+
 class Armor:
     def __init__(self):
         self.int_name = ''
@@ -2649,6 +2706,12 @@ class Weapon(Attack):
 
     def get_avg_dmg(self, owner):
         return self.get_damage(owner, use_versatile=True)[5]
+
+    def get_cr_factors(self, owner):
+        to_hit = self.get_to_hit(owner)
+        avg_dmg = self.get_avg_dmg(owner)
+        cr_factor = CRFactor('attack', to_hit=to_hit, damage=avg_dmg)
+        return [cr_factor, ]
 
     def get_stat_block_entry(self, owner: Character, short=True):
         text = ''
@@ -2880,6 +2943,22 @@ class FeatureMultiattack(CharacterFeature):
             if char_hd >= 5:
                 self.attacks = 2
 
+        # In the future, it would be nice to have the multiattack specifically say which weapons can be used
+        # self.melee_attacks = []
+        # self.offhand_weapons = []
+        # self.best_melee_dmg = 0
+        # self.best_offhand_damage = 0
+        # self.ranged_weapons = []
+        # self.best_ranged_damage = 0
+
+
+    def get_cr_factors(self, character: 'Character'):
+        best_weapon_to_hit, best_weapon_dmg = character.get_best_weapon_hit_dmg()
+        damage_per_round = best_weapon_dmg * self.attacks
+        cr_factor = CRFactor('attack', to_hit=best_weapon_to_hit, damage=damage_per_round)
+        return [cr_factor, ]
+
+
     def get_stat_block_entries(self, character: 'Character', short=True):
         entries = []
         entries.append(StatBlockEntry(
@@ -3078,6 +3157,13 @@ class FeatureSpellcasting(CharacterFeature):
                         .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
                 text += ', '.join(self.spells_known[i])
         return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
+
+    def get_cr_factors(self, character: 'Character'):
+        entries = []
+        caster_level = self.get_caster_level(character)
+        dc = self.get_spell_dc(character)
+        cr_factor = CRFactor('ability', ability_level=caster_level, dc=dc)
+        return [cr_factor, ]
 
     def get_stat_block_entries(self, character: 'Character', short=True):
         entries = []
