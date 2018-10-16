@@ -448,6 +448,8 @@ def random_string(length, rnd_instance=None):
 # I format my csv tag entries like 'tag_name:tag_val1;tag_val2,second_tag_name'
 # This will break them apart and return dictionaries like {tag_name: [tag_val1, tag_val2], second_tag_name: []}
 def csv_tag_reader(item_line, tag_delimiter=',', tag_value_separator=':', tag_val_delimiter=';'):
+    if item_line == '':
+        return {}
     tags_dict = {}
     for tag_raw in item_line.replace(" ", "").split(tag_delimiter):
         if tag_value_separator in tag_raw:
@@ -610,22 +612,7 @@ class NPCGenerator:
                     else:
                         new_trait_factory.text_short = new_trait_factory.text
 
-                    # if line['tags']:
-                    #     new_tags_dict = {}
-                    #     for raw_tag in line['tags'].replace(' ', '').split(','):
-                    #         if ':' in raw_tag:
-                    #             tag_name, tag_value = raw_tag.split(':')
-                    #             # NOTE if you want to give multiple of something like armor or resistances, you need to
-                    #             # use semicolons to separate them
-                    #             # Each tag for a trait will ALWAYS have a list associated with it,
-                    #             # remember when doing trait logic
-                    #             new_tags_dict[tag_name] = tag_value.split(';')
-                    #         else:
-                    #             new_tags_dict[raw_tag] = None
-                    #     new_trait_factory.tags = new_tags_dict
-
-                    if line['tags']:
-                        new_trait_factory.tags = csv_tag_reader(line['tags'])
+                    new_trait_factory.tags = csv_tag_reader(line['tags'])
 
                     self.traits[new_trait_factory.int_name] = new_trait_factory
                 except (ValueError, TypeError):
@@ -798,68 +785,6 @@ class NPCGenerator:
 
                 self.spell_lists[new_spell_list.name] = new_spell_list
 
-    # def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
-    #     with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
-    #         spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
-    #         for line in spellcaster_profiles_file_reader:
-    #
-    #             try:
-    #
-    #                 # Ignore blank lines or comments using hastags
-    #                 if line['internal_name'] == '' or '#' in line['internal_name']:
-    #                     continue
-    #
-    #                 new_spellcaster_profile = SpellCasterProfile()
-    #                 new_spellcaster_profile.intName = line['internal_name']
-    #                 new_spellcaster_profile.casting_stat = line['casting_stat']
-    #                 new_spellcaster_profile.ready_style = line['ready_style']
-    #
-    #                 # Alternative slots progressions not implemented
-    #                 # Probably not needed, since all casters currently in the game derive their slots from the standard
-    #                 new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
-    #
-    #                 if line["hd_per_casting_level"]:
-    #                     new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
-    #                 else:
-    #                     new_spellcaster_profile.hd_per_casting_level = 1
-    #
-    #                 new_spellcaster_profile.cantrips_per_level = CASTER_CANTRIPS_KNOWN[line['cantrips_per_level']]
-    #
-    #                 if line['fixed_spells_known_by_level']:
-    #                     new_spellcaster_profile.fixed_spells_known_by_level = \
-    #                         CASTER_FIXED_SPELLS_KNOWN[line['fixed_spells_known_by_level']]
-    #                 else:
-    #                     new_spellcaster_profile.fixed_spells_known_by_level = None
-    #
-    #                 if line['spells_known_modifier']:
-    #                     new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
-    #                 else:
-    #                     new_spellcaster_profile.spells_known_modifier = 0
-    #
-    #                 if line['free_spell_lists']:
-    #                     for spell_list_name in line['free_spell_lists'].replace(" ", "").split(','):
-    #                         new_spellcaster_profile.free_spell_lists.append(self.spell_lists[spell_list_name])
-    #                 else:
-    #                     new_spellcaster_profile.free_spell_lists = None
-    #
-    #                 new_spell_lists_dict = {}
-    #                 for rawEntry in line['spell_lists'].replace(" ", "").split(','):
-    #                     if ':' in rawEntry:
-    #                         spell_list_name, weight = rawEntry.split(':')
-    #                         new_spell_lists_dict[self.spell_lists[spell_list_name]] = weight
-    #                     else:
-    #                         new_spell_lists_dict[self.spell_lists[rawEntry]] = DEFAULT_SPELL_WEIGHT
-    #                 new_spellcaster_profile.spell_lists = new_spell_lists_dict
-    #
-    #                 # For now, only standard slots progression
-    #                 # In the future, may add support for nonstandard slot progressions, like warlock
-    #                 new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
-    #
-    #                 self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
-    #
-    #             except (ValueError, TypeError):
-    #                 debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
-
     def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
         with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
@@ -910,19 +835,7 @@ class NPCGenerator:
                             new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_WEIGHT
                     new_spellcaster_profile.spell_lists = new_spell_lists_dict
 
-                    if line['tags']:
-                        new_tags_dict = {}
-                        for raw_tag in line['tags'].replace(' ', '').split(','):
-                            if ':' in raw_tag:
-                                tag_name, tag_value = raw_tag.split(':')
-                                # NOTE if you want to give multiple of something like armor or resistances, you need to
-                                # use semicolons to separate them
-                                # Each tag for a trait will ALWAYS have a list associated with it,
-                                # remember when doing trait logic
-                                new_tags_dict[tag_name] = tag_value.split(';')
-                            else:
-                                new_tags_dict[raw_tag] = None
-                        new_spellcaster_profile.tags = new_tags_dict
+                    new_spellcaster_profile.tags = csv_tag_reader(line['tags'])
 
                     # For now, only standard slots progression
                     # In the future, may add support for nonstandard slot progressions, like warlock
@@ -999,19 +912,7 @@ class NPCGenerator:
                     if line['languages']:
                         new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
-                    if line['features']:
-                        new_features_dict = {}
-                        for raw_feature in line['features'].replace(' ', '').split(','):
-                            if ':' in raw_feature:
-                                feature_name, feature_value = raw_feature.split(':')
-                                # NOTE if you want to give multiple of something like armor or resistances, you need to
-                                # use semicolons to separate them
-                                # Each tag for a trait will ALWAYS have a list associated with it,
-                                # remember when doing trait logic
-                                new_features_dict[feature_name] = feature_value.split(';')
-                            else:
-                                new_features_dict[raw_feature] = []
-                        new_race_template.features = new_features_dict
+                    new_race_template.features = csv_tag_reader(line['features'])
 
                     self.race_options.append((new_race_template.int_name, new_race_template.display_name))
                     self.race_templates[new_race_template.int_name] = new_race_template
@@ -1091,19 +992,7 @@ class NPCGenerator:
                     else:
                         new_class_template.cr_calc_type = 'attack'
 
-                    if line['features']:
-                        new_features_dict = {}
-                        for raw_feature in line['features'].replace(' ', '').split(','):
-                            if ':' in raw_feature:
-                                feature_name, feature_value = raw_feature.split(':')
-                                # NOTE if you want to give multiple of something like armor or resistances, you need to
-                                # use semicolons to separate them
-                                # Each tag for a trait will ALWAYS have a list associated with it,
-                                # remember when doing trait logic
-                                new_features_dict[feature_name] = feature_value.split(';')
-                            else:
-                                new_features_dict[raw_feature] = []
-                        new_class_template.features = new_features_dict
+                    new_class_template.features = csv_tag_reader(line['features'])
 
                     self.class_options.append((new_class_template.int_name, new_class_template.display_name))
                     self.class_templates[new_class_template.int_name] = new_class_template
@@ -1111,147 +1000,6 @@ class NPCGenerator:
 
                 except ValueError:
                     print("Error processing class template {}.".format(line['internal_name']))
-
-    # def give_trait(self, character: 'Character', trait_name, rnd_instance=None, process_tags=True):
-    #
-    #     # Process tags means the trait will execute tag stuff
-    #     # This allows a handful of traits to basically give themselves to the character for the sake of ordering
-    #
-    #     if not rnd_instance:
-    #         rnd_instance = random
-    #
-    #     assert trait_name in self.traits, "Trait {} not found!".format(trait_name)
-    #
-    #     trait = self.traits[trait_name]
-    #
-    #     # If a character already has the trait from another source,
-    #     # and doesn't have the repeatable tag, don't give again
-    #     if trait_name in character.traits and 'repeatable' not in trait.tags:
-    #         return
-    #
-    #     # Remember,
-    #     # trait.tags = {tag_name: [tag_val_1, tag_val_2, ...], ...}
-    #     # each tag ALWAYS has a list associated with it even if it's for a single value
-    #
-    #     # Some tags might implicitly require that the trait should not be given to the character
-    #     # Traits that give other traits, for example
-    #     # They can set this flag to false to block the giving at the end
-    #     give_trait = True
-    #
-    #     if process_tags:
-    #         if 'give_armor' in trait.tags:
-    #             for armor in trait.tags['give_armor']:
-    #                 self.give_armor(character, armor)
-    #
-    #         if 'give_weapon' in trait.tags:
-    #             for weapon in trait.tags['give_weapon']:
-    #                 self.give_weapon(character, weapon)
-    #
-    #         if 'give_tag' in trait.tags:
-    #             for character_tag in trait.tags['give_tag']:
-    #                 character.add_tag(character_tag)
-    #
-    #         # Tools and skills are considered the same, anything not in SKILLS is considered a tool
-    #         if 'skill_proficiency' in trait.tags:
-    #             for skill in trait.tags['skill_proficiency']:
-    #                 skill = skill.replace('_', ' ')
-    #                 if skill not in character.skills:
-    #                     character.add_skill(skill)
-    #                 elif len(character.get_non_proficient_skills()) > 0:
-    #                     random_skill = rnd_instance.choice(character.get_non_proficient_skills())
-    #                     debug_print('Trait {}: {} already present, adding {} instead'
-    #                                 .format(trait_name, skill, random_skill))
-    #                     character.add_skill(random_skill)
-    #
-    #         if 'skill_random' in trait.tags:
-    #             num_random_skills = int(trait.tags['skill_random'][0])
-    #             for i in range(num_random_skills):
-    #                 if len(character.get_non_proficient_skills()) > 0:
-    #                     random_skill = rnd_instance.choice(character.get_non_proficient_skills())
-    #                     debug_print('Trait {}: giving random skill {}.'
-    #                                 .format(trait_name, random_skill))
-    #                     character.add_skill(random_skill)
-    #
-    #         if 'expertise_random' in trait.tags:
-    #             num_expertise = int(trait.tags['expertise_random'][0])
-    #             expertise_choices = rnd_instance.sample(character.skills, num_expertise)
-    #             for choice in expertise_choices:
-    #                 character.add_skill(choice, expertise=True)
-    #
-    #         if 'expertise_fixed' in trait.tags:
-    #             expertise_choices = trait.tags['expertise_random']
-    #             for choice in expertise_choices:
-    #                 character.add_skill(choice, expertise=True)
-    #
-    #         if 'damage_immunity' in trait.tags:
-    #             for entry in trait.tags['damage_immunity']:
-    #                 character.add_damage_immunity(entry)
-    #
-    #         if 'damage_vulnerability' in trait.tags:
-    #             for entry in trait.tags['damage_vulnerability']:
-    #                 character.add_damage_vulnerability(entry)
-    #
-    #         if 'damage_resistance' in trait.tags:
-    #             for entry in trait.tags['damage_resistance']:
-    #                 character.add_damage_resistance(entry)
-    #
-    #         if 'condition_immunity' in trait.tags:
-    #             for entry in trait.tags['condition_immunity']:
-    #                 character.add_condition_immunity(entry)
-    #
-    #         if 'save_advantage' in trait.tags:
-    #             for advantage in trait.tags['save_advantage']:
-    #                 character.add_save_advantage(advantage)
-    #
-    #         if 'save_disadvantage' in trait.tags:
-    #             for disadvantage in trait.tags['save_disadvantage']:
-    #                 character.add_save_disadvantage(disadvantage)
-    #
-    #         if 'sense_darkvision' in trait.tags:
-    #             val = int(trait.tags['sense_darkvision'][0])
-    #             character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
-    #
-    #         if 'bonus_hp_per_level' in trait.tags:
-    #             val = int(trait.tags['bonus_hp_per_level'][0])
-    #             character.stats['bonus_hp_per_level'] += val
-    #
-    #         if 'floating_attribute_bonus' in trait.tags:
-    #             val = int(trait.tags['floating_attribute_bonus'][0])
-    #             character.stats['floating_attribute_points'] += val
-    #
-    #         if 'random_language' in trait.tags:
-    #             num_extra_languages = trait.tags['random_language'][0]
-    #             language_options = set(LANGUAGES)
-    #             for language in character.languages:
-    #                 language_options.remove(language)
-    #             language_choices = rnd_instance.sample(language_options, num_extra_languages)
-    #             for language in language_choices:
-    #                 character.add_language(language)
-    #
-    #         if 'random_subtraits' in trait.tags:
-    #             # If the first val is an int, then that's how many subtraits to give
-    #             # If it's not, assume we need only one
-    #             try:
-    #                 num_subtraits = int(trait.tags['random_subtraits'][0])
-    #                 trait_options = trait.tags['random_subtraits'][1:]
-    #             except ValueError:
-    #                 num_subtraits = 1
-    #                 trait_options = trait.tags['random_subtraits'][:]
-    #             assert num_subtraits <= len(trait_options), \
-    #                 "Trait {} doesn't have enough subtrait options!!".format(trait_name)
-    #             trait_choices = rnd_instance.sample(trait_options, num_subtraits)
-    #             # We're going to call this function again to give this trait to the character, but without processing
-    #             # the tags, hopefully ensuring things end up in the right order
-    #             self.give_trait(character, trait_name, rnd_instance=rnd_instance, process_tags=False)
-    #             for trait_choice in trait_choices:
-    #                 self.give_trait(character, trait_choice, rnd_instance=rnd_instance, process_tags=True)
-    #             give_trait = False
-    #
-    #     # happens at end because some traits might not actually get added
-    #     # All traits get added to the character's dictionary, and non-hidden ones get added to the order attributes
-    #     # Complicated, but this will maintain trait order which can be important for traits with subtraits
-    #     if give_trait:
-    #         character.traits[trait_name] = trait
 
     def give_armor(self, character, armor_name, extra=False):
         armor = self.armors[armor_name].get_copy()
