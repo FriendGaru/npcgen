@@ -1768,6 +1768,8 @@ class Character:
     # Can also add tools, anything that's not in the valid skills list is assumed to be a tool
     # I don't have a good way to get replacement tools, so only skills will get a free replacement if the character
     # already has it
+    # Replacement skills are completely random. Not ideal, but it's fine.
+    # Should always give add_skill an rnd_instance, because you never know when it might need it for a replacement skill
     def add_skill(self, skill, expertise=False, allow_replacement=True, rnd_instance=None):
         debug_print("Trying to add skill {}".format(skill), 3)
         # Tools can have spaces in them, so they use underscores in the csv file
@@ -1812,6 +1814,8 @@ class Character:
         return list(out_skills)
 
     def add_tag(self, tag, tag_val=None):
+        if not tag_val:
+            tag_val = []
         self.character_tags[tag] = tag_val
 
     def add_damage_resistance(self, damage_resistance):
