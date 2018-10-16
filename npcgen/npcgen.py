@@ -1041,16 +1041,11 @@ class NPCGenerator:
 
         rnd_instance = random.Random(seed + 'skills')
         fixed_skills = class_template.skills_fixed
+        # we want to avoid random.sample() here because it won't guarantee the same choices by seed
         randomized_skills = rnd_instance.sample(class_template.skills_random, class_template.num_random_skills)
         skills_to_add = itertools.chain(fixed_skills, randomized_skills)
         for skill in skills_to_add:
-            if skill in character.skills and len(character.get_non_proficient_skills()) > 0:
-                replacement_skill = rnd_instance.choice(character.get_non_proficient_skills())
-                debug_print('Class {}: Already proficient in {}, adding {} instead.'
-                            .format(class_template.int_name, skill, replacement_skill))
-                character.add_skill(replacement_skill)
-            else:
-                character.add_skill(skill)
+            character.add_skill(skill, rnd_instance=rnd_instance)
 
         for save in class_template.saves:
             character.saves.add(save)
@@ -1143,7 +1138,7 @@ class NPCGenerator:
 
         class_template = self.class_templates[class_choice]
         assert isinstance(class_template, ClassTemplate)
-        self.apply_class_template(new_character, class_template)
+        self.apply_class_template(new_character, class_template, seed=seed)
 
         # Get all the traits and features from the templates, have the factories instantiate them,
         # then give them to the new character
@@ -1771,22 +1766,48 @@ class Character:
         self.save_disadvantages.add(disadvantage)
 
     # Can also add tools, anything that's not in the valid skills list is assumed to be a tool
-    def add_skill(self, skill, expertise=False):
+    # I don't have a good way to get replacement tools, so only skills will get a free replacement if the character
+    # already has it
+    def add_skill(self, skill, expertise=False, allow_replacement=True, rnd_instance=None):
+        debug_print("Trying to add skill {}".format(skill), 3)
         # Tools can have spaces in them, so they use underscores in the csv file
         # Make sure underscores have become spaces, first
         skill = skill.replace('_', ' ')
         if skill in SKILLS:
-            self.skills.add(skill)
-            if expertise:
+            if skill not in self.skills:
+                self.skills.add(skill)
+                if expertise:
+                    self.skills_expertise.add(skill)
+            elif expertise and skill not in self.skills_expertise:
                 self.skills_expertise.add(skill)
+                if allow_replacement:
+                    if not rnd_instance:
+                        rnd_instance = random.Random()
+                    replacement_skill = rnd_instance.choice(self.get_non_proficient_skills())
+                    self.add_skill(replacement_skill, rnd_instance=rnd_instance)
+            elif expertise and skill in self.skills_expertise:
+                if allow_replacement:
+                    if not rnd_instance:
+                        rnd_instance = random.Random()
+                    replacement_skill = rnd_instance.choice(self.get_non_expertise_skills())
+                    self.add_skill(replacement_skill, expertise=True, rnd_instance=rnd_instance)
+            else:
+                debug_print("!!!ERROR!!! add_skill method screwed up and could not add skill {} expertise={}"
+                            .format(skill, str(expertise)))
         else:
             self.tool_proficiencies.add(skill)
             if expertise:
-                self.skills_expertise.add(skill)
+                self.tools_expertise.add(skill)
 
     def get_non_proficient_skills(self):
         out_skills = set(SKILLS.keys())
         for prof_skill in self.skills:
+            out_skills.remove(prof_skill)
+        return list(out_skills)
+
+    def get_non_expertise_skills(self):
+        out_skills = set(SKILLS.keys())
+        for prof_skill in self.skills_expertise:
             out_skills.remove(prof_skill)
         return list(out_skills)
 
@@ -2252,33 +2273,25 @@ class FeatureTrait(CharacterFeature):
         if 'skill_proficiency' in self.tags:
             for skill in self.tags['skill_proficiency']:
                 skill = skill.replace('_', ' ')
-                if skill not in character.skills:
-                    character.add_skill(skill)
-                elif len(character.get_non_proficient_skills()) > 0:
-                    random_skill = rnd_instance.choice(character.get_non_proficient_skills())
-                    debug_print('Trait {}: {} already present, adding {} instead'
-                                .format(self.int_name, skill, random_skill))
-                    character.add_skill(random_skill)
+                character.add_skill(skill, rnd_instance=rnd_instance)
 
         if 'skill_random' in self.tags:
             num_random_skills = int(self.tags['skill_random'][0])
             for i in range(num_random_skills):
                 if len(character.get_non_proficient_skills()) > 0:
-                    random_skill = rnd_instance.choice(character.get_non_proficient_skills())
-                    debug_print('Trait {}: giving random skill {}.'
-                                .format(self.int_name, random_skill))
-                    character.add_skill(random_skill)
+                    random_skill = rnd_instance.choice(sorted(list(SKILLS.keys())))
+                    character.add_skill(random_skill, rnd_instance=rnd_instance)
 
         if 'expertise_random' in self.tags:
             num_expertise = int(self.tags['expertise_random'][0])
             expertise_choices = rnd_instance.sample(character.skills, num_expertise)
             for choice in expertise_choices:
-                character.add_skill(choice, expertise=True)
+                character.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
 
         if 'expertise_fixed' in self.tags:
             expertise_choices = self.tags['expertise_random']
             for choice in expertise_choices:
-                character.add_skill(choice, expertise=True)
+                character.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
 
         if 'damage_immunity' in self.tags:
             for entry in self.tags['damage_immunity']:
@@ -3084,7 +3097,8 @@ class FeatureTinker(CharacterFeature):
         self.choice = rnd_instance.choice(list(FEATURE_TINKER_OPTIONS.keys()))
 
     def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
-        character.add_skill('tinkers_tools')
+        rnd_instance = random.Random(seed + self.int_name + 'first')
+        character.add_skill('tinkers_tools', rnd_instance=rnd_instance)
 
     def get_stat_block_entries(self, character: 'Character', short=True):
         entries = []
