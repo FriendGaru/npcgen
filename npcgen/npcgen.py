@@ -54,7 +54,6 @@ STATS_BASE = {
     'bonus_hp_per_level': 0,  # Dwarf toughness
     'speed_bonus_universal': 0,
     'floating_attribute_points': 0,
-    'breath_weapon_dice': 2,  # For dragonborn breath weapons
 }
 
 SKILLS = {
@@ -977,15 +976,8 @@ class NPCGenerator:
                     if line['armors_loadout']:
                         new_class_template.armors_loadout_pool = line['armors_loadout']
 
-                    if line['multiattack_type']:
-                        new_class_template.multiattack_type = line['multiattack_type']
-
                     if line['traits']:
                         new_class_template.traits = line['traits'].replace(" ", "").split(',')
-
-                    if line['spellcasting_profile']:
-                        new_class_template.spell_casting_profile = \
-                            self.spellcaster_profiles[line['spellcasting_profile']]
 
                     if line['cr_calc']:
                         new_class_template.cr_calc_type = line['cr_calc']
@@ -1396,8 +1388,6 @@ class Character:
         self.creature_type = ''
         self.size = ''
 
-        self.multiattack = None
-
         # I don't like directly referencing traits, so I'm adding an intermediary step.
         # Traits can give character tags, which in turn may be referenced by character logic
         # Tags are not included in stat blocks at all
@@ -1423,7 +1413,6 @@ class Character:
 
         # Using an ordered dict to maintain consistency in how traits are displayed
         self.character_features = collections.OrderedDict()
-        self.traits = collections.OrderedDict()
 
         self.damage_vulnerabilities = []
         self.damage_resistances = []
@@ -1434,7 +1423,6 @@ class Character:
         self.languages = []
         self.senses = {}
 
-        self.spell_casting_ability = None
 
     def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
@@ -1621,35 +1609,6 @@ class Character:
             self.stats[attribute + '_attack'] = self.stats['proficiency'] + self.stats[attribute + '_mod']
         # Speed
         # Speed has to come after armor, so it gets its own method
-        # Multiattack
-        if self.multiattack:
-            hd = self.stats['hit_dice_num']
-            multiattack_type = self.multiattack
-            attacks = 1
-            if multiattack_type == 'fighter':
-                if hd >= 20:
-                    attacks = 4
-                elif hd >= 11:
-                    attacks = 3
-                elif hd >= 5:
-                    attacks = 2
-            elif multiattack_type == 'single':
-                if hd >= 5:
-                    attacks = 2
-            self.stats['attacks_per_round'] = attacks
-        else:
-            self.stats['attacks_per_round'] = 1
-
-        # Trait specific stuff
-        hit_dice_num = self.stats['hit_dice_num']
-        if hit_dice_num >= 16:
-            self.stats['breath_weapon_dice'] = 5
-        elif hit_dice_num >= 11:
-            self.stats['breath_weapon_dice'] = 4
-        elif hit_dice_num >= 6:
-            self.stats['breath_weapon_dice'] = 3
-        else:
-            self.stats['breath_weapon_dice'] = 2
 
     # Speed is partially dependent on armor, which is determined separately from derived stats
     def update_speeds(self):
@@ -1723,23 +1682,24 @@ class Character:
 
     def get_cr(self):
         effective_to_hit, effective_attack_dmg = self.get_best_attack()
-        effective_dmg_per_round = effective_attack_dmg * self.stats['attacks_per_round']
+        # effective_dmg_per_round = effective_attack_dmg * self.stats['attacks_per_round']
+        effective_dmg_per_round = effective_attack_dmg * 1
         effective_hp = self.stats['hit_points_total']
         effective_ac = self.get_best_ac()
 
         # For now, we'll just say that if a character's spellcasting level is greater than half its hit dice,
         # we'll treat it like a caster for CR purposes
-        if self.spell_casting_ability:
-            effective_caster_level = self.spell_casting_ability.get_caster_level(self)
-            effective_spell_dc = self.spell_casting_ability.get_spell_dc(self)
-            if self.spell_casting_ability.get_caster_level(self) > self.stats['hit_dice_num'] / 2:
-                cr_focus = 'caster'
-            else:
-                cr_focus = 'not_caster'
-        else:
-            effective_caster_level = 0
-            effective_spell_dc = 0
-            cr_focus = 'not_caster'
+        # if self.spell_casting_ability:
+        #     effective_caster_level = self.spell_casting_ability.get_caster_level(self)
+        #     effective_spell_dc = self.spell_casting_ability.get_spell_dc(self)
+        #     if self.spell_casting_ability.get_caster_level(self) > self.stats['hit_dice_num'] / 2:
+        #         cr_focus = 'caster'
+        #     else:
+        #         cr_focus = 'not_caster'
+        # else:
+        #     effective_caster_level = 0
+        #     effective_spell_dc = 0
+        cr_focus = 'not_caster'
 
         # Note, we're using row index for CR math instead of the actual number,
         # This should accommodate fractional CRs
@@ -2511,7 +2471,7 @@ class Armor:
             total_ac = base_ac + owner.get_stat('dex_mod')
         elif self.armor_type == 'medium':
             max_dex_bonus = 2
-            if 'medium_armor_master' in owner.traits:
+            if 'medium_armor_master' in owner.character_tags:
                 max_dex_bonus = 3
             # Can add case here for medium armor mastery
             total_ac = base_ac + min(max_dex_bonus, owner.get_stat('dex_mod'))
