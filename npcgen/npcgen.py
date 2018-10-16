@@ -1254,14 +1254,14 @@ class NPCGenerator:
     #         character.traits[trait_name] = trait
 
     def give_armor(self, character, armor_name, extra=False):
-        armor = self.armors[armor_name]
+        armor = self.armors[armor_name].get_copy()
         if extra:
             character.extra_armors[armor_name] = armor
         else:
             character.armors[armor_name] = armor
 
     def give_weapon(self, character, weapon_name):
-        weapon = self.weapons[weapon_name]
+        weapon = self.weapons[weapon_name].get_copy()
         character.weapons[weapon_name] = weapon
 
     # Applies everything EXCEPT features/traits
@@ -2256,11 +2256,15 @@ class Character:
             sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
         all_block_entries = self.get_all_stat_block_entries(short=short_traits)
+        # Add weapons as entries, too
+        for weapon in self.weapons.values():
+            all_block_entries.append(weapon.get_stat_block_entry(self))
         passive_entries = []
         multiattack_entries = []
         action_entries = []
         spellcasting_entries = []
         hidden_entries = []
+        attacks = []
         for entry in all_block_entries:
             assert isinstance(entry, StatBlockEntry)
             if entry.get_visibility(self) <= trait_visibility:
@@ -2272,16 +2276,12 @@ class Character:
                     spellcasting_entries.append((entry.get_title(self), entry.get_entry(self)))
                 elif entry.get_category() == 'action':
                     action_entries.append((entry.get_title(self), entry.get_entry(self)))
+                elif entry.get_category() == 'attack':
+                    attacks.append((entry.get_title(self), entry.get_entry(self)))
             else:
                 hidden_entries.append(entry.get_title(self))
 
-        attacks = []
-        for weapon in self.weapons.values():
-            assert isinstance(weapon, StatBlockEntry)
-            attacks.append((weapon.get_title(self),
-                            weapon.get_entry(self, short=short_traits)))
         sb.attacks = attacks
-
         sb.passive_traits = passive_entries
         sb.multiattack = multiattack_entries
         sb.actions = action_entries
@@ -2427,8 +2427,11 @@ class CharacterFeature:
 # Everything that can appear as an entry in a stat block musty implement this functionality
 # Features are allowed to change things based on who the owner is
 class StatBlockEntry:
-    def __init__(self, title, category, visibility, text, ):
+    def __init__(self, title, category, visibility, text, subtitles=None):
         self.title = title
+        self.subtitles = subtitles
+        if not self.subtitles:
+            self.subtitles = []
         self.text = text
         self.category = category
         self.visibility = visibility
@@ -2439,10 +2442,19 @@ class StatBlockEntry:
     def __repr__(self):
         return "<StatBlockEntry:{}>".format(self.title)
 
+    def add_subtitle(self, subtitle):
+        self.subtitles.append(subtitle)
+
+    def get_subtitles(self):
+        return ', '.join(self.subtitles)
+
     # The part that is typically in bold with a period at the end.
     # When using short statblock versions, expect (1/short), etc. for abilities that recharge on a short rest
-    def get_title(self, owner: Character, short=True):
-        return self.title
+    def get_title(self, owner: Character, short=True, include_subtitles=True):
+        if include_subtitles and self.subtitles:
+            return '{} ({})'.format(self.title, ', '.join(self.subtitles))
+        else:
+            return self.title
 
     # The normal text stuff
     def get_entry(self, owner: Character, short=True):
@@ -2721,14 +2733,31 @@ class Armor:
         self.stealth_disadvantage = False
         self.tags = set()
 
+        # This stuff is usually default, but can be overriden by character features
+        self.enchantment = 0
+
     def __repr__(self):
         return self.int_name
+
+    # Characters get copies of equipment
+    # That way, they can let their features modify them without screwing up armors for everyone
+    def get_copy(self):
+        copy_armor = Armor()
+        copy_armor.int_name = self.int_name
+        copy_armor.display_name = self.display_name
+        copy_armor.base_ac = self.base_ac
+        copy_armor.armor_type = self.armor_type
+        copy_armor.min_str = self.min_str
+        copy_armor.stealth_disadvantage = self.stealth_disadvantage
+        copy_armor.tags = self.tags.copy()
+        copy_armor.enchantment = self.enchantment
+        return copy_armor
 
     def is_extra(self):
         return 'extra' in self.tags
 
     def get_ac(self, owner):
-        base_ac = self.base_ac
+        base_ac = self.base_ac + self.enchantment
         total_ac = 0
         if self.armor_type == 'light' or self.armor_type == 'none':
             total_ac = base_ac + owner.get_stat('dex_mod')
@@ -2770,7 +2799,10 @@ class Armor:
         return self.stealth_disadvantage
 
     def sheet_display(self, owner):
-        outstring = str(self.get_ac(owner)) + ' (' + self.display_name
+        armor_name = self.display_name
+        if self.enchantment:
+            armor_name = '{} {}'.format(num_plusser(self.enchantment))
+        outstring = str(self.get_ac(owner)) + ' (' + armor_name
         if owner.has_shield:
             outstring += ', with shield'
         outstring += ')'
@@ -2779,7 +2811,7 @@ class Armor:
 
 # For CR calculations, an attack needs to give its to hit and average damage value
 # And it needs to be able to give a stat block entry when it comes time to render
-class Attack(StatBlockEntry):
+class Attack:
 
     def get_to_hit(self, owner):
         pass
@@ -2802,6 +2834,12 @@ class Weapon(Attack):
         self.tags = {}
         self.num_targets = 1
 
+        # Typically not used, but can be modified by other things
+        self.subtitles = []
+        self.enchantment = 0
+        self.extra_damages = []
+        self.extra_effects = []
+
     def __repr__(self):
         outstring = '[{},{},{},{},{},{},{},{},{},{},' \
             .format(self.int_name, self.display_name, self.dmg_dice_num, self.dmg_dice_size, self.damage_type,
@@ -2811,6 +2849,24 @@ class Weapon(Attack):
 
     def __str__(self):
         return self.__repr__()
+
+    def get_copy(self):
+        copy_weapon = Weapon()
+        copy_weapon.int_name = self.int_name
+        copy_weapon.display_name = self.display_name
+        copy_weapon.dmg_dice_num = self.dmg_dice_num
+        copy_weapon.dmg_dice_size = self.dmg_dice_size
+        copy_weapon.damage_type = self.damage_type
+        copy_weapon.attack_type = self.attack_type
+        copy_weapon.range_short = self.range_short
+        copy_weapon.range_long = self.range_long
+        copy_weapon.tags = self.tags.copy()
+        copy_weapon.num_targets = self.num_targets
+        copy_weapon.subtitles = self.subtitles.copy()
+        copy_weapon.enchantment = self.enchantment
+        copy_weapon.extra_damages = self.extra_damages.copy()
+        copy_weapon.extra_effects = self.extra_effects.copy()
+        return copy_weapon
 
     def get_to_hit(self, owner):
         owner_str = owner.get_stat('str_mod')
@@ -2869,24 +2925,18 @@ class Weapon(Attack):
     def get_avg_dmg(self, owner):
         return self.get_damage(owner, use_versatile=True)[5]
 
-    def get_title(self, owner: Character, short=True):
-        return self.display_name
-
-    def get_category(self):
-        return 'attack'
-
-    def get_entry(self, owner: Character, short=True):
-        entry = ''
+    def get_stat_block_entry(self, owner: Character, short=True):
+        text = ''
         is_melee = self.attack_type == 'melee'
         is_ranged = (self.attack_type == 'ranged' or 'thrown' in self.tags)
         if is_melee and is_ranged:
-            entry += 'Melee or ranged weapon attack: '
+            text += 'Melee or ranged weapon attack: '
         elif is_melee:
-            entry += 'Melee weapon attack: '
+            text += 'Melee weapon attack: '
         elif is_ranged:
-            entry += 'Ranged weapon attack: '
+            text += 'Ranged weapon attack: '
 
-        entry += '{} to hit, '.format(num_plusser(self.get_to_hit(owner)))
+        text += '{} to hit, '.format(num_plusser(self.get_to_hit(owner)))
 
         if is_melee and 'reach' in self.tags:
             weapon_reach = WEAPON_REACH_W_BONUS
@@ -2894,32 +2944,35 @@ class Weapon(Attack):
             weapon_reach = WEAPON_REACH_NORMAL
 
         if is_melee and is_ranged:
-            entry += 'reach {} ft. or range {}/{} ft., '.format(weapon_reach, self.range_short, self.range_long)
+            text += 'reach {} ft. or range {}/{} ft., '.format(weapon_reach, self.range_short, self.range_long)
         elif is_melee:
-            entry += 'reach {} ft, '.format(weapon_reach)
+            text += 'reach {} ft, '.format(weapon_reach)
         elif is_ranged:
-            entry += 'range {}/{} ft., '.format(self.range_short, self.range_long)
+            text += 'range {}/{} ft., '.format(self.range_short, self.range_long)
 
         if self.num_targets == 1:
-            entry += 'one target. '
+            text += 'one target. '
         else:
-            entry += NUM_TO_TEXT.get(self.num_targets) + ' targets. '
+            text += NUM_TO_TEXT.get(self.num_targets) + ' targets. '
         ##
         avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = self.get_damage(owner)
-        entry += 'Hit: {}({}d{} {}) {} damage' \
+        text += 'Hit: {}({}d{} {}) {} damage' \
             .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
 
         # Check for versatile, which increases damage with two hands.
         if is_melee and 'versatile' in self.tags:
             avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = \
                 self.get_damage(owner, use_versatile=True)
-            entry += ' or {}({}d{} {}) {} damage if used with two hands' \
+            text += ' or {}({}d{} {}) {} damage if used with two hands' \
                 .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
-        entry += '.'
-        return entry
+        text += '.'
 
-    def get_visibility(self, owner: Character):
-        return 0
+        title = self.display_name
+        if self.enchantment:
+            title = '{} {}'.format(title, num_plusser(self.enchantment))
+        stat_block_entry = StatBlockEntry(title, 'attack', 0, text, subtitles=self.subtitles)
+
+        return stat_block_entry
 
 
 class Spell:
@@ -3378,6 +3431,6 @@ class FeatureDragonborn(CharacterFeature):
             .format(FEATURE_DRAGONBORN_CHART[self.lineage_type][1], character.get_stat('con_dc'),
                     FEATURE_DRAGONBORN_CHART[self.lineage_type][2], dmg_dice,
                     FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
-        breath_weapon_entry = StatBlockEntry('Breath Weapon (1/short)', 'action', 0, text)
+        breath_weapon_entry = StatBlockEntry('Breath Weapon', 'action', 0, text, subtitles=['1/short',])
         entries.append(breath_weapon_entry)
         return entries
