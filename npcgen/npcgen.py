@@ -1186,7 +1186,7 @@ class NPCGenerator:
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
             feature.second_pass(new_character, self, seed)
-        debug_print('Begin features second_pass', 2)
+        debug_print('Begin features third_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
             feature.third_pass(new_character, self, seed)
@@ -2124,14 +2124,18 @@ class StatBlock:
             disp += 'Hidden Traits: ' + self.hidden_traits + '\n'
         for spellcasting_trait in self.spellcasting_traits:
             disp += spellcasting_trait[0] + '. ' + spellcasting_trait[1] + '\n'
-        for multiattack in self.multiattack:
-            disp += multiattack[0] + '. ' + multiattack[1] + '\n'
-        for attack in self.attacks:
-            disp += attack[0] + '. ' + attack[1] + '\n'
-        for action in self.actions:
-            disp += action[0] + '. ' + action[1] + '\n'
-        for reaction in self.reactions:
-            disp += reaction[0] + '. ' + reaction[1] + '\n'
+        if self.multiattack or self.attacks or self.actions:
+            disp += 'ACTIONS\n'
+            for multiattack in self.multiattack:
+                disp += multiattack[0] + '. ' + multiattack[1] + '\n'
+            for attack in self.attacks:
+                disp += attack[0] + '. ' + attack[1] + '\n'
+            for action in self.actions:
+                disp += action[0] + '. ' + action[1] + '\n'
+        if self.reactions:
+            disp += 'REACTIONS\n'
+            for reaction in self.reactions:
+                disp += reaction[0] + '. ' + reaction[1] + '\n'
 
         return disp
 
@@ -2972,10 +2976,15 @@ class FeatureMultiattack(CharacterFeature):
         return entries
 
 
+HIGHEST_SPELL_LEVEL_BY_CASTER_LEVEL = (
+        1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 9,
+    )
+
+
 class FeatureSpellcasting(CharacterFeature):
     def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
         super().__init__()
-        self.int_name = 'spellcasting'
+        self.int_name = 'spellcasting_' + args_tup[0]
         sp_profile = npc_gen.spellcaster_profiles[args_tup[0]]
         assert isinstance(sp_profile, SpellCasterProfile)
 
@@ -2987,17 +2996,21 @@ class FeatureSpellcasting(CharacterFeature):
         self.spells_readied_progression = DEFAULT_SPELLS_READIED_PROGRESSION
         self.cantrips_progression = CASTER_CANTRIPS_KNOWN[sp_profile.cantrips_per_level]
         self.fixed_spells_known_by_level = sp_profile.fixed_spells_known_by_level
-        self.slots_progression = sp_profile.spell_slots_table
+        self.spell_slots_table = sp_profile.spell_slots_table
         self.spells_known_modifier = sp_profile.spells_known_modifier
         self.free_spell_lists = sp_profile.free_spell_lists
         self.spell_lists = sp_profile.spell_lists
+        self.tags = sp_profile.tags
 
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
         self.spell_choices = None
         self.free_spells = self.get_free_spells(npc_gen=npc_gen)
         self.spell_choices = self.get_spell_choices(npc_gen=npc_gen, seed=seed)
-        self.spells_known = [[], [], [], [], [], [], [], [], [], [], ]
-        self.spells_known_set = set()
+        self.spell_slots = []
+        self.cantrips_readied = 0
+        self.spells_readied = [[], [], [], [], [], [], [], [], [], [], ]
+        self.spells_readied_set = set()
+        self.spellbook = None
 
     def get_free_spells(self, npc_gen: 'NPCGenerator'):
         free_spells = [[], [], [], [], [], [], [], [], [], [], ]
@@ -3008,16 +3021,18 @@ class FeatureSpellcasting(CharacterFeature):
                     free_spells[spell.level].append(spell.name)
         return free_spells
 
-    # We pre-select all the possible spell choices a caster can make.
-    # This is where we weight the choices by spell list
+    # This function will go ahead and pre-select all of the spells this character might end up knowing
+    # When it comes time to get a character's spells known, they'll just grab a selection from those lists
+    # Selections are weighted by spelllist as specified in the spellcaster profile
+    # Will not select spells that the caster will automatically end up getting
     def get_spell_choices(self, npc_gen, seed):
 
         rnd_instance = random.Random(seed + 'spellchoices')
 
-        free_spells = set()
-        for spell_level in self.free_spells:
-            for spell_name in spell_level:
-                free_spells.add(spell_name)
+        already_chosen_spells = set()
+        for spell_level in range(0, 10):
+            for spell_name in self.free_spells[spell_level]:
+                already_chosen_spells.add(spell_name)
 
         spell_selections = []
         # We do this for every spell level
@@ -3055,9 +3070,10 @@ class FeatureSpellcasting(CharacterFeature):
 
                 if spell_choice in spell_selections:
                     continue
-                elif spell_choice in free_spells:
+                elif spell_choice in already_chosen_spells:
                     continue
                 else:
+                    already_chosen_spells.add(spell_choice)
                     spell_selections_for_level.append(spell_choice)
                     spell_selections_remaining -= 1
 
@@ -3070,6 +3086,7 @@ class FeatureSpellcasting(CharacterFeature):
     # Caster level is actually a bit weird for half and third casters like paladins and eldritch knights
     # They only get their first casting level at 2 or 3 hd, respectively
     # BUT, the next hd they gets bumps them up to the next spellcaster level regardless
+    # From then on, they need 2 or 3 hd to get additional spellcasting levels
     # So, that's why this function looks weird
     def get_caster_level(self, owner):
         hit_dice = owner.get_stat('hit_dice_num')
@@ -3084,55 +3101,116 @@ class FeatureSpellcasting(CharacterFeature):
                 caster_level = (hit_dice + self.hd_per_casting_level - 1) // self.hd_per_casting_level
         return caster_level
 
-    # Here's wehre we do all the major stuff
-    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+    # Right now it's a simple thing, but there's possibility other things may want to mess with this
+    def set_spell_slots(self, owner):
+        self.spell_slots = self.spell_slots_table[self.get_caster_level(owner)]
+        self.cantrips_readied = int(self.cantrips_progression[owner.get_hd()])
+
+    # At this point, we already have our possible spell choices made
+    # Now, we're basically going to figure out how which of those spells to have readied
+    # First, we figure out how many spells the character is allowed to have readied
+    # Typically, this is caster level + casting stat mod
+    # Some classes, however, used a fixed progression dependent on hd rather than casting stat
+    # Additionally, cantrips have their own chart and are kinda separate
+    # So, once we know how many spells in total we want to pick we need to decide how many of each level
+    # We guarantee one for each spell level up to the maximum spell level the caster can cast
+    # after that, we go through and one by one pick spell levels one by one until we run out of picks
+    # For each pick, each spell level is weighted by how many spell slots the character could use to cast that level
+    # That weight is also divided by the number of picks already made
+    # Thus characters are biased toward making more low level picks and picks of levels they have fewer of
+    # Note that any free spells the character gets will NOT be reflected in these picks
+    def select_readied_spells(self, character, seed):
         rnd_instance = random.Random(seed + self.int_name + 'spellpicking')
         char_hd = character.get_stat('hit_dice_num')
         caster_level = self.get_caster_level(character)
         if self.fixed_spells_known_by_level:
             spells_readied_remaining = self.fixed_spells_known_by_level[char_hd]
         else:
-            spells_readied_remaining = caster_level + character.get_stat(self.casting_stat + '_mod') + self.spells_known_modifier
+            spells_readied_remaining = caster_level + character.get_stat(
+                self.casting_stat + '_mod') + self.spells_known_modifier
 
-        spell_slots = self.slots_progression
+        # Figure out the maximum level spell our guy can cast
         max_spell_level = 9
         for spell_level in range(1, 10):
-            if spell_slots[caster_level][spell_level] <= 0:
+            if self.spell_slots[spell_level] <= 0:
                 max_spell_level = spell_level - 1
                 break
-            else:
-                for free_spell in self.free_spells[spell_level]:
-                    self.spells_known[spell_level].append(free_spell)
 
-        cantrips_remaining = int(self.cantrips_progression[char_hd])
+        # Add free spells to spells readied
+        for spell_level in range(0, max_spell_level + 1):  # Free spells might include cantrips
+            for free_spell in self.free_spells[spell_level]:
+                self.spells_readied[spell_level].append(free_spell)
+
+        # Cantrips are straightforward, simply pop them from our choices list until we have enough
+        cantrips_remaining = self.cantrips_readied
         while cantrips_remaining > 0:
-            self.spells_known[0].append(self.spell_choices[0].pop(0))
+            self.spells_readied[0].append(self.spell_choices[0].pop(0))
             cantrips_remaining -= 1
 
-        # First, go through and make sure the caster has at least one spell from each level
+        # Now, we have to decide which levels of spells to ready
+        # When we make a pick, we're just going to pop it from spell_choices, since we shouldn't need that after this
+        # First, go through and make sure the caster has at least one spell from each level she can cast
         for spell_level in range(1, max_spell_level + 1):
-            if spells_readied_remaining > 0:
-                self.spells_known[spell_level].append(self.spell_choices[spell_level].pop(0))
+            if spells_readied_remaining > 0:  # Technically, a super dumb guy may not have enough picks for all levels
+                self.spells_readied[spell_level].append(self.spell_choices[spell_level].pop(0))
                 spells_readied_remaining -= 1
 
+        # Now, we make the picks
+        # We have to rebuild the weights after each level pick
         while spells_readied_remaining > 0:
             weights = [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]
             for spell_level in range(1, max_spell_level + 1):
-                weights[spell_level] = sum(self.slots_progression[caster_level][spell_level:])
-                weights[spell_level] /= len(self.spells_known[spell_level])
+                weights[spell_level] = sum(self.spell_slots[spell_level:])
+                weights[spell_level] /= len(self.spells_readied[spell_level])
             spell_level_choice = rnd_instance.choices(range(1, max_spell_level + 1), weights[1:max_spell_level + 1])[0]
-            self.spells_known[spell_level_choice].append(self.spell_choices[spell_level_choice].pop(0))
+            self.spells_readied[spell_level_choice].append(self.spell_choices[spell_level_choice].pop(0))
             spells_readied_remaining -= 1
 
+        # Finally, we add EVERY spell to a set, which we can use for easy referencing, like mage armor or shield
         for spell_level in range(0, 10):
-            for spell_name in self.spells_known[spell_level]:
-                self.spells_known_set.add(spell_name)
+            for spell_name in self.spells_readied[spell_level]:
+                self.spells_readied_set.add(spell_name)
+        # It's wacky and confusing and I don't understand it, but now self.spells_readied should have an appropriate
+        # set of randomly generated spells know by level and self.spells_readied_set should have a set of all spells
 
-        # It's wacky and confusing and I don't understand it, but now self.spells_known should have an appropriate
-        # set of randomly generated spells know by level and self.spells_known_set should have a set of all spells
+    # Wizards also have a spellbook
+    # Typically, it contains 6 1st level spells + 2 for every level after that.
+    # Users don't need to see spells already in the prepared sopell list, so this method produces a list of
+    # spells that are in a character's spellbook, but NOT currently prepared
+    # Characters are assumed to spend their spell picks on the highest level spell they can
+    # Every level they get chance to get an extra spell pick, for variety's sake,
+    # bonus_spell_chance is percentage cvahnce of getting that extra spell
+    def set_spellbook(self, owner, seed, starting_spells=4, spells_per_level=2, bonus_spell_chance=10):
+        rnd_instance = random.Random(seed + self.int_name + 'spellbook')
+        spellbook = []
+        total_spells = [-1, starting_spells, 0, 0, 0, 0, 0, 0, 0, 0, ]
+        for character_level in range(0, owner.get_hd()):
+            spells_for_this_level = spells_per_level
+            if random.randrange(100) < bonus_spell_chance:
+                spells_for_this_level += 1
+            highest_spell_level = HIGHEST_SPELL_LEVEL_BY_CASTER_LEVEL[character_level]
+            total_spells[highest_spell_level] += spells_for_this_level
+
+        for spell_level in range(1, 10):
+            spellbook_spells = total_spells[spell_level] - len(self.spells_readied[spell_level])
+            while spellbook_spells > 0:
+                if len(self.spell_choices[spell_level]):  # Make sure we still haven't already exhausted our choices
+                    spellbook.append(self.spell_choices[spell_level].pop(0))
+                spellbook_spells -=1
+        debug_print('Spellbook built, contains: {}'.format(str(spellbook)), 2)
+        self.spellbook = spellbook
+
+    # Hypothetically, other features might want to do something that affects spellcasting in the first pass,
+    # so we do all the big stuff in the second pass
+    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        self.set_spell_slots(character)
+        self.select_readied_spells(character, seed)
+
+        if 'spellbook' in self.tags:
+            self.set_spellbook(character, seed)
 
         # Now, we can do some of those special case things
-        if 'mage armor' in self.spells_known_set:
+        if 'mage armor' in self.spells_readied_set:
             npc_gen.give_armor(character, 'mage_armor', extra=True)
 
     def get_main_stat_block_entry(self, owner, short=True):
@@ -3148,30 +3226,54 @@ class FeatureSpellcasting(CharacterFeature):
                        owner.get_stat(self.casting_stat + '_dc'),
                        num_plusser(owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'
         # Cantrips
-        if len(self.spells_known[0]) > 0:
-            text += 'Cantrips (at-will): ' + ', '.join(self.spells_known[0])
+        if len(self.spells_readied[0]) > 0:
+            text += 'Cantrips (at-will): ' + ', '.join(self.spells_readied[0])
         for i in range(1, 10):
-            if len(self.spells_known[i]) > 0 and self.slots_progression[caster_level][i] > 0:
+            if len(self.spells_readied[i]) > 0 and self.spell_slots_table[caster_level][i] > 0:
                 # Pluralize 'slot' or not
-                if self.slots_progression[caster_level][i] == 1:
+                if self.spell_slots_table[caster_level][i] == 1:
                     text += '\n{} level ({} slot): ' \
-                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
+                        .format(NUM_TO_ORDINAL[i], self.spell_slots_table[caster_level][i])
                 else:
                     text += '\n{} level ({} slots): ' \
-                        .format(NUM_TO_ORDINAL[i], self.slots_progression[caster_level][i])
-                text += ', '.join(self.spells_known[i])
+                        .format(NUM_TO_ORDINAL[i], self.spell_slots_table[caster_level][i])
+                text += ', '.join(self.spells_readied[i])
         return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
+
+    def get_spellbook_entry(self, short=True):
+        text = "You have a spellbook containing your readied spells."
+        if len(self.spellbook) > 0:
+            text += " It also contains the following additional spells: {}".format(nice_list(self.spellbook))
+        return StatBlockEntry('Spellbook', 'spellcasting', 0, text)
+
+    def get_shield_entry(self):
+        text = "When you are hit by an attack or targeted by the magic missile spell, " \
+               "an invisible barrier of magical force appears and protects you. " \
+               "Until the start of your next turn, you have a +5 bonus to AC, " \
+               "including against the triggering attack, and you take no damage from magic missile."
+        return StatBlockEntry('Shield', 'reaction', 0, text, subtitles=['spell'])
 
     def get_cr_factors(self, character: 'Character'):
         entries = []
         caster_level = self.get_caster_level(character)
         dc = self.get_spell_dc(character)
-        cr_factor = CRFactor(CRFactor.ABILITY, ability_level=caster_level, dc=dc)
-        return [cr_factor, ]
+        entries.append(CRFactor(CRFactor.ABILITY, ability_level=caster_level, dc=dc))
+
+        # Special case spells
+        if 'shield' in self.spells_readied_set:
+            entries.append(CRFactor(CRFactor.EFFECTIVE_AC_MOD, extra_ac=1))
+
+        return entries
 
     def get_stat_block_entries(self, character: 'Character', short=True):
         entries = []
         entries.append(self.get_main_stat_block_entry(character, short))
+        if 'spellbook' in self.tags:
+            entries.append(self.get_spellbook_entry())
+
+        # Per spell special entries
+        if 'shield' in self.spells_readied_set:
+            entries.append(self.get_shield_entry())
         return entries
 
 

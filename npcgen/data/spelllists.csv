@@ -1,6 +1,6 @@
 name,req_classes,req_schools,req_levels,req_sources,fixed_include,fixed_exclude,spelllists_include,spelllists_exclude
 restricted,,,,,healing spirit,,,
-wiz_essentials,,,,,mage armor,,,restricted
+wiz_essentials,,,,,"mage armor,shield",,,restricted
 wizard,wizard,,,,,,,restricted
 cleric,cleric,,,,,,,restricted
 wiz_abjuration,wizard,abjuration,,,,,,restricted
