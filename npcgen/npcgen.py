@@ -3272,10 +3272,11 @@ class FeatureMartialArts(CharacterFeature):
         return False
 
     def upgrade_weapon(self, weapon):
-        if weapon.dmg_dice_size < self.upgrade_damage_die:
-            debug_print("Martial Arts applied to {}, {}->{}".format(
-                weapon.int_name, weapon.dmg_dice_size, self.upgrade_damage_die))
-            weapon.dmg_dice_size = self.upgrade_damage_die
+        if weapon.dmg_dice_size < self.upgrade_damage_die or 'finesse' not in weapon.tags:
+            new_dmg_dice_size = max(weapon.dmg_dice_size, self.upgrade_damage_die)
+            debug_print("Martial Arts applied to {}, {}->{}, finesse added".format(
+                weapon.int_name, weapon.dmg_dice_size, new_dmg_dice_size))
+            weapon.dmg_dice_size = new_dmg_dice_size
             weapon.add_tag('finesse')
             weapon.subtitles.append('Martial Arts')
         else:
