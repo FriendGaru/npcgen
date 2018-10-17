@@ -11,7 +11,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 3
+DEBUG_LEVEL = 1
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
@@ -347,6 +347,7 @@ NUM_TIMES_TO_TEXT = {
 }
 
 DEFAULT_SPELL_WEIGHT = 1
+
 
 # Random functions can accept an instance of random,
 # If they don't get one, they default to the global random
@@ -988,6 +989,7 @@ class NPCGenerator:
 
     def give_armor(self, character, armor_name, extra=False):
         armor = self.armors[armor_name].get_copy()
+        armor.owner = character
         if extra:
             character.extra_armors[armor_name] = armor
         else:
@@ -995,6 +997,7 @@ class NPCGenerator:
 
     def give_weapon(self, character, weapon_name):
         weapon = self.weapons[weapon_name].get_copy()
+        weapon.owner = character
         character.weapons[weapon_name] = weapon
 
     # Applies everything EXCEPT features/traits
@@ -1102,8 +1105,7 @@ class NPCGenerator:
         assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
         assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
 
-        new_character = Character()
-        new_character.seed = seed
+        new_character = Character(seed, self)
 
         if name:
             new_character.name = name
@@ -1125,21 +1127,21 @@ class NPCGenerator:
             debug_print('Trait: {}'.format(trait_name))
             trait_factory = self.traits[trait_name]
             assert isinstance(trait_factory, TraitFactory)
-            trait_feature = trait_factory.get_character_feature(new_character, self, seed=seed, short=True, args_tup=())
-            trait_feature.give_to_character(new_character)
+            trait_feature = trait_factory.get_character_feature(new_character, short=True)
+            trait_feature.give_to_owner()
         for feature_name, feature_args in itertools.chain((
                 race_template.features.items()), class_template.features.items()):
             debug_print('Feature: {} args: {}'.format(feature_name, str(feature_args)), 3)
             feature_class = get_character_feature_class(feature_name)
             feature_instance = feature_class(
-                new_character, self, seed=seed, short=True, args_tup=feature_args)
-            feature_instance.give_to_character(new_character)
+                new_character, args_tup=feature_args)
+            feature_instance.give_to_owner()
 
         # Do the pre-attribute rolling first pass of features
         debug_print('Begin features first_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
-            feature.first_pass(new_character, self, seed)
+            feature.first_pass()
 
         # Note, for floating attributes bonuses like half-elves to apply, race traits need to be applied before
         # Rolling attributes
@@ -1185,11 +1187,11 @@ class NPCGenerator:
         debug_print('Begin features second_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
-            feature.second_pass(new_character, self, seed)
+            feature.second_pass()
         debug_print('Begin features third_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
-            feature.third_pass(new_character, self, seed)
+            feature.third_pass()
 
         # Update again, just to be sure
         new_character.update_derived_stats()
@@ -1345,8 +1347,14 @@ class NPCGenerator:
 
 
 class Character:
-    def __init__(self):
-        self.seed = None
+    def __init__(self, seed, npc_gen):
+
+        # Character Features get their seed from here, so even if Character doesn't use it it should be present
+        self.seed = seed
+        # I originally wanted a complete break between NPCGenerator and Character,
+        # but Character Features are allowed to look at NPCGens for reference data, so might as well streamline it
+        self.npc_gen = npc_gen
+
         self.name = ''
 
         self.stats = {}
@@ -1399,7 +1407,6 @@ class Character:
 
         self.languages = []
         self.senses = {}
-
 
     def roll_attributes(self, die_size=6, num_dice=3, drop_lowest=0, drop_highest=0,
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
@@ -1547,7 +1554,7 @@ class Character:
         if not asi_progression:
             asi_progression = self.asi_progression[:]
 
-        asi_points_remaining = (self.get_stat('hit_dice_num') // hd_per_increase) * points_per_increase
+        asi_points_remaining = (self.get_hd() // hd_per_increase) * points_per_increase
 
         while asi_points_remaining > 0:
             if len(asi_progression) == 0:
@@ -1635,7 +1642,7 @@ class Character:
     def get_stat(self, stat):
         return self.stats[stat]
 
-    # Used so often might as well give it it's own method
+    # Used so often might as well give it its own method
     def get_hd(self):
         return self.get_stat('hit_dice_num')
 
@@ -1666,11 +1673,11 @@ class Character:
         cr_factors_all = []
         # From weapons
         for weapon in self.weapons.values():
-            for weapon_cr_factor in weapon.get_cr_factors(self):
+            for weapon_cr_factor in weapon.get_cr_factors():
                 cr_factors_all.append(weapon_cr_factor)
         # From features
         for character_feature in self.character_features.values():
-            for feature_cr_factor in character_feature.get_cr_factors(self):
+            for feature_cr_factor in character_feature.get_cr_factors():
                 cr_factors_all.append(feature_cr_factor)
 
         best_attack_damage = -1
@@ -1866,7 +1873,7 @@ class Character:
         # First check for AC
         best_ac = 0
         for armor_obj in self.armors.values():
-            armor_ac = armor_obj.get_ac(self)
+            armor_ac = armor_obj.get_ac()
             if armor_ac > best_ac:
                 best_ac_armors = [armor_obj, ]
                 best_ac = armor_ac
@@ -1894,7 +1901,7 @@ class Character:
         all_entries = []
         for feature in self.character_features.values():
             assert isinstance(feature, CharacterFeature)
-            feature_entries = feature.get_stat_block_entries(self, short)
+            feature_entries = feature.get_stat_block_entries(short)
             for stat_block_entry in feature_entries:
                 all_entries.append(stat_block_entry)
         return all_entries
@@ -2014,7 +2021,7 @@ class Character:
         all_block_entries = self.get_all_stat_block_entries(short=short_traits)
         # Add weapons as entries, too
         for weapon in self.weapons.values():
-            all_block_entries.append(weapon.get_stat_block_entry(self))
+            all_block_entries.append(weapon.get_stat_block_entry())
         passive_entries = []
         multiattack_entries = []
         action_entries = []
@@ -2024,21 +2031,21 @@ class Character:
         reaction_entries = []
         for entry in all_block_entries:
             assert isinstance(entry, StatBlockEntry)
-            if entry.get_visibility(self) <= trait_visibility:
+            if entry.get_visibility() <= trait_visibility:
                 if entry.get_category() == 'passive':
-                    passive_entries.append((entry.get_title(self), entry.get_entry(self)))
+                    passive_entries.append((entry.get_title(), entry.get_entry()))
                 elif entry.get_category() == 'multiattack':
-                    multiattack_entries.append((entry.get_title(self), entry.get_entry(self)))
+                    multiattack_entries.append((entry.get_title(), entry.get_entry()))
                 elif entry.get_category() == 'spellcasting':
-                    spellcasting_entries.append((entry.get_title(self), entry.get_entry(self)))
+                    spellcasting_entries.append((entry.get_title(), entry.get_entry()))
                 elif entry.get_category() == 'action':
-                    action_entries.append((entry.get_title(self), entry.get_entry(self)))
+                    action_entries.append((entry.get_title(), entry.get_entry()))
                 elif entry.get_category() == 'attack':
-                    attack_entries.append((entry.get_title(self), entry.get_entry(self)))
+                    attack_entries.append((entry.get_title(), entry.get_entry()))
                 elif entry.get_category() == 'reaction':
-                    reaction_entries.append((entry.get_title(self), entry.get_entry(self)))
+                    reaction_entries.append((entry.get_title(), entry.get_entry()))
             else:
-                hidden_entries.append(entry.get_title(self))
+                hidden_entries.append(entry.get_title())
 
         sb.attacks = attack_entries
         sb.passive_traits = passive_entries
@@ -2047,7 +2054,6 @@ class Character:
         sb.spellcasting_traits = spellcasting_entries
         sb.reactions = reaction_entries
         sb.hidden_traits = nice_list(hidden_entries)
-
 
         return sb
 
@@ -2149,19 +2155,24 @@ class StatBlock:
 # Character features are provided a reference to NPCGenerator, so that they can use functions that rely on its
 # reference dictionaries
 class CharacterFeature:
-    def __init__(self):
+    def __init__(self, owner: 'Character'):
         self.int_name = 'dummy'
+        self.owner = owner
+        self.npc_gen = self.owner.npc_gen
+        self.seed = self.owner.seed
 
-    # Shouldn't need to be overriden, but can be if there needs to be some kind of merginge function
-    def give_to_character(self, character):
-        character.add_character_feature(self)
+    # Shouldn't need to be overriden, but can be if there needs to be some kind of merging function
+    # This could definitely be moved into the __init__ function, but I figured making it explicit would be more clearn,
+    # since in the future there may be some features that
+    def give_to_owner(self):
+        self.owner.add_character_feature(self)
 
     # first_pass() is called just after race/class templates have been applied,
     # before attributes are rolled or ASI applied
     # At this point, hit dice are known but no attributes or derived stats have been set
     # Feature should call this method if wants to affect how a character rolls for attributes or generates basic stats
     # or if it can figure out everything it wants using ONLY hit dice
-    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+    def first_pass(self):
         pass
 
     # second_pass() is called after attributes have been rolled and stats derived
@@ -2170,18 +2181,18 @@ class CharacterFeature:
     # However, a CharacterFeature cannot rely on other features to have gotten their shit together by this point
     # Basically, any feature that does stuff that relies on character stats
     #  but not other features should do their stuff here
-    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+    def second_pass(self):
         pass
 
     # third_pass() is called right after second_pass()
     # At this point, a CharacterFeature can expect other CharacterFeatures to have their shit mostly together
     # Character features that depend on other features or modify other features can do their stuff here
-    def third_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+    def third_pass(self):
         pass
 
     # If the feature should impact the character's CR calculations, this should be overriden to provide an appropriate
     # list of CRFactor objects
-    def get_cr_factors(self, character: 'Character'):
+    def get_cr_factors(self):
         return []
 
     # When it comes time to build a statblock, every feature will have this function called
@@ -2190,12 +2201,13 @@ class CharacterFeature:
     # Note, this is where the short parameter is called,
     # which if true means shortened versions of entries should be used
     # Visibility and which entries should be hidden is handled by the StatBlock
-    def get_stat_block_entries(self, character: 'Character', short=True):
+    def get_stat_block_entries(self, short=True):
         return []
 
 
 # Everything that can appear as an entry in a stat block musty implement this functionality
-# Features are allowed to change things based on who the owner is
+# These blocks are "ready to go" for the renderer
+# The only logic done here is separating things into logical chunks for the renderer
 class StatBlockEntry:
     def __init__(self, title, category, visibility, text, subtitles=None):
         self.title = title
@@ -2220,14 +2232,14 @@ class StatBlockEntry:
 
     # The part that is typically in bold with a period at the end.
     # When using short statblock versions, expect (1/short), etc. for abilities that recharge on a short rest
-    def get_title(self, owner: Character, short=True, include_subtitles=True):
+    def get_title(self, include_subtitles=True):
         if include_subtitles and self.subtitles:
             return '{} ({})'.format(self.title, ', '.join(self.subtitles))
         else:
             return self.title
 
     # The normal text stuff
-    def get_entry(self, owner: Character, short=True):
+    def get_entry(self):
         return self.text
 
     # Categories are used for organizing the statblock when it comes time for rendering
@@ -2243,7 +2255,7 @@ class StatBlockEntry:
     # 3 - always hide, probably because the character can't actually use the feature,
     #     i.e. the feature has a minimum hd requirement the character doesn't meet
     # Features with the 'hidden' category will never be shown, regardless of visibility
-    def get_visibility(self, owner: Character):
+    def get_visibility(self):
         return self.visibility
 
 
@@ -2263,7 +2275,7 @@ class TraitFactory:
         self.visibility = 0
         self.tags = {}
 
-    def get_character_feature(self, character, npc_gen, seed=None, short=True, args_tup=()):
+    def get_character_feature(self, character, short=True):
         if short:
             text = self.text_short
         else:
@@ -2275,6 +2287,7 @@ class TraitFactory:
             title = self.display_name
 
         return FeatureTrait(
+            owner=character,
             int_name=self.int_name,
             title=title,
             trait_type=self.trait_type,
@@ -2285,8 +2298,8 @@ class TraitFactory:
 
 
 class FeatureTrait(CharacterFeature):
-    def __init__(self, int_name, title, trait_type, text, visibility, tags):
-        super().__init__()
+    def __init__(self, owner, int_name, title, trait_type, text, visibility, tags):
+        super().__init__(owner)
         self.int_name = int_name
         self.title = title
         self.trait_type = trait_type
@@ -2294,96 +2307,96 @@ class FeatureTrait(CharacterFeature):
         self.visibility = visibility
         self.tags = tags
 
-    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+    def first_pass(self):
 
-        rnd_instance = random.Random(seed + self.int_name + 'first')
+        rnd_instance = random.Random(self.owner.seed + self.int_name + 'first')
 
         if 'give_armor' in self.tags:
             for armor in self.tags['give_armor']:
-                npc_gen.give_armor(character, armor)
+                self.npc_gen.give_armor(self.owner, armor)
 
         if 'give_weapon' in self.tags:
             for weapon in self.tags['give_weapon']:
-                npc_gen.give_weapon(character, weapon)
+                self.npc_gen.give_weapon(self.owner, weapon)
 
         if 'give_tag' in self.tags:
             for character_tag in self.tags['give_tag']:
-                character.add_tag(character_tag)
+                self.owner.add_tag(character_tag)
 
         # Tools and skills are considered the same, anything not in SKILLS is considered a tool
         if 'skill_proficiency' in self.tags:
             for skill in self.tags['skill_proficiency']:
                 skill = skill.replace('_', ' ')
-                character.add_skill(skill, rnd_instance=rnd_instance)
+                self.owner.add_skill(skill, rnd_instance=rnd_instance)
 
         if 'skill_random' in self.tags:
             num_random_skills = int(self.tags['skill_random'][0])
             for i in range(num_random_skills):
-                if len(character.get_non_proficient_skills()) > 0:
+                if len(self.owner.get_non_proficient_skills()) > 0:
                     random_skill = rnd_instance.choice(sorted(list(SKILLS.keys())))
-                    character.add_skill(random_skill, rnd_instance=rnd_instance)
+                    self.owner.add_skill(random_skill, rnd_instance=rnd_instance)
 
         if 'expertise_random' in self.tags:
             num_expertise = int(self.tags['expertise_random'][0])
-            expertise_choices = rnd_instance.sample(character.skills, num_expertise)
+            expertise_choices = rnd_instance.sample(self.owner.skills, num_expertise)
             for choice in expertise_choices:
-                character.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
+                self.owner.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
 
         if 'expertise_fixed' in self.tags:
             expertise_choices = self.tags['expertise_random']
             for choice in expertise_choices:
-                character.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
+                self.owner.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
 
         if 'damage_immunity' in self.tags:
             for entry in self.tags['damage_immunity']:
-                character.add_damage_immunity(entry)
+                self.owner.add_damage_immunity(entry)
 
         if 'damage_vulnerability' in self.tags:
             for entry in self.tags['damage_vulnerability']:
-                character.add_damage_vulnerability(entry)
+                self.owner.add_damage_vulnerability(entry)
 
         if 'damage_resistance' in self.tags:
             for entry in self.tags['damage_resistance']:
-                character.add_damage_resistance(entry)
+                self.owner.add_damage_resistance(entry)
 
         if 'condition_immunity' in self.tags:
             for entry in self.tags['condition_immunity']:
-                character.add_condition_immunity(entry)
+                self.owner.add_condition_immunity(entry)
 
         if 'save_advantage' in self.tags:
             for advantage in self.tags['save_advantage']:
-                character.add_save_advantage(advantage)
+                self.owner.add_save_advantage(advantage)
 
         if 'save_disadvantage' in self.tags:
             for disadvantage in self.tags['save_disadvantage']:
-                character.add_save_disadvantage(disadvantage)
+                self.owner.add_save_disadvantage(disadvantage)
 
         if 'sense_darkvision' in self.tags:
             val = int(self.tags['sense_darkvision'][0])
-            character.senses['darkvision'] = max(character.senses.get('darkvision', 0), val)
+            self.owner.senses['darkvision'] = max(self.owner.senses.get('darkvision', 0), val)
 
         if 'bonus_hp_per_level' in self.tags:
             val = int(self.tags['bonus_hp_per_level'][0])
-            character.stats['bonus_hp_per_level'] += val
+            self.owner.stats['bonus_hp_per_level'] += val
 
         if 'floating_attribute_bonus' in self.tags:
             val = int(self.tags['floating_attribute_bonus'][0])
-            character.stats['floating_attribute_points'] += val
+            self.owner.stats['floating_attribute_points'] += val
 
         if 'random_language' in self.tags:
             num_extra_languages = self.tags['random_language'][0]
             language_options = set(LANGUAGES)
-            for language in character.languages:
+            for language in self.owner.languages:
                 language_options.remove(language)
             language_choices = rnd_instance.sample(language_options, num_extra_languages)
             for language in language_choices:
-                character.add_language(language)
+                self.owner.add_language(language)
 
     # Traits shouldn't need to do anything on the second pass
-    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+    def second_pass(self):
         pass
 
-    def get_cr_factors(self, character: 'Character'):
+    def get_cr_factors(self):
         factors_list = []
         if 'cr_damage_shift' in self.tags:
             shift_val = int(self.tags['cr_damage_shift'][0])
@@ -2399,58 +2412,11 @@ class FeatureTrait(CharacterFeature):
             factors_list.append(cr_factor)
         return factors_list
 
-    def get_stat_block_entries(self, character: 'Character', short=True):
-        text = self.text.format(**character.stats)
-        sb_entries = []
-        sb_entries.append(StatBlockEntry(
-            title=self.title, text=text, category=self.trait_type, visibility=self.visibility, ))
-        return sb_entries
-
-
-# class Trait(StatBlockEntry):
-#     def __init__(self):
-#         self.int_name = ''
-#         self.display_name = ''
-#         self.recharge = ''
-#         self.trait_type = 'hidden'
-#         self.text = ''
-#         self.text_short = ''
-#         self.visibility = 0
-#         self.tags = {}
-#
-#     def __str__(self):
-#         return '<{}:{},{},{},{}>'.format(self.int_name, self.display_name, self.trait_type, self.text, str(self.tags))
-#
-#     def get_title(self, owner, short=True):
-#         if short and self.recharge:
-#             return '{} ({})'.format(self.display_name, self.recharge)
-#         return self.display_name
-#
-#     def get_entry(self, owner: Character, short=True):
-#         if short:
-#             return self.text_short.format(**owner.stats)
-#         else:
-#             return self.text.format(**owner.stats)
-#
-#     def get_category(self):
-#         return self.trait_type
-#
-#     def get_visibility(self, owner: Character):
-#         if 'min_hd' in self.tags and owner.get_stat('hit_dice_num') < int(self.tags['min_hd'][0]):
-#             return 3
-#         else:
-#             return self.visibility
-#
-#     def get_character_feature(self):
-#         new_feature = RevisedTrait(
-#             title = self.display_name,
-#             recharge = self.recharge,
-#             short_text = self.text_short,
-#             long_text = self.text,
-#             visibility= self.visibility,
-#             tags = self.tags,
-#             )
-#         return new_feature
+    def get_stat_block_entries(self, short=True):
+        text = self.text.format(**self.owner.stats)
+        sb_entry = StatBlockEntry(
+            title=self.title, text=text, category=self.trait_type, visibility=self.visibility, )
+        return [sb_entry, ]
 
 
 class RaceTemplate:
@@ -2534,6 +2500,9 @@ class Armor:
         self.stealth_disadvantage = False
         self.tags = set()
 
+        # Owner can be assigned to make references easier
+        self.owner = None
+
         # This stuff is usually default, but can be overriden by character features
         self.enchantment = 0
 
@@ -2557,7 +2526,11 @@ class Armor:
     def is_extra(self):
         return 'extra' in self.tags
 
-    def get_ac(self, owner):
+    def get_ac(self, owner=None):
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Armor obj {} has no owner!'.format(self.int_name)
+
         base_ac = self.base_ac + self.enchantment
         total_ac = 0
         if self.armor_type == 'light' or self.armor_type == 'none':
@@ -2581,7 +2554,11 @@ class Armor:
     # This method returns true if a character should take a speed penalty
     # For dwarves or other characters who have heavy armor training, this will still return true,
     # but their penalty should have been reduced to zero, so it won't affect them
-    def speed_penalty(self, owner: Character):
+    def speed_penalty(self, owner=None):
+
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Armor obj {} has no owner!'.format(self.int_name)
 
         if 'heavy_armor_penalty' in owner.character_tags:
             return 0
@@ -2593,13 +2570,22 @@ class Armor:
 
     def stealth_penalty(self, owner):
 
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Armor obj {} has no owner!'.format(self.int_name)
+
         # Special case for medium armor master
-        if self.armor_type == 'medium' and 'medium_armor_master' in owner.traits:
+        if self.armor_type == 'medium' and 'medium_armor_master' in owner.character_tags:
             return False
 
         return self.stealth_disadvantage
 
     def sheet_display(self, owner):
+
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Armor obj {} has no owner!'.format(self.int_name)
+
         armor_name = self.display_name
         if self.enchantment:
             armor_name = '{} {}'.format(self.display_name, num_plusser(self.enchantment))
@@ -2610,19 +2596,7 @@ class Armor:
         return outstring
 
 
-# For CR calculations, an attack needs to give its to hit and average damage value
-# And it needs to be able to give a stat block entry when it comes time to render
-class Attack:
-
-    def get_to_hit(self, owner):
-        pass
-
-    def get_avg_dmg(self, owner):
-        avg_dmg = 1
-        return avg_dmg
-
-
-class Weapon(Attack):
+class Weapon:
     def __init__(self):
         self.int_name = ''
         self.display_name = ''
@@ -2634,6 +2608,9 @@ class Weapon(Attack):
         self.range_long = 0
         self.tags = set()
         self.num_targets = 1
+
+        # Can be assigned as owner, making referencing easier
+        self.owner = None
 
         # Typically not used, but can be modified by other things
         self.subtitles = []
@@ -2669,7 +2646,12 @@ class Weapon(Attack):
         copy_weapon.extra_effects = self.extra_effects.copy()
         return copy_weapon
 
-    def get_to_hit(self, owner):
+    def get_to_hit(self, owner=None):
+
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
+
         owner_str = owner.get_stat('str_mod')
         owner_dex = owner.get_stat('dex_mod')
         owner_prof = owner.get_stat('proficiency')
@@ -2686,7 +2668,12 @@ class Weapon(Attack):
                 attack_stat = owner_dex
         return attack_stat + owner_prof
 
-    def get_damage(self, owner, use_versatile=False):
+    def get_damage(self, owner=None, use_versatile=False):
+
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
+
         owner_str = owner.get_stat('str_mod')
         owner_dex = owner.get_stat('dex_mod')
         attack_stat = 0
@@ -2709,16 +2696,31 @@ class Weapon(Attack):
 
         return int(avg_dmg), dmg_dice_num, dmg_dice_size, attack_stat, self.damage_type, avg_dmg
 
-    def get_avg_dmg(self, owner):
+    def get_avg_dmg(self, owner=None):
+
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
+
         return self.get_damage(owner, use_versatile=True)[5]
 
-    def get_cr_factors(self, owner):
+    def get_cr_factors(self, owner=None):
+
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
+
         to_hit = self.get_to_hit(owner)
         avg_dmg = self.get_avg_dmg(owner)
         cr_factor = CRFactor(CRFactor.ATTACK, to_hit=to_hit, damage=avg_dmg)
         return [cr_factor, ]
 
-    def get_stat_block_entry(self, owner: Character, short=True):
+    def get_stat_block_entry(self, owner=None):
+
+        if not owner:
+            owner = self.owner
+        assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
+
         text = ''
         is_melee = self.attack_type == 'melee'
         is_ranged = (self.attack_type == 'ranged' or 'thrown' in self.tags)
@@ -2769,7 +2771,6 @@ class Weapon(Attack):
 
     def add_tag(self, tag):
         self.tags.add(tag)
-
 
 
 class Spell:
@@ -2842,68 +2843,68 @@ class SpellCasterProfile:
         self.spell_slots_table = None
         self.tags = {}
 
-    def get_free_spells(self):
-        free_spells = [[], [], [], [], [], [], [], [], [], [], ]
-        if self.free_spell_lists:
-            for free_spell_list in self.free_spell_lists:
-                for spell in free_spell_list.spells.values():
-                    free_spells[spell.level].append(spell.name)
-        return free_spells
-
-    def get_random_spells(self, rnd_instance=None):
-
-        if not rnd_instance:
-            rnd_instance = random
-
-        free_spells = set()
-        if self.free_spell_lists:
-            for spell_list in self.free_spell_lists:
-                for spell_name in spell_list.spells.keys():
-                    free_spells.add(spell_name)
-
-        spell_selections = []
-
-        # We do this for every spell level
-        for spell_level in range(0, 10):
-            total_spell_count = 0
-            for spell_list in self.spell_lists.keys():
-                total_spell_count += spell_list.num_spells_of_level(spell_level)
-
-            spell_options = []
-            spell_weights = []
-
-            for spell_list, weight in self.spell_lists.items():
-                num_spells_of_level = spell_list.num_spells_of_level(spell_level)
-                if num_spells_of_level == 0:
-                    continue
-                weight_per_spell = float(weight) / num_spells_of_level
-                for spell_name in spell_list.get_spell_set_of_level(spell_level):
-                    spell_options.append(spell_name)
-                    spell_weights.append(weight_per_spell)
-
-            spell_selections_for_level = []
-            spell_selections_remaining = MAX_SPELL_CHOICES_PER_LEVEL
-            while spell_selections_remaining > 0:
-                # First, check that we still have options
-                if len(spell_options) == 0:
-                    break
-
-                choice_by_index = rnd_instance.choices(range(len(spell_weights)), spell_weights)[0]
-                spell_choice = spell_options[choice_by_index]
-
-                spell_options.pop(choice_by_index)
-                spell_weights.pop(choice_by_index)
-
-                if spell_choice in spell_selections:
-                    continue
-                elif spell_choice in free_spells:
-                    continue
-                else:
-                    spell_selections_for_level.append(spell_choice)
-                    spell_selections_remaining -= 1
-
-            spell_selections.append(spell_selections_for_level)
-        return spell_selections
+    # def get_free_spells(self):
+    #     free_spells = [[], [], [], [], [], [], [], [], [], [], ]
+    #     if self.free_spell_lists:
+    #         for free_spell_list in self.free_spell_lists:
+    #             for spell in free_spell_list.spells.values():
+    #                 free_spells[spell.level].append(spell.name)
+    #     return free_spells
+    #
+    # def get_random_spells(self, rnd_instance=None):
+    #
+    #     if not rnd_instance:
+    #         rnd_instance = random
+    #
+    #     free_spells = set()
+    #     if self.free_spell_lists:
+    #         for spell_list in self.free_spell_lists:
+    #             for spell_name in spell_list.spells.keys():
+    #                 free_spells.add(spell_name)
+    #
+    #     spell_selections = []
+    #
+    #     # We do this for every spell level
+    #     for spell_level in range(0, 10):
+    #         total_spell_count = 0
+    #         for spell_list in self.spell_lists.keys():
+    #             total_spell_count += spell_list.num_spells_of_level(spell_level)
+    #
+    #         spell_options = []
+    #         spell_weights = []
+    #
+    #         for spell_list, weight in self.spell_lists.items():
+    #             num_spells_of_level = spell_list.num_spells_of_level(spell_level)
+    #             if num_spells_of_level == 0:
+    #                 continue
+    #             weight_per_spell = float(weight) / num_spells_of_level
+    #             for spell_name in spell_list.get_spell_set_of_level(spell_level):
+    #                 spell_options.append(spell_name)
+    #                 spell_weights.append(weight_per_spell)
+    #
+    #         spell_selections_for_level = []
+    #         spell_selections_remaining = MAX_SPELL_CHOICES_PER_LEVEL
+    #         while spell_selections_remaining > 0:
+    #             # First, check that we still have options
+    #             if len(spell_options) == 0:
+    #                 break
+    #
+    #             choice_by_index = rnd_instance.choices(range(len(spell_weights)), spell_weights)[0]
+    #             spell_choice = spell_options[choice_by_index]
+    #
+    #             spell_options.pop(choice_by_index)
+    #             spell_weights.pop(choice_by_index)
+    #
+    #             if spell_choice in spell_selections:
+    #                 continue
+    #             elif spell_choice in free_spells:
+    #                 continue
+    #             else:
+    #                 spell_selections_for_level.append(spell_choice)
+    #                 spell_selections_remaining -= 1
+    #
+    #         spell_selections.append(spell_selections_for_level)
+    #     return spell_selections
 
 
 class Loadout:
@@ -2934,13 +2935,13 @@ class LoadoutPool:
 
 
 class FeatureMultiattack(CharacterFeature):
-    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__()
+    def __init__(self, owner, args_tup=()):
+        super().__init__(owner)
         self.int_name = 'multiattack'
 
         self.multiattack_type = args_tup[0]
         self.attacks = 1
-        char_hd = character.get_stat('hit_dice_num')
+        char_hd = owner.get_hd()
         if self.multiattack_type == 'fighter':
             if char_hd >= 20:
                 self.attacks = 4
@@ -2960,13 +2961,13 @@ class FeatureMultiattack(CharacterFeature):
         # self.ranged_weapons = []
         # self.best_ranged_damage = 0
 
-    def get_cr_factors(self, character: 'Character'):
-        best_weapon_to_hit, best_weapon_dmg = character.get_best_weapon_hit_dmg()
+    def get_cr_factors(self):
+        best_weapon_to_hit, best_weapon_dmg = self.owner.get_best_weapon_hit_dmg()
         damage_per_round = best_weapon_dmg * self.attacks
         cr_factor = CRFactor(CRFactor.ATTACK, to_hit=best_weapon_to_hit, damage=damage_per_round)
         return [cr_factor, ]
 
-    def get_stat_block_entries(self, character: 'Character', short=True):
+    def get_stat_block_entries(self, short=True):
         entries = []
         if self.attacks > 1:
             main_entry = StatBlockEntry(
@@ -2982,10 +2983,10 @@ HIGHEST_SPELL_LEVEL_BY_CASTER_LEVEL = (
 
 
 class FeatureSpellcasting(CharacterFeature):
-    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__()
+    def __init__(self, owner, args_tup=()):
+        super().__init__(owner)
         self.int_name = 'spellcasting_' + args_tup[0]
-        sp_profile = npc_gen.spellcaster_profiles[args_tup[0]]
+        sp_profile = self.npc_gen.spellcaster_profiles[args_tup[0]]
         assert isinstance(sp_profile, SpellCasterProfile)
 
         # NPCs generally either have spells 'prepared' or 'known'
@@ -3004,8 +3005,8 @@ class FeatureSpellcasting(CharacterFeature):
 
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
         self.spell_choices = None
-        self.free_spells = self.get_free_spells(npc_gen=npc_gen)
-        self.spell_choices = self.get_spell_choices(npc_gen=npc_gen, seed=seed)
+        self.free_spells = self.get_free_spells(npc_gen=self.npc_gen)
+        self.spell_choices = self.get_spell_choices(npc_gen=self.npc_gen, seed=self.seed)
         self.spell_slots = []
         self.cantrips_readied = 0
         self.spells_readied = [[], [], [], [], [], [], [], [], [], [], ]
@@ -3083,19 +3084,19 @@ class FeatureSpellcasting(CharacterFeature):
             spell_selections.append(spell_selections_for_level)
         return spell_selections
 
-    def get_spell_dc(self, owner):
-        return owner.get_stat(self.casting_stat + '_dc')
+    def get_spell_dc(self):
+        return self.owner.get_stat(self.casting_stat + '_dc')
 
-    def get_spell_to_hit(self, owner):
-        return owner.get_stat(self.casting_stat + '_attack')
+    def get_spell_to_hit(self):
+        return self.owner.get_stat(self.casting_stat + '_attack')
 
     # Caster level is actually a bit weird for half and third casters like paladins and eldritch knights
     # They only get their first casting level at 2 or 3 hd, respectively
     # BUT, the next hd they gets bumps them up to the next spellcaster level regardless
     # From then on, they need 2 or 3 hd to get additional spellcasting levels
     # So, that's why this function looks weird
-    def get_caster_level(self, owner):
-        hit_dice = owner.get_stat('hit_dice_num')
+    def get_caster_level(self):
+        hit_dice = self.owner.get_hd()
         if self.hd_per_casting_level == 1:
             caster_level = hit_dice
         else:
@@ -3108,9 +3109,9 @@ class FeatureSpellcasting(CharacterFeature):
         return caster_level
 
     # Right now it's a simple thing, but there's possibility other things may want to mess with this
-    def set_spell_slots(self, owner):
-        self.spell_slots = self.spell_slots_table[self.get_caster_level(owner)]
-        self.cantrips_readied = int(self.cantrips_progression[owner.get_hd()])
+    def set_spell_slots(self):
+        self.spell_slots = self.spell_slots_table[self.get_caster_level()]
+        self.cantrips_readied = int(self.cantrips_progression[self.owner.get_hd()])
 
     # At this point, we already have our possible spell choices made
     # Now, we're basically going to figure out how which of those spells to have readied
@@ -3125,14 +3126,14 @@ class FeatureSpellcasting(CharacterFeature):
     # That weight is also divided by the number of picks already made
     # Thus characters are biased toward making more low level picks and picks of levels they have fewer of
     # Note that any free spells the character gets will NOT be reflected in these picks
-    def select_readied_spells(self, character, seed):
-        rnd_instance = random.Random(seed + self.int_name + 'spellpicking')
-        char_hd = character.get_stat('hit_dice_num')
-        caster_level = self.get_caster_level(character)
+    def select_readied_spells(self):
+        rnd_instance = random.Random(self.seed + self.int_name + 'spellpicking')
+        char_hd = self.owner.get_hd()
+        caster_level = self.get_caster_level()
         if self.fixed_spells_known_by_level:
             spells_readied_remaining = self.fixed_spells_known_by_level[char_hd]
         else:
-            spells_readied_remaining = caster_level + character.get_stat(
+            spells_readied_remaining = caster_level + self.owner.get_stat(
                 self.casting_stat + '_mod') + self.spells_known_modifier
 
         # Figure out the maximum level spell our guy can cast
@@ -3186,13 +3187,13 @@ class FeatureSpellcasting(CharacterFeature):
     # Characters are assumed to spend their spell picks on the highest level spell they can
     # Every level they get chance to get an extra spell pick, for variety's sake,
     # bonus_spell_chance is percentage cvahnce of getting that extra spell
-    def set_spellbook(self, owner, seed, starting_spells=4, spells_per_level=2, bonus_spell_chance=10):
-        rnd_instance = random.Random(seed + self.int_name + 'spellbook')
+    def set_spellbook(self, starting_spells=4, spells_per_level=2, bonus_spell_chance=10):
+        rnd_instance = random.Random(self.seed + self.int_name + 'spellbook')
         spellbook = []
         total_spells = [-1, starting_spells, 0, 0, 0, 0, 0, 0, 0, 0, ]
-        for character_level in range(0, owner.get_hd()):
+        for character_level in range(0, self.owner.get_hd()):
             spells_for_this_level = spells_per_level
-            if random.randrange(100) < bonus_spell_chance:
+            if rnd_instance.randrange(100) < bonus_spell_chance:
                 spells_for_this_level += 1
             highest_spell_level = HIGHEST_SPELL_LEVEL_BY_CASTER_LEVEL[character_level]
             total_spells[highest_spell_level] += spells_for_this_level
@@ -3208,22 +3209,22 @@ class FeatureSpellcasting(CharacterFeature):
 
     # Hypothetically, other features might want to do something that affects spellcasting in the first pass,
     # so we do all the big stuff in the second pass
-    def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
-        self.set_spell_slots(character)
-        self.select_readied_spells(character, seed)
+    def second_pass(self):
+        self.set_spell_slots()
+        self.select_readied_spells()
 
         if 'spellbook' in self.tags:
-            self.set_spellbook(character, seed)
+            self.set_spellbook()
 
         # Now, we can do some of those special case things
         if 'mage armor' in self.spells_readied_set:
-            npc_gen.give_armor(character, 'mage_armor', extra=True)
+            self.npc_gen.give_armor(self.owner, 'mage_armor', extra=True)
 
         if 'chill touch' in self.spells_readied_set:
-            self.spell_attacks.append(SpellAttackChillTouch())
+            self.spell_attacks.append(SpellAttackChillTouch(self))
 
-    def get_main_stat_block_entry(self, owner, short=True):
-        caster_level = self.get_caster_level(owner)
+    def get_main_stat_block_entry(self, short=True):
+        caster_level = self.get_caster_level()
         if caster_level == 0:
             return None
 
@@ -3232,8 +3233,8 @@ class FeatureSpellcasting(CharacterFeature):
                "It has the following spells {}:" \
                .format(NUM_TO_ORDINAL[caster_level],
                        ATTRIBUTES_ABBREVIATION_TO_FULL_WORD[self.casting_stat],
-                       owner.get_stat(self.casting_stat + '_dc'),
-                       num_plusser(owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'
+                       self.owner.get_stat(self.casting_stat + '_dc'),
+                       num_plusser(self.owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'
         # Cantrips
         if len(self.spells_readied[0]) > 0:
             text += 'Cantrips (at-will): ' + ', '.join(self.spells_readied[0])
@@ -3249,7 +3250,7 @@ class FeatureSpellcasting(CharacterFeature):
                 text += ', '.join(self.spells_readied[i])
         return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
 
-    def get_spellbook_entry(self, short=True):
+    def get_spellbook_entry(self):
         if len(self.spellbook) > 0:
             text = "You have a spellbook containing your readied spells and the following additional spells: {}"\
                 .format(nice_list(self.spellbook))
@@ -3264,10 +3265,10 @@ class FeatureSpellcasting(CharacterFeature):
                "including against the triggering attack, and you take no damage from magic missile."
         return StatBlockEntry('Shield', 'reaction', 0, text, subtitles=['spell'])
 
-    def get_cr_factors(self, character: 'Character'):
+    def get_cr_factors(self):
         entries = []
-        caster_level = self.get_caster_level(character)
-        dc = self.get_spell_dc(character)
+        caster_level = self.get_caster_level()
+        dc = self.get_spell_dc()
         entries.append(CRFactor(CRFactor.ABILITY, ability_level=caster_level, dc=dc))
 
         # Special case spells
@@ -3275,13 +3276,13 @@ class FeatureSpellcasting(CharacterFeature):
             entries.append(CRFactor(CRFactor.EFFECTIVE_AC_MOD, extra_ac=1))
 
         for spell_attack in self.spell_attacks:
-            entries.append(spell_attack.get_cr_factor(character, self))
+            entries.append(spell_attack.get_cr_factor())
 
         return entries
 
-    def get_stat_block_entries(self, character: 'Character', short=True):
+    def get_stat_block_entries(self, short=True):
         entries = []
-        entries.append(self.get_main_stat_block_entry(character, short))
+        entries.append(self.get_main_stat_block_entry(short=short))
         if 'spellbook' in self.tags:
             entries.append(self.get_spellbook_entry())
 
@@ -3291,16 +3292,21 @@ class FeatureSpellcasting(CharacterFeature):
 
         # All the spells set up as attacks
         for spell_attack in self.spell_attacks:
-            entries.append(spell_attack.get_stat_block_entry(character, self))
+            entries.append(spell_attack.get_stat_block_entry())
 
         return entries
 
 
 class SpellAttack:
-    def get_stat_block_entry(self, character, spellcasting_feature: 'FeatureSpellcasting'):
+    def __init__(self, spellcasting_feature: 'FeatureSpellcasting'):
+        self.spellcasting_feature = spellcasting_feature
+        self.owner = self.spellcasting_feature.owner
+
+
+    def get_stat_block_entry(self):
         pass
 
-    def get_cr_factor(self, character, spellcasting_feature: 'FeatureSpellcasting'):
+    def get_cr_factor(self):
         pass
 
 
@@ -3311,8 +3317,8 @@ class SpellAttackChillTouch(SpellAttack):
            "If you hit an undead target, it also has disadvantage on attack rolls " \
            "against you until the end of your next turn."
 
-    def attack_dice(self, character):
-        hd = character.get_hd()
+    def attack_dice(self):
+        hd = self.owner.get_hd()
         if hd >= 17:
             dice = 4
         elif hd >= 11:
@@ -3323,15 +3329,16 @@ class SpellAttackChillTouch(SpellAttack):
             dice = 1
         return dice
 
-    def get_cr_factor(self, character, spellcasting_feature):
-        return CRFactor(CRFactor.ATTACK, damage=self.attack_dice(character)*4.5,
-                        to_hit=spellcasting_feature.get_spell_to_hit(character))
+    def get_cr_factor(self):
+        return CRFactor(CRFactor.ATTACK, damage=self.attack_dice()*4.5,
+                        to_hit=self.spellcasting_feature.get_spell_to_hit())
 
-    def get_stat_block_entry(self, character, spellcasting_feature):
+    def get_stat_block_entry(self):
         text = self.TEXT
-        to_hit = num_plusser(spellcasting_feature.get_spell_to_hit(character))
-        text = text.format(to_hit, self.attack_dice(character))
+        to_hit = num_plusser(self.spellcasting_feature.get_spell_to_hit())
+        text = text.format(to_hit, self.attack_dice())
         return StatBlockEntry('Chill Touch', 'attack', 1, text, subtitles=['spell'])
+
 
 # Below this point are classes for particular Character Features
 # If you add a new feature, you MUST update the get_character_feature_class() method
@@ -3355,24 +3362,32 @@ def get_character_feature_class(feature_string):
         raise ValueError
 
 FEATURE_TINKER_OPTIONS = {
-    'clockwork toy': 'This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. When placed on the ground, the toy moves 5 feet across the ground on each of your turns in a random direction. It makes noises as appropriate to the creature it represents.',
-    'fire box': 'The device produces a miniature flame, which you can use to light a candle, torch, or campfire. Using the device requires your action.',
-    'music box': "When opened, this music box plays a single song at a moderate volume. The box stops playing when it reaches the song's end or when it is closed.",
+    'clockwork toy':
+        'This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. '
+        'When placed on the ground, the toy moves 5 feet across the ground '
+        'on each of your turns in a random direction. '
+        'It makes noises as appropriate to the creature it represents.',
+    'fire box':
+        'The device produces a miniature flame, which you can use to light a candle, torch, or campfire. '
+        'Using the device requires your action.',
+    'music box':
+        "When opened, this music box plays a single song at a moderate volume. "
+        "The box stops playing when it reaches the song's end or when it is closed.",
 }
 
 
 class FeatureTinker(CharacterFeature):
-    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__()
+    def __init__(self, owner, args_tup=()):
+        super().__init__(owner)
         self.int_name = 'tinker'
-        rnd_instance = random.Random(seed + self.int_name + 'init')
+        rnd_instance = random.Random(self.seed + self.int_name + 'init')
         self.choice = rnd_instance.choice(list(FEATURE_TINKER_OPTIONS.keys()))
 
-    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
-        rnd_instance = random.Random(seed + self.int_name + 'first')
-        character.add_skill('tinkers_tools', rnd_instance=rnd_instance)
+    def first_pass(self):
+        rnd_instance = random.Random(self.seed + self.int_name + 'first')
+        self.owner.add_skill('tinkers_tools', rnd_instance=rnd_instance)
 
-    def get_stat_block_entries(self, character: 'Character', short=True):
+    def get_stat_block_entries(self, short=True):
         entries = []
         entries.append(StatBlockEntry('Tinker', 'passive', 2,
                                       "You have proficiency with artisan's tools (tinker's tools). Using those tools, "
@@ -3401,17 +3416,17 @@ FEATURE_DRAGONBORN_CHART = {
 
 
 class FeatureDragonborn(CharacterFeature):
-    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__()
+    def __init__(self, owner, args_tup=()):
+        super().__init__(owner)
         self.int_name = 'dragonborn_feature'
         self.lineage_type = args_tup[0]
 
-    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
-        character.add_damage_resistance(FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
+    def first_pass(self):
+        self.owner.add_damage_resistance(FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
 
-    def get_stat_block_entries(self, character: 'Character', short=True):
+    def get_stat_block_entries(self, short=True):
         entries = []
-        hd = character.get_stat('hit_dice_num')
+        hd = self.owner.get_hd()
         if hd >= 16:
             dmg_dice = 5
         elif hd >= 11:
@@ -3422,10 +3437,10 @@ class FeatureDragonborn(CharacterFeature):
             dmg_dice = 2
         text = "When you use your breath weapon, each creature in a {} must make a DC {} {} saving throw. " \
                "A creature takes {}d6 {} damage on a failed save, and half as much damage on a successful one." \
-            .format(FEATURE_DRAGONBORN_CHART[self.lineage_type][1], character.get_stat('con_dc'),
+            .format(FEATURE_DRAGONBORN_CHART[self.lineage_type][1], self.owner.get_stat('con_dc'),
                     FEATURE_DRAGONBORN_CHART[self.lineage_type][2], dmg_dice,
                     FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
-        breath_weapon_entry = StatBlockEntry('Breath Weapon', 'action', 0, text, subtitles=['1/short',])
+        breath_weapon_entry = StatBlockEntry('Breath Weapon', 'action', 0, text, subtitles=['1/short', ])
         entries.append(breath_weapon_entry)
         return entries
 
@@ -3441,9 +3456,9 @@ MARTIAL_ARTS_DAMAGE = (
 # to allow dex to be used for attacks
 # I think it would only matter for sneak attack, which I'm not going to implement precisely anyways
 class FeatureMartialArts(CharacterFeature):
-    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__()
-        self.upgrade_damage_die = MARTIAL_ARTS_DAMAGE[character.get_hd()]
+    def __init__(self, owner, args_tup=()):
+        super().__init__(owner)
+        self.upgrade_damage_die = MARTIAL_ARTS_DAMAGE[self.owner.get_hd()]
 
     @staticmethod
     def is_monk_weapon(weapon: 'Weapon'):
@@ -3465,12 +3480,12 @@ class FeatureMartialArts(CharacterFeature):
         else:
             debug_print("Martial Arts not applied to {}".format(weapon.int_name))
 
-    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
-        for weapon in character.weapons.values():
+    def first_pass(self):
+        for weapon in self.owner.weapons.values():
             if self.is_monk_weapon(weapon):
                 self.upgrade_weapon(weapon)
 
-    def get_stat_block_entries(self, character: 'Character', short=True):
+    def get_stat_block_entries(self, short=True):
         entry = StatBlockEntry('Martial Arts', 'passive', 1,
                                'Damage scales to your level when using monk weapons.')
         return [entry, ]
