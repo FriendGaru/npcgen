@@ -1720,11 +1720,17 @@ class Character:
             off_ability_rating_shift = int(float(effective_best_ability_dc - expected_dc) / 2)
             offensive_ability_rating = starting_offensive_ability_rating + off_ability_rating_shift
 
-        if offensive_attack_rating >= 0 and offensive_ability_rating >= 0:
-            combined_attack_rating = offensive_attack_rating + offensive_ability_rating
-            offensive_rating = combined_attack_rating // 2 + combined_attack_rating % 2
-        else:
-            offensive_rating = max(offensive_attack_rating, offensive_ability_rating)
+        # if offensive_attack_rating >= 0 and offensive_ability_rating >= 0:
+        #     combined_attack_rating = offensive_attack_rating + offensive_ability_rating
+        #     offensive_rating = combined_attack_rating // 2 + combined_attack_rating % 2
+        # else:
+        #     offensive_rating = max(offensive_attack_rating, offensive_ability_rating)
+
+        # Take the better of attack and ability ratings
+        # If the difference between the two is within 2, add one more to the rating because that means it well rounded
+        offensive_rating = max(offensive_attack_rating, offensive_ability_rating)
+        if abs(offensive_attack_rating - offensive_ability_rating) <= 2:
+            offensive_rating += 1
 
         combined_cr_rating = (defensive_rating + offensive_rating) // 2
 
