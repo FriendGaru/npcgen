@@ -1682,7 +1682,7 @@ class Character:
         effective_hp_bonus = 0
 
         for cr_factor in cr_factors_all:
-            assert isinstance(cr_factor, CRFactor)
+            assert isinstance(cr_factor, CRFactor), str(cr_factor)
             if cr_factor.cr_type == CRFactor.ATTACK:
                 if cr_factor.damage > best_attack_damage:
                     best_attack_damage = cr_factor.damage
@@ -2510,7 +2510,7 @@ class CRFactor:
     EFFECTIVE_AC_MOD = 'effective_ac_mod'
     EFFECTIVE_HP_MOD = 'effective_hp_mod'
 
-    def __init__(self, cr_type, importance=-1, damage=-1, ability_level=-1, to_hit=-1,
+    def __init__(self, cr_type, importance=-1, damage=-1.0, ability_level=-1, to_hit=-1,
                  dc=-1, extra_damage=-1, extra_ac=-1, extra_hp=-1):
         # Valid types: attack, ability, effective_damage_mod, effective_ac_mod
         self.cr_type = cr_type
@@ -3012,6 +3012,9 @@ class FeatureSpellcasting(CharacterFeature):
         self.spells_readied_set = set()
         self.spellbook = None
 
+        # Many spells can be treated as an attack, if such a spell is readied, here it goes!
+        self.spell_attacks = []
+
     def get_free_spells(self, npc_gen: 'NPCGenerator'):
         free_spells = [[], [], [], [], [], [], [], [], [], [], ]
         if self.free_spell_lists:
@@ -3082,6 +3085,9 @@ class FeatureSpellcasting(CharacterFeature):
 
     def get_spell_dc(self, owner):
         return owner.get_stat(self.casting_stat + '_dc')
+
+    def get_spell_to_hit(self, owner):
+        return owner.get_stat(self.casting_stat + '_attack')
 
     # Caster level is actually a bit weird for half and third casters like paladins and eldritch knights
     # They only get their first casting level at 2 or 3 hd, respectively
@@ -3196,7 +3202,7 @@ class FeatureSpellcasting(CharacterFeature):
             while spellbook_spells > 0:
                 if len(self.spell_choices[spell_level]):  # Make sure we still haven't already exhausted our choices
                     spellbook.append(self.spell_choices[spell_level].pop(0))
-                spellbook_spells -=1
+                spellbook_spells -= 1
         debug_print('Spellbook built, contains: {}'.format(str(spellbook)), 2)
         self.spellbook = spellbook
 
@@ -3212,6 +3218,9 @@ class FeatureSpellcasting(CharacterFeature):
         # Now, we can do some of those special case things
         if 'mage armor' in self.spells_readied_set:
             npc_gen.give_armor(character, 'mage_armor', extra=True)
+
+        if 'chill touch' in self.spells_readied_set:
+            self.spell_attacks.append(SpellAttackChillTouch())
 
     def get_main_stat_block_entry(self, owner, short=True):
         caster_level = self.get_caster_level(owner)
@@ -3241,9 +3250,11 @@ class FeatureSpellcasting(CharacterFeature):
         return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
 
     def get_spellbook_entry(self, short=True):
-        text = "You have a spellbook containing your readied spells."
         if len(self.spellbook) > 0:
-            text += " It also contains the following additional spells: {}".format(nice_list(self.spellbook))
+            text = "You have a spellbook containing your readied spells and the following additional spells: {}"\
+                .format(nice_list(self.spellbook))
+        else:
+            text = "You have a spellbook containing your readied spells."
         return StatBlockEntry('Spellbook', 'spellcasting', 0, text)
 
     def get_shield_entry(self):
@@ -3263,6 +3274,9 @@ class FeatureSpellcasting(CharacterFeature):
         if 'shield' in self.spells_readied_set:
             entries.append(CRFactor(CRFactor.EFFECTIVE_AC_MOD, extra_ac=1))
 
+        for spell_attack in self.spell_attacks:
+            entries.append(spell_attack.get_cr_factor(character, self))
+
         return entries
 
     def get_stat_block_entries(self, character: 'Character', short=True):
@@ -3274,15 +3288,57 @@ class FeatureSpellcasting(CharacterFeature):
         # Per spell special entries
         if 'shield' in self.spells_readied_set:
             entries.append(self.get_shield_entry())
+
+        # All the spells set up as attacks
+        for spell_attack in self.spell_attacks:
+            entries.append(spell_attack.get_stat_block_entry(character, self))
+
         return entries
 
 
+class SpellAttack:
+    def get_stat_block_entry(self, character, spellcasting_feature: 'FeatureSpellcasting'):
+        pass
+
+    def get_cr_factor(self, character, spellcasting_feature: 'FeatureSpellcasting'):
+        pass
+
+
+class SpellAttackChillTouch(SpellAttack):
+    TEXT = "Ranged spell attack: {} to hit, range 120 ft., one target. " \
+           "Hit: {}d8 necrotic damage " \
+           "and target can't regain hit points until the start of your next turn. " \
+           "If you hit an undead target, it also has disadvantage on attack rolls " \
+           "against you until the end of your next turn."
+
+    def attack_dice(self, character):
+        hd = character.get_hd()
+        if hd >= 17:
+            dice = 4
+        elif hd >= 11:
+            dice = 3
+        elif hd >= 5:
+            dice = 2
+        else:
+            dice = 1
+        return dice
+
+    def get_cr_factor(self, character, spellcasting_feature):
+        return CRFactor(CRFactor.ATTACK, damage=self.attack_dice(character)*4.5,
+                        to_hit=spellcasting_feature.get_spell_to_hit(character))
+
+    def get_stat_block_entry(self, character, spellcasting_feature):
+        text = self.TEXT
+        to_hit = num_plusser(spellcasting_feature.get_spell_to_hit(character))
+        text = text.format(to_hit, self.attack_dice(character))
+        return StatBlockEntry('Chill Touch', 'attack', 1, text, subtitles=['spell'])
+
 # Below this point are classes for particular Character Features
-# If you add a new feature, you MUST update the get_character_feature_class method
+# If you add a new feature, you MUST update the get_character_feature_class() method
 
 # Take a string, grab the correct CharacterFeature
-# Maybe a bit hacky, but it gets around the unresolved reference errors
-# feature_string is for how the feature will be referred to in class/race templates
+# Maybe a bit hacky, but I was getting unresolved reference errors when trying to implement it as a dictionary
+# feature_string is how the feature will be referred to in class/race templates
 def get_character_feature_class(feature_string):
     if feature_string == 'multiattack':
         return FeatureMultiattack

@@ -1,42 +1,16 @@
-work out the nitty gritty of casters, they calculate spell slots one way but have a different method for fixed spells known
-
-randomization:
-since I've settled on "same seed and parameters yields the same character, consistent across HD",
-I can go back and redo the way it handles spellcaster abilities, asi progression, and other randomized choices to make
-things a bit cleaner and more comprehensible
+THE BIG THING:
+rework as much as possible to take owners upon instantiation
+Like, CharacterFeatures always need to belong to a character, so I should just specify the owner upon intantiation
+instead of passing around character references all the time
+Could make the code MUCH more readable
 
 special weapons need exceptions:
 lance, net
 
-maybe rework 'weapons' as 'attacks'
-it would be nice and convenient for users if things like eldritch blast were listed under attacks
-it would also make CR calculations more reliable in cases like that
-
-mage armor: the generator should check if the npc has mage armor the spell rather than attaching it to loadouts.
-If I start listing spells like eldritch blast under attacks, the generator should check for those spells.
-
-CR calc should allow for various modifiers, things like effective hp and damage output
-sneak attack, for example, should increase effective damage
-easiest method would probably be for characters to keep track of various cr mods and handle them individually
-in the cr calculation
-
-Skill proficencies granted by traits are slapdash.
-Should clean it up and have a good way to handle proficiencies being granted by both class and traits.
-
-Tool proficiencies
-
 The following traits need randomized spells:
 extra_cantrip
 natural_illusionist
-Ideally, should consolidate all of hte various innate magic traits into one unified system, perhaps have it coordinate
+Ideally, should consolidate all of the various innate magic traits into one unified system, perhaps have it coordinate
 with the spellcasting system to prevent overlap
 
-tinker trait needs a randomization scheme
-should create a generalized method for traits like this
-
-tools can have spaces and apostrophes in them, (i.e. "tinker's tools"),
-if I implement tool proficiencies in the statblock I'll need to address that
-
-- Have characters received modifiable copies of weapons and armors, in anticipation of future features
-- Rework Martial Arts so it
 
