@@ -11,7 +11,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 1
+DEBUG_LEVEL = 3
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
@@ -154,11 +154,11 @@ VALID_HD_SIZES = (
 )
 
 TRAIT_TYPES = (
-    'hidden', 'passive', 'multiattack', 'action', 'reaction',
+    'hidden', 'passive', 'action', 'reaction',
 )
 
 VALID_SIZES = (
-    'small', 'medium', 'large',
+    'tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'
 )
 DEFAULT_SIZE = 'medium'
 
@@ -1683,19 +1683,19 @@ class Character:
 
         for cr_factor in cr_factors_all:
             assert isinstance(cr_factor, CRFactor)
-            if cr_factor.cr_type == 'attack':
+            if cr_factor.cr_type == CRFactor.ATTACK:
                 if cr_factor.damage > best_attack_damage:
                     best_attack_damage = cr_factor.damage
                     best_attack_to_hit = cr_factor.to_hit
-            elif cr_factor.cr_type == 'ability':
+            elif cr_factor.cr_type == CRFactor.ABILITY:
                 if cr_factor.ability_level > best_ability_dc:
                     best_ability_level = cr_factor.ability_level
                     best_ability_dc = cr_factor.dc
-            elif cr_factor.cr_type == 'effective_damage_bonus':
+            elif cr_factor.cr_type == CRFactor.EFFECTIVE_DAMAGE_MOD:
                 effective_damage_bonus += cr_factor.extra_damage
-            elif cr_factor.cr_type == 'effective_ac_bonus':
+            elif cr_factor.cr_type == CRFactor.EFFECTIVE_AC_MOD:
                 effective_ac_bonus += cr_factor.extra_ac
-            elif cr_factor.cr_type == 'effective_hp_bonus':
+            elif cr_factor.cr_type == CRFactor.EFFECTIVE_HP_MOD:
                 effective_hp_bonus += cr_factor.extra_ac
             else:
                 debug_print('!!!ERROR!!! Invalid cr_factory type {} received'.format(cr_factor.cr_type), 0)
@@ -2379,6 +2379,22 @@ class FeatureTrait(CharacterFeature):
     def second_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
         pass
 
+    def get_cr_factors(self, character: 'Character'):
+        factors_list = []
+        if 'cr_damage_shift' in self.tags:
+            shift_val = int(self.tags['cr_damage_shift'][0])
+            cr_factor = CRFactor(CRFactor.EFFECTIVE_DAMAGE_MOD, extra_damage=shift_val)
+            factors_list.append(cr_factor)
+        if 'cr_ac_shift' in self.tags:
+            shift_val = int(self.tags['cr_ac_shift'][0])
+            cr_factor = CRFactor(CRFactor.EFFECTIVE_AC_MOD, extra_ac=shift_val)
+            factors_list.append(cr_factor)
+        if 'cr_hp_shift' in self.tags:
+            shift_val = int(self.tags['cr_hp_shift'][0])
+            cr_factor = CRFactor(CRFactor.EFFECTIVE_HP_MOD, extra_hp=shift_val)
+            factors_list.append(cr_factor)
+        return factors_list
+
     def get_stat_block_entries(self, character: 'Character', short=True):
         text = self.text.format(**character.stats)
         sb_entries = []
@@ -2484,8 +2500,15 @@ class ClassTemplate:
 # When it comes time for the CR calculation, each ClassFeature may choose to provide one or more CRFactor instances
 # The method for calculating CR will collect them and figure out how to use them
 class CRFactor:
-    def __init__(self, cr_type, importance=0, damage=0, ability_level=0, to_hit=0, dc=0, extra_damage=0, extra_ac=0):
-        # Valid types: attack, ability, effective_damage_bonus, effective_ac_bonus
+    ATTACK = 'attack'
+    ABILITY = 'ability'
+    EFFECTIVE_DAMAGE_MOD = 'effective_damage_mod'
+    EFFECTIVE_AC_MOD = 'effective_ac_mod'
+    EFFECTIVE_HP_MOD = 'effective_hp_mod'
+
+    def __init__(self, cr_type, importance=-1, damage=-1, ability_level=-1, to_hit=-1,
+                 dc=-1, extra_damage=-1, extra_ac=-1, extra_hp=-1):
+        # Valid types: attack, ability, effective_damage_mod, effective_ac_mod
         self.cr_type = cr_type
         self.importance = importance
         self.damage = damage
@@ -2494,6 +2517,7 @@ class CRFactor:
         self.dc = dc
         self.extra_damage = extra_damage
         self.extra_ac = extra_ac
+        self.extra_hp = extra_hp
 
 
 class Armor:
@@ -2687,7 +2711,7 @@ class Weapon(Attack):
     def get_cr_factors(self, owner):
         to_hit = self.get_to_hit(owner)
         avg_dmg = self.get_avg_dmg(owner)
-        cr_factor = CRFactor('attack', to_hit=to_hit, damage=avg_dmg)
+        cr_factor = CRFactor(CRFactor.ATTACK, to_hit=to_hit, damage=avg_dmg)
         return [cr_factor, ]
 
     def get_stat_block_entry(self, owner: Character, short=True):
@@ -2935,7 +2959,7 @@ class FeatureMultiattack(CharacterFeature):
     def get_cr_factors(self, character: 'Character'):
         best_weapon_to_hit, best_weapon_dmg = character.get_best_weapon_hit_dmg()
         damage_per_round = best_weapon_dmg * self.attacks
-        cr_factor = CRFactor('attack', to_hit=best_weapon_to_hit, damage=damage_per_round)
+        cr_factor = CRFactor(CRFactor.ATTACK, to_hit=best_weapon_to_hit, damage=damage_per_round)
         return [cr_factor, ]
 
     def get_stat_block_entries(self, character: 'Character', short=True):
@@ -3142,7 +3166,7 @@ class FeatureSpellcasting(CharacterFeature):
         entries = []
         caster_level = self.get_caster_level(character)
         dc = self.get_spell_dc(character)
-        cr_factor = CRFactor('ability', ability_level=caster_level, dc=dc)
+        cr_factor = CRFactor(CRFactor.ABILITY, ability_level=caster_level, dc=dc)
         return [cr_factor, ]
 
     def get_stat_block_entries(self, character: 'Character', short=True):

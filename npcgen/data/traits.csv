@@ -72,4 +72,4 @@ relentless_endurance,,,passive,,"When you are reduced to 0 hit points but not ki
 savage_attack,,,passive,,"When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit. ",,,
 hellish_resistance,,,passive,2,You have resistance to fire damage. ,,damage_resistance:fire,
 infernal_legacy,,,passive,,"You know the thaumaturgy cantrip. Once you reach 3rd level, you can cast the hellish rebuke spell as a 2nd-level spell; you must finish a long rest in order to cast the spell again using this trait. Once you reach 5th level, you can also cast the darkness spell; you must finish a long rest in order to cast the spell again using this trait. Charisma is your spellcasting ability for these spells. ",,,
-parry,,,reaction,,"You add 2 to its AC against one melee attack that would hit you. To do so, you must see the attacker and be wielding a melee weapon.",,cr_ac:1,
+parry,,,reaction,,"You add 2 to its AC against one melee attack that would hit you. To do so, you must see the attacker and be wielding a melee weapon.",,cr_ac_shift:1,
