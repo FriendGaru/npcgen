@@ -2940,10 +2940,11 @@ class FeatureMultiattack(CharacterFeature):
 
     def get_stat_block_entries(self, character: 'Character', short=True):
         entries = []
-        entries.append(StatBlockEntry(
-            'Multiattack', 'multiattack', 0,
-            "You may make {} attacks when using the attack action.".format(NUM_TO_TEXT[self.attacks])
-        ))
+        if self.attacks > 1:
+            main_entry = StatBlockEntry(
+                'Multiattack', 'multiattack', 0,
+                "You may make {} attacks when using the attack action.".format(NUM_TO_TEXT[self.attacks]))
+            entries.append(main_entry)
         return entries
 
 
