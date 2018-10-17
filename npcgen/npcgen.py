@@ -428,7 +428,7 @@ def nice_list(data):
     a, b, and c
     a, b, c, and d
     """
-    return ", ".join(data[:-2] + [" and ".join(data[-2:])])
+    return ", ".join(data[:-2] + [", and ".join(data[-2:])])
 
 
 def random_string(length, rnd_instance=None):
