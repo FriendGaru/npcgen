@@ -3337,7 +3337,7 @@ class SpellAttackChillTouch(SpellAttack):
         text = self.TEXT
         to_hit = num_plusser(self.spellcasting_feature.get_spell_to_hit())
         text = text.format(to_hit, self.attack_dice())
-        return StatBlockEntry('Chill Touch', 'attack', 1, text, subtitles=['spell'])
+        return StatBlockEntry('Chill Touch', 'attack', 1, text, subtitles=['cantrip'])
 
 
 # Below this point are classes for particular Character Features
