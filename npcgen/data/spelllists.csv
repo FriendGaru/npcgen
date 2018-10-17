@@ -16,3 +16,5 @@ bard,bard,,,,,,,restricted
 paladin,paladin,,,,,,,restricted
 ranger,ranger,,,,,,,restricted
 healing,,,,,"cure wounds,healing word,mass cure wounds,heal",,,restricted
+warlock,warlock,,,,,,,restricted
+eldritch_blast,,,,,eldritch blast,,,restricted

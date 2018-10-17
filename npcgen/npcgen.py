@@ -150,7 +150,7 @@ DEFAULT_HIT_DICE_SIZE = 8
 HIT_DICE_NUM_CAP = 20
 
 VALID_HD_SIZES = (
-    4, 6, 8, 10, 12
+    4, 6, 8, 10, 12, 20
 )
 
 TRAIT_TYPES = (
@@ -195,54 +195,8 @@ ASI_PROGRESSION_PRIORITY_SUBSEQUENT_SCALE = 0.75
 # A character will never go above this value when choosing ASIs
 ASI_DEFAULT_ATTRIBUTE_CAP = 20
 
-MAX_SPELL_CHOICES_PER_LEVEL = 10
-DEFAULT_SPELLS_READIED_PROGRESSION = (
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 1,
-    2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 1, 2, 3,
-)
-
-SPELL_SLOTS_TABLE = (
-    # SPELL_SLOTS_TABLE[caster_level][spell_level]
-    (),
-    # 1
-    (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
-    (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
-    (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
-    (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
-    (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
-    # 6
-    (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
-    (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
-    (-1, 4, 3, 3, 2, 0, 0, 0, 0, 0,),
-    (-1, 4, 3, 3, 3, 1, 0, 0, 0, 0,),
-    (-1, 4, 3, 3, 3, 2, 0, 0, 0, 0,),
-    # 11
-    (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
-    (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
-    (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
-    (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
-    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
-    # 16
-    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
-    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 1,),
-    (-1, 4, 3, 3, 3, 3, 1, 1, 1, 1,),
-    (-1, 4, 3, 3, 3, 3, 2, 1, 1, 1,),
-    (-1, 4, 3, 3, 3, 3, 2, 2, 1, 1,),
-)
-
-CASTER_FIXED_SPELLS_KNOWN = {
-    'sorcerer': (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15),
-    'bard': (-1, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22),
-    'half': (-1, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11),
-    'third': (-1, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13),
-}
-
-CASTER_CANTRIPS_KNOWN = {
-    'none': (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,),
-    'cleric_wizard': (-1, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,),
-    'sorcerer': (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,),
-    'bard_druid': (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,),
-}
+MAX_SPELL_CHOICES_PER_LEVEL = 15
+DEFAULT_SPELL_LIST_WEIGHT = 1
 
 CHALLENGE_RATING_CHART = (
     # CR,    prof,  AC, HP,   hit,dpr,  saveDC
@@ -345,8 +299,6 @@ NUM_TIMES_TO_TEXT = {
     9: 'nine times',
     10: 'ten times',
 }
-
-DEFAULT_SPELL_WEIGHT = 1
 
 
 # Random functions can accept an instance of random,
@@ -452,6 +404,23 @@ def csv_tag_reader(item_line, tag_delimiter=';', tag_value_separator=':', tag_va
             tag_name, tag_val_list = tag_raw, []
         tags_dict[tag_name] = tag_val_list
     return tags_dict
+
+
+# There are a bunch of times where you use hd/level to get a simple value
+# Most attack cantrips, for example, do a single die of damage at level one and add a die at levels 5, 11, and 17
+# Since it's very common and takes up an annoying amount of space, this is just a helper function
+# starting_val: the val at level 1
+# increase_points: the levels at which the value goes up
+# character_hd: how many hd the character we're check has
+# increment: how much to increase at each point
+# For example, that cantrip progression for a level 10 character would look like
+# increment_from_hd(1, (5, 11, 17), 10)
+def increment_from_hd(starting_val, increase_points, character_hd, increment=1):
+    out_val = starting_val
+    for point in increase_points:
+        if character_hd >= point:
+            out_val += increment
+    return out_val
 
 
 class NPCGenerator:
@@ -825,7 +794,7 @@ class NPCGenerator:
                             spell_list_name, weight = rawEntry.split(':')
                             new_spell_lists_dict[spell_list_name] = weight
                         else:
-                            new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_WEIGHT
+                            new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_LIST_WEIGHT
                     new_spellcaster_profile.spell_lists = new_spell_lists_dict
 
                     new_spellcaster_profile.tags = csv_tag_reader(line['tags'])
@@ -872,7 +841,13 @@ class NPCGenerator:
                     if line["display_name"]:
                         new_race_template.display_name = line['display_name']
                     else:
-                        new_race_template.display_name = line['internal_name'].capitalize()
+                        # The main race name is always the start of the internal name
+                        # So, for most entries a bit of finagling is called for
+                        name_parts = line['internal_name'].split('_')
+                        name_parts.append(name_parts.pop(0))
+                        name = ' '.join(name_parts)
+                        name = name.title()
+                        new_race_template.display_name = name
 
                     new_attribute_bonuses_dict = {}
                     if line['attribute_bonuses']:
@@ -2159,6 +2134,8 @@ class CharacterFeature:
         self.int_name = 'dummy'
         self.owner = owner
         self.npc_gen = self.owner.npc_gen
+        assert isinstance(self.npc_gen, NPCGenerator), \
+            "Character Feature:{} couldn't find NPCGenerator on owner!".format(self.__class__)
         self.seed = self.owner.seed
 
     # Shouldn't need to be overriden, but can be if there needs to be some kind of merging function
@@ -2843,69 +2820,6 @@ class SpellCasterProfile:
         self.spell_slots_table = None
         self.tags = {}
 
-    # def get_free_spells(self):
-    #     free_spells = [[], [], [], [], [], [], [], [], [], [], ]
-    #     if self.free_spell_lists:
-    #         for free_spell_list in self.free_spell_lists:
-    #             for spell in free_spell_list.spells.values():
-    #                 free_spells[spell.level].append(spell.name)
-    #     return free_spells
-    #
-    # def get_random_spells(self, rnd_instance=None):
-    #
-    #     if not rnd_instance:
-    #         rnd_instance = random
-    #
-    #     free_spells = set()
-    #     if self.free_spell_lists:
-    #         for spell_list in self.free_spell_lists:
-    #             for spell_name in spell_list.spells.keys():
-    #                 free_spells.add(spell_name)
-    #
-    #     spell_selections = []
-    #
-    #     # We do this for every spell level
-    #     for spell_level in range(0, 10):
-    #         total_spell_count = 0
-    #         for spell_list in self.spell_lists.keys():
-    #             total_spell_count += spell_list.num_spells_of_level(spell_level)
-    #
-    #         spell_options = []
-    #         spell_weights = []
-    #
-    #         for spell_list, weight in self.spell_lists.items():
-    #             num_spells_of_level = spell_list.num_spells_of_level(spell_level)
-    #             if num_spells_of_level == 0:
-    #                 continue
-    #             weight_per_spell = float(weight) / num_spells_of_level
-    #             for spell_name in spell_list.get_spell_set_of_level(spell_level):
-    #                 spell_options.append(spell_name)
-    #                 spell_weights.append(weight_per_spell)
-    #
-    #         spell_selections_for_level = []
-    #         spell_selections_remaining = MAX_SPELL_CHOICES_PER_LEVEL
-    #         while spell_selections_remaining > 0:
-    #             # First, check that we still have options
-    #             if len(spell_options) == 0:
-    #                 break
-    #
-    #             choice_by_index = rnd_instance.choices(range(len(spell_weights)), spell_weights)[0]
-    #             spell_choice = spell_options[choice_by_index]
-    #
-    #             spell_options.pop(choice_by_index)
-    #             spell_weights.pop(choice_by_index)
-    #
-    #             if spell_choice in spell_selections:
-    #                 continue
-    #             elif spell_choice in free_spells:
-    #                 continue
-    #             else:
-    #                 spell_selections_for_level.append(spell_choice)
-    #                 spell_selections_remaining -= 1
-    #
-    #         spell_selections.append(spell_selections_for_level)
-    #     return spell_selections
-
 
 class Loadout:
     def __init__(self):
@@ -2943,12 +2857,7 @@ class FeatureMultiattack(CharacterFeature):
         self.attacks = 1
         char_hd = owner.get_hd()
         if self.multiattack_type == 'fighter':
-            if char_hd >= 20:
-                self.attacks = 4
-            elif char_hd >= 11:
-                self.attacks = 3
-            elif char_hd >= 5:
-                self.attacks = 2
+            self.attacks = increment_from_hd(1, (5, 11, 20), char_hd)
         elif self.multiattack_type == 'single':
             if char_hd >= 5:
                 self.attacks = 2
@@ -2979,7 +2888,59 @@ class FeatureMultiattack(CharacterFeature):
 
 HIGHEST_SPELL_LEVEL_BY_CASTER_LEVEL = (
         1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 9,
-    )
+)
+
+SPELL_SLOTS_TABLE = (
+    # SPELL_SLOTS_TABLE[caster_level][spell_level]
+    (),
+    # 1
+    (-1, 2, 0, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 3, 0, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 2, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 0, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 2, 0, 0, 0, 0, 0, 0,),
+    # 6
+    (-1, 4, 3, 3, 0, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 1, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 2, 0, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 1, 0, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 0, 0, 0, 0,),
+    # 11
+    (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 0, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 0, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
+    # 16
+    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 0,),
+    (-1, 4, 3, 3, 3, 2, 1, 1, 1, 1,),
+    (-1, 4, 3, 3, 3, 3, 1, 1, 1, 1,),
+    (-1, 4, 3, 3, 3, 3, 2, 1, 1, 1,),
+    (-1, 4, 3, 3, 3, 3, 2, 2, 1, 1,),
+)
+
+CASTER_FIXED_SPELLS_KNOWN = {
+    'sorcerer': (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15),
+    'bard': (-1, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22),
+    'warlock': (-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15),
+    'half': (-1, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11),
+    'third': (-1, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13),
+}
+
+CASTER_CANTRIPS_KNOWN = {
+    'none': (-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,),
+    'cleric_wizard': (-1, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,),
+    'sorcerer': (-1, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,),
+    'bard_druid': (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,),
+}
+
+WARLOCK_SLOTS = (
+    -1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4
+)
+
+WARLOCK_SLOT_LEVEL = (
+    -1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+)
 
 
 class FeatureSpellcasting(CharacterFeature):
@@ -2994,14 +2955,19 @@ class FeatureSpellcasting(CharacterFeature):
         # Which stat is used for casting
         self.casting_stat = sp_profile.casting_stat
         self.hd_per_casting_level = sp_profile.hd_per_casting_level
-        self.spells_readied_progression = DEFAULT_SPELLS_READIED_PROGRESSION
         self.cantrips_progression = CASTER_CANTRIPS_KNOWN[sp_profile.cantrips_per_level]
-        self.fixed_spells_known_by_level = sp_profile.fixed_spells_known_by_level
+        if sp_profile.fixed_spells_known_by_level:
+            self.fixed_spells_known_by_level = CASTER_FIXED_SPELLS_KNOWN[sp_profile.fixed_spells_known_by_level]
+        else:
+            self.fixed_spells_known_by_level = None
         self.spell_slots_table = sp_profile.spell_slots_table
         self.spells_known_modifier = sp_profile.spells_known_modifier
         self.free_spell_lists = sp_profile.free_spell_lists
         self.spell_lists = sp_profile.spell_lists
         self.tags = sp_profile.tags
+
+        self.bonus_cantrips = 0
+        self.free_spells = [[], [], [], [], [], [], [], [], [], [], ]
 
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
         self.spell_choices = None
@@ -3016,8 +2982,23 @@ class FeatureSpellcasting(CharacterFeature):
         # Many spells can be treated as an attack, if such a spell is readied, here it goes!
         self.spell_attacks = []
 
+    # Hypothetically, other feature can add spell_lists to a spellcasting feature
+    # For example, you could have a base cleric and have the domain be a feature that modifies the spellcasting feature
+    def add_free_spell_list(self, spell_list):
+        self.free_spell_lists.append(spell_list)
+
+    def add_free_spell(self, spell_name):
+        spell_obj = self.npc_gen.spells[spell_name]
+        assert isinstance(spell_obj, Spell), "add_free_spell(): Problem finding spell {}".format(spell_name)
+        self.free_spells[spell_obj.level].append(spell_name)
+
+    def add_spell_list(self, spell_list, weight=DEFAULT_SPELL_LIST_WEIGHT):
+        if spell_list in self.spell_lists.keys():
+            debug_print('Adding spell list "{}" to spellcasting feature, but already present. Overwriting weight.')
+        self.spell_lists[spell_list] = weight
+
     def get_free_spells(self, npc_gen: 'NPCGenerator'):
-        free_spells = [[], [], [], [], [], [], [], [], [], [], ]
+        free_spells = self.free_spells
         if self.free_spell_lists:
             for free_spell_list_name in self.free_spell_lists:
                 spell_list = npc_gen.spell_lists[free_spell_list_name]
@@ -3111,7 +3092,18 @@ class FeatureSpellcasting(CharacterFeature):
     # Right now it's a simple thing, but there's possibility other things may want to mess with this
     def set_spell_slots(self):
         self.spell_slots = self.spell_slots_table[self.get_caster_level()]
-        self.cantrips_readied = int(self.cantrips_progression[self.owner.get_hd()])
+        self.cantrips_readied = int(self.cantrips_progression[self.owner.get_hd()]) + self.bonus_cantrips
+
+    def get_max_spell_level(self):
+        if 'warlock' in self.tags:
+            return WARLOCK_SLOT_LEVEL[self.get_caster_level()]
+        else:
+            max_spell_level = 9
+            for spell_level in range(1, 10):
+                if self.spell_slots[spell_level] <= 0:
+                    max_spell_level = spell_level - 1
+                    break
+        return max_spell_level
 
     # At this point, we already have our possible spell choices made
     # Now, we're basically going to figure out how which of those spells to have readied
@@ -3136,12 +3128,7 @@ class FeatureSpellcasting(CharacterFeature):
             spells_readied_remaining = caster_level + self.owner.get_stat(
                 self.casting_stat + '_mod') + self.spells_known_modifier
 
-        # Figure out the maximum level spell our guy can cast
-        max_spell_level = 9
-        for spell_level in range(1, 10):
-            if self.spell_slots[spell_level] <= 0:
-                max_spell_level = spell_level - 1
-                break
+        max_spell_level = self.get_max_spell_level()
 
         # Add free spells to spells readied
         for spell_level in range(0, max_spell_level + 1):  # Free spells might include cantrips
@@ -3222,6 +3209,8 @@ class FeatureSpellcasting(CharacterFeature):
 
         if 'chill touch' in self.spells_readied_set:
             self.spell_attacks.append(SpellAttackChillTouch(self))
+        if 'eldritch blast' in self.spells_readied_set:
+            self.spell_attacks.append(SpellAttackEldritchBlast(self))
 
     def get_main_stat_block_entry(self, short=True):
         caster_level = self.get_caster_level()
@@ -3246,6 +3235,36 @@ class FeatureSpellcasting(CharacterFeature):
                         .format(NUM_TO_ORDINAL[i], self.spell_slots_table[caster_level][i])
                 else:
                     text += '\n{} level ({} slots): ' \
+                        .format(NUM_TO_ORDINAL[i], self.spell_slots_table[caster_level][i])
+                text += ', '.join(self.spells_readied[i])
+        return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
+
+    def get_warlock_stat_block_entry(self, short=True):
+        caster_level = self.get_caster_level()
+        if caster_level == 0:
+            return None
+
+        text = "This character is a {}-level spellcaster. " \
+               "Its spellcasting ability is {} (spell save DC {}, {} to hit with spell attacks). " \
+               "This character has {} level {} spell slots which are regained after a short rest. " \
+               "It has the following spells {}:" \
+               .format(NUM_TO_ORDINAL[caster_level],
+                       ATTRIBUTES_ABBREVIATION_TO_FULL_WORD[self.casting_stat],
+                       self.owner.get_stat(self.casting_stat + '_dc'),
+                       num_plusser(self.owner.get_stat(self.casting_stat + '_attack')),
+                       self.get_max_spell_level(), WARLOCK_SLOTS[self.get_caster_level()],
+                       self.ready_style) + '\n'
+        # Cantrips
+        if len(self.spells_readied[0]) > 0:
+            text += 'Cantrips (at-will): ' + ', '.join(self.spells_readied[0])
+        for i in range(1, 10):
+            if len(self.spells_readied[i]) > 0 and self.spell_slots_table[caster_level][i] > 0:
+                # Pluralize 'slot' or not
+                if self.spell_slots_table[caster_level][i] == 1:
+                    text += '\n{} level: ' \
+                        .format(NUM_TO_ORDINAL[i], self.spell_slots_table[caster_level][i])
+                else:
+                    text += '\n{} level: ' \
                         .format(NUM_TO_ORDINAL[i], self.spell_slots_table[caster_level][i])
                 text += ', '.join(self.spells_readied[i])
         return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
@@ -3282,7 +3301,11 @@ class FeatureSpellcasting(CharacterFeature):
 
     def get_stat_block_entries(self, short=True):
         entries = []
-        entries.append(self.get_main_stat_block_entry(short=short))
+
+        if 'warlock' in self.tags:
+            entries.append(self.get_warlock_stat_block_entry(short=short))
+        else:
+            entries.append(self.get_main_stat_block_entry(short=short))
         if 'spellbook' in self.tags:
             entries.append(self.get_spellbook_entry())
 
@@ -3318,16 +3341,7 @@ class SpellAttackChillTouch(SpellAttack):
            "against you until the end of your next turn."
 
     def attack_dice(self):
-        hd = self.owner.get_hd()
-        if hd >= 17:
-            dice = 4
-        elif hd >= 11:
-            dice = 3
-        elif hd >= 5:
-            dice = 2
-        else:
-            dice = 1
-        return dice
+        return increment_from_hd(1, (5, 11, 17), self.owner.get_hd())
 
     def get_cr_factor(self):
         return CRFactor(CRFactor.ATTACK, damage=self.attack_dice()*4.5,
@@ -3337,7 +3351,35 @@ class SpellAttackChillTouch(SpellAttack):
         text = self.TEXT
         to_hit = num_plusser(self.spellcasting_feature.get_spell_to_hit())
         text = text.format(to_hit, self.attack_dice())
-        return StatBlockEntry('Chill Touch', 'attack', 1, text, subtitles=['cantrip'])
+        return StatBlockEntry('Chill Touch', 'attack', 1, text, subtitles=['cantrip', 'VS'])
+
+class SpellAttackEldritchBlast(SpellAttack):
+    TEXT_SINGLE = \
+        "A beam of crackling energy streaks toward a creature within range. " \
+        "Make a {} ranged spell attack against the target. " \
+        "On a hit, the target takes 1d10 force damage."
+
+    TEXT_MULTIPLE = \
+        "{} beams of crackling energy streak toward one or more creatures within range. " \
+        "You can direct the beams at the same target or at different ones. " \
+        "Make a ranged {} spell attack for each beam. " \
+        "On a hit, the target takes 1d10 force damage." \
+
+    def beams(self):
+        return increment_from_hd(1, (5, 11, 17), self.owner.get_hd())
+
+    def get_cr_factor(self):
+        return CRFactor(CRFactor.ATTACK, damage=self.beams()*5.5,
+                        to_hit=self.spellcasting_feature.get_spell_to_hit())
+
+    def get_stat_block_entry(self):
+        beams = self.beams()
+        to_hit = num_plusser(self.spellcasting_feature.get_spell_to_hit())
+        if beams > 1:
+            text = self.TEXT_MULTIPLE.format(NUM_TO_TEXT[beams].title(), to_hit)
+        else:
+            text = self.TEXT_SINGLE.format(to_hit)
+        return StatBlockEntry('Eldritch Blast', 'attack', 1, text, subtitles=['cantrip', 'VS'])
 
 
 # Below this point are classes for particular Character Features
@@ -3427,14 +3469,7 @@ class FeatureDragonborn(CharacterFeature):
     def get_stat_block_entries(self, short=True):
         entries = []
         hd = self.owner.get_hd()
-        if hd >= 16:
-            dmg_dice = 5
-        elif hd >= 11:
-            dmg_dice = 4
-        elif hd >= 6:
-            dmg_dice = 3
-        else:
-            dmg_dice = 2
+        dmg_dice = increment_from_hd(2, (6, 11, 16), hd)
         text = "When you use your breath weapon, each creature in a {} must make a DC {} {} saving throw. " \
                "A creature takes {}d6 {} damage on a failed save, and half as much damage on a successful one." \
             .format(FEATURE_DRAGONBORN_CHART[self.lineage_type][1], self.owner.get_stat('con_dc'),
