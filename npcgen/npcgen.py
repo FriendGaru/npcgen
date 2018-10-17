@@ -2604,7 +2604,7 @@ class Weapon(Attack):
         self.attack_type = ''
         self.range_short = 0
         self.range_long = 0
-        self.tags = {}
+        self.tags = set()
         self.num_targets = 1
 
         # Typically not used, but can be modified by other things
@@ -2738,6 +2738,10 @@ class Weapon(Attack):
         stat_block_entry = StatBlockEntry(title, 'attack', 0, text, subtitles=self.subtitles)
 
         return stat_block_entry
+
+    def add_tag(self, tag):
+        self.tags.add(tag)
+
 
 
 class Spell:
@@ -3272,6 +3276,7 @@ class FeatureMartialArts(CharacterFeature):
             debug_print("Martial Arts applied to {}, {}->{}".format(
                 weapon.int_name, weapon.dmg_dice_size, self.upgrade_damage_die))
             weapon.dmg_dice_size = self.upgrade_damage_die
+            weapon.add_tag('finesse')
             weapon.subtitles.append('Martial Arts')
         else:
             debug_print("Martial Arts not applied to {}".format(weapon.int_name))
