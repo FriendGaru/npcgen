@@ -381,7 +381,7 @@ def nice_list(data):
     a, b, and c
     a, b, c, and d
     """
-    return ", ".join(data[:-2] + [", and ".join(data[-2:])])
+    return ", ".join(data[:-2] + [" and ".join(data[-2:])])
 
 
 def random_string(length, rnd_instance=None):
@@ -3359,17 +3359,19 @@ class SpellAttackChillTouch(SpellAttack):
         text = text.format(to_hit, self.attack_dice())
         return StatBlockEntry('Chill Touch', 'attack', 1, text, subtitles=['cantrip', 'VS'])
 
+
 class SpellAttackEldritchBlast(SpellAttack):
     TEXT_SINGLE = \
-        "A beam of crackling energy streaks toward a creature within range. " \
-        "Make a {} ranged spell attack against the target. " \
-        "On a hit, the target takes 1d10 force damage."
+        "Ranged spell attack: {} to hit, range 120 ft., one target. " \
+        "Hit: 1d8 force damage.\n" \
+        "A beam of crackling energy streaks toward one creature within range."
 
     TEXT_MULTIPLE = \
+        "Ranged spell attack: {} to hit, range 120 ft., up to {} targets. " \
+        "Hit: 1d8 force damage.\n" \
         "{} beams of crackling energy streak toward one or more creatures within range. " \
         "You can direct the beams at the same target or at different ones. " \
-        "Make a ranged {} spell attack for each beam. " \
-        "On a hit, the target takes 1d10 force damage." \
+        "Make a ranged spell attack for each beam. "
 
     def beams(self):
         return increment_from_hd(1, (5, 11, 17), self.owner.get_hd())
@@ -3382,7 +3384,7 @@ class SpellAttackEldritchBlast(SpellAttack):
         beams = self.beams()
         to_hit = num_plusser(self.spellcasting_feature.get_spell_to_hit())
         if beams > 1:
-            text = self.TEXT_MULTIPLE.format(NUM_TO_TEXT[beams].title(), to_hit)
+            text = self.TEXT_MULTIPLE.format(to_hit, beams, NUM_TO_TEXT[beams].title())
         else:
             text = self.TEXT_SINGLE.format(to_hit)
         return StatBlockEntry('Eldritch Blast', 'attack', 1, text, subtitles=['cantrip', 'VS'])

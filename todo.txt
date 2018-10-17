@@ -13,4 +13,4 @@ natural_illusionist
 Ideally, should consolidate all of the various innate magic traits into one unified system, perhaps have it coordinate
 with the spellcasting system to prevent overlap
 
-
+nice_list isn't getting the Oxford comma right
