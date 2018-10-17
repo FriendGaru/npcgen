@@ -1,7 +1,6 @@
 import random
 import csv
 import itertools
-import math
 import string
 import collections
 from typing import Dict
@@ -12,7 +11,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 2
+DEBUG_LEVEL = 1
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
@@ -348,12 +347,6 @@ NUM_TIMES_TO_TEXT = {
 }
 
 DEFAULT_SPELL_WEIGHT = 1
-
-# Data for special traits
-MARTIAL_ARTS_DAMAGE = (
-    (-1, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10,)
-)
-
 
 # Random functions can accept an instance of random,
 # If they don't get one, they default to the global random
@@ -1071,20 +1064,6 @@ class NPCGenerator:
                     self.give_weapon(character, weapon)
             character.has_shield = loadout.shield
 
-    # Take a string, grab the correct CharacterFeatureFactory, and get the CharacterFeature
-    def build_character_feature(self, feature_string, character, seed, short, args_tup):
-        if feature_string == 'multiattack':
-            return FeatureMultiattack(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
-        elif feature_string == 'spellcasting':
-            return FeatureSpellcasting(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
-        elif feature_string == 'tinker':
-            return FeatureTinker(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
-        elif feature_string == 'dragonborn_feature':
-            return FeatureDragonborn(character=character, npc_gen=self, seed=seed, short=short, args_tup=args_tup)
-        else:
-            debug_print("'{}' has not been associated with CharacterFeature class!".format(feature_string), 0)
-            raise ValueError
-
     def new_character(self,
 
                       seed=None,
@@ -1143,20 +1122,21 @@ class NPCGenerator:
         # Get all the traits and features from the templates, have the factories instantiate them,
         # then give them to the new character
         for trait_name in itertools.chain(race_template.traits, class_template.traits):
+            debug_print('Trait: {}'.format(trait_name))
             trait_factory = self.traits[trait_name]
             assert isinstance(trait_factory, TraitFactory)
             trait_feature = trait_factory.get_character_feature(new_character, self, seed=seed, short=True, args_tup=())
             trait_feature.give_to_character(new_character)
-        for feature_name, feature_args in race_template.features.items():
-            feature_instance = self.build_character_feature(
-                feature_name, new_character, seed=seed, short=True, args_tup=feature_args)
-            feature_instance.give_to_character(new_character)
-        for feature_name, feature_args in class_template.features.items():
-            feature_instance = self.build_character_feature(
-                feature_name, new_character, seed=seed, short=True, args_tup=feature_args)
+        for feature_name, feature_args in itertools.chain((
+                race_template.features.items()), class_template.features.items()):
+            debug_print('Feature: {} args: {}'.format(feature_name, str(feature_args)), 3)
+            feature_class = get_character_feature_class(feature_name)
+            feature_instance = feature_class(
+                new_character, self, seed=seed, short=True, args_tup=feature_args)
             feature_instance.give_to_character(new_character)
 
         # Do the pre-attribute rolling first pass of features
+        debug_print('Begin features first_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
             feature.first_pass(new_character, self, seed)
@@ -1202,9 +1182,11 @@ class NPCGenerator:
         new_character.update_derived_stats()
 
         # Second and third passes for CharacterFeatures
+        debug_print('Begin features second_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
             feature.second_pass(new_character, self, seed)
+        debug_print('Begin features second_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
             feature.third_pass(new_character, self, seed)
@@ -1242,7 +1224,7 @@ class NPCGenerator:
             raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
 
     def get_options_dict(self):
-        options_dict = {}
+        options_dict = {}  # No, PyCharm, lots of stuff breaks if I rewrite it as a dict literal
         options_dict['race_options'] = self.get_options('race_choice')
         options_dict['class_options'] = self.get_options('class_choice')
         options_dict['attribute_roll_options'] = self.get_options('attribute_roll_method')
@@ -1653,6 +1635,10 @@ class Character:
     def get_stat(self, stat):
         return self.stats[stat]
 
+    # Used so often might as well give it it's own method
+    def get_hd(self):
+        return self.get_stat('hit_dice_num')
+
     def set_stat(self, stat, value):
         self.stats[stat] = value
 
@@ -1805,7 +1791,7 @@ class Character:
     # Replacement skills are completely random. Not ideal, but it's fine.
     # Should always give add_skill an rnd_instance, because you never know when it might need it for a replacement skill
     def add_skill(self, skill, expertise=False, allow_replacement=True, rnd_instance=None):
-        debug_print("Trying to add skill {}".format(skill), 3)
+        debug_print("add skill: {} expertise={}".format(skill, str(expertise)), 3)
         # Tools can have spaces in them, so they use underscores in the csv file
         # Make sure underscores have become spaces, first
         skill = skill.replace('_', ' ')
@@ -2034,7 +2020,8 @@ class Character:
         action_entries = []
         spellcasting_entries = []
         hidden_entries = []
-        attacks = []
+        attack_entries = []
+        reaction_entries = []
         for entry in all_block_entries:
             assert isinstance(entry, StatBlockEntry)
             if entry.get_visibility(self) <= trait_visibility:
@@ -2047,16 +2034,20 @@ class Character:
                 elif entry.get_category() == 'action':
                     action_entries.append((entry.get_title(self), entry.get_entry(self)))
                 elif entry.get_category() == 'attack':
-                    attacks.append((entry.get_title(self), entry.get_entry(self)))
+                    attack_entries.append((entry.get_title(self), entry.get_entry(self)))
+                elif entry.get_category() == 'reaction':
+                    reaction_entries.append((entry.get_title(self), entry.get_entry(self)))
             else:
                 hidden_entries.append(entry.get_title(self))
 
-        sb.attacks = attacks
+        sb.attacks = attack_entries
         sb.passive_traits = passive_entries
         sb.multiattack = multiattack_entries
         sb.actions = action_entries
         sb.spellcasting_traits = spellcasting_entries
+        sb.reactions = reaction_entries
         sb.hidden_traits = nice_list(hidden_entries)
+
 
         return sb
 
@@ -2154,7 +2145,7 @@ class StatBlock:
 # Character features are provided a reference to NPCGenerator, so that they can use functions that rely on its
 # reference dictionaries
 class CharacterFeature:
-    def __init__(self, character: 'Character', npc_gen: 'NPCGenerator', seed=None, short=True, args_tup=()):
+    def __init__(self):
         self.int_name = 'dummy'
 
     # Shouldn't need to be overriden, but can be if there needs to be some kind of merginge function
@@ -2291,7 +2282,7 @@ class TraitFactory:
 
 class FeatureTrait(CharacterFeature):
     def __init__(self, int_name, title, trait_type, text, visibility, tags):
-        super().__init__(character=None, npc_gen=None, seed=None, short=True, args_tup=())
+        super().__init__()
         self.int_name = int_name
         self.title = title
         self.trait_type = trait_type
@@ -2583,7 +2574,7 @@ class Armor:
     def sheet_display(self, owner):
         armor_name = self.display_name
         if self.enchantment:
-            armor_name = '{} {}'.format(num_plusser(self.enchantment))
+            armor_name = '{} {}'.format(self.display_name, num_plusser(self.enchantment))
         outstring = str(self.get_ac(owner)) + ' (' + armor_name
         if owner.has_shield:
             outstring += ', with shield'
@@ -2658,11 +2649,6 @@ class Weapon(Attack):
         if self.attack_type == 'melee':
             if 'finesse' in self.tags:
                 attack_stat = max(owner_str, owner_dex)
-            # Special martial arts case
-            elif 'martial_arts' in owner.character_tags and \
-                    ('monk' in self.tags or
-                     ('simple' in self.tags and '2h' not in self.tags and 'heavy' not in self.tags)):
-                attack_stat = max(owner_str, owner_dex)
             else:
                 attack_stat = owner_str
         elif self.attack_type == 'ranged':
@@ -2690,15 +2676,6 @@ class Weapon(Attack):
         dmg_dice_num, dmg_dice_size = self.dmg_dice_num, self.dmg_dice_size
         if use_versatile:
             dmg_dice_size += 2
-
-        # Check for Martial Arts special case
-        if 'martial_arts' in owner.character_tags:
-            if ('monk' in self.tags) or \
-                    (self.attack_type == 'melee' and 'simple' in self.tags
-                     and 'heavy' not in self.tags and '2h' not in self.tags):
-                if dmg_dice_num == 1 and dmg_dice_size < MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]:
-                    dmg_dice_size = MARTIAL_ARTS_DAMAGE[owner.get_stat('hit_dice_num')]
-                attack_stat = max(owner_str, owner_dex)
 
         avg_dmg = dmg_dice_size / 2 * dmg_dice_num + attack_stat
 
@@ -2926,7 +2903,7 @@ class LoadoutPool:
 
 class FeatureMultiattack(CharacterFeature):
     def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__(character, npc_gen, seed, short=True, args_tup=())
+        super().__init__()
         self.int_name = 'multiattack'
 
         self.multiattack_type = args_tup[0]
@@ -2951,13 +2928,11 @@ class FeatureMultiattack(CharacterFeature):
         # self.ranged_weapons = []
         # self.best_ranged_damage = 0
 
-
     def get_cr_factors(self, character: 'Character'):
         best_weapon_to_hit, best_weapon_dmg = character.get_best_weapon_hit_dmg()
         damage_per_round = best_weapon_dmg * self.attacks
         cr_factor = CRFactor('attack', to_hit=best_weapon_to_hit, damage=damage_per_round)
         return [cr_factor, ]
-
 
     def get_stat_block_entries(self, character: 'Character', short=True):
         entries = []
@@ -2970,7 +2945,7 @@ class FeatureMultiattack(CharacterFeature):
 
 class FeatureSpellcasting(CharacterFeature):
     def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__(character, npc_gen, seed, short=True, args_tup=())
+        super().__init__()
         self.int_name = 'spellcasting'
         sp_profile = npc_gen.spellcaster_profiles[args_tup[0]]
         assert isinstance(sp_profile, SpellCasterProfile)
@@ -3172,6 +3147,26 @@ class FeatureSpellcasting(CharacterFeature):
 
 
 # Below this point are classes for particular Character Features
+# If you add a new feature, you MUST update the get_character_feature_class method
+
+# Take a string, grab the correct CharacterFeature
+# Maybe a bit hacky, but it gets around the unresolved reference errors
+# feature_string is for how the feature will be referred to in class/race templates
+def get_character_feature_class(feature_string):
+    if feature_string == 'multiattack':
+        return FeatureMultiattack
+    elif feature_string == 'spellcasting':
+        return FeatureSpellcasting
+    elif feature_string == 'tinker':
+        return FeatureTinker
+    elif feature_string == 'dragonborn_feature':
+        return FeatureDragonborn
+    elif feature_string == 'martial_arts':
+        return FeatureMartialArts
+    else:
+        debug_print("'{}' has not been associated with CharacterFeature class!".format(feature_string), 0)
+        raise ValueError
+
 FEATURE_TINKER_OPTIONS = {
     'clockwork toy': 'This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. When placed on the ground, the toy moves 5 feet across the ground on each of your turns in a random direction. It makes noises as appropriate to the creature it represents.',
     'fire box': 'The device produces a miniature flame, which you can use to light a candle, torch, or campfire. Using the device requires your action.',
@@ -3181,7 +3176,7 @@ FEATURE_TINKER_OPTIONS = {
 
 class FeatureTinker(CharacterFeature):
     def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__(character, npc_gen, seed, short=True, args_tup=())
+        super().__init__()
         self.int_name = 'tinker'
         rnd_instance = random.Random(seed + self.int_name + 'init')
         self.choice = rnd_instance.choice(list(FEATURE_TINKER_OPTIONS.keys()))
@@ -3220,7 +3215,7 @@ FEATURE_DRAGONBORN_CHART = {
 
 class FeatureDragonborn(CharacterFeature):
     def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
-        super().__init__(character, npc_gen, seed, short=True, args_tup=())
+        super().__init__()
         self.int_name = 'dragonborn_feature'
         self.lineage_type = args_tup[0]
 
@@ -3246,3 +3241,48 @@ class FeatureDragonborn(CharacterFeature):
         breath_weapon_entry = StatBlockEntry('Breath Weapon', 'action', 0, text, subtitles=['1/short',])
         entries.append(breath_weapon_entry)
         return entries
+
+
+MARTIAL_ARTS_DAMAGE = (
+    (-1, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10,)
+)
+
+
+# Martial Arts works by going through a character's weapons and checking to see if the weapon can be "upgraded" to
+# a bigger die. If the weapon can be upgraded, it is, and a 'Martial Arts' subtitle is added.
+# TECHNICALLY martial arts shouldn't give finesse, but it basically does, so I'm just adding that tag to valid weapons
+# to allow dex to be used for attacks
+# I think it would only matter for sneak attack, which I'm not going to implement precisely anyways
+class FeatureMartialArts(CharacterFeature):
+    def __init__(self, character, npc_gen, seed, short=True, args_tup=()):
+        super().__init__()
+        self.upgrade_damage_die = MARTIAL_ARTS_DAMAGE[character.get_hd()]
+
+    @staticmethod
+    def is_monk_weapon(weapon: 'Weapon'):
+        if weapon.attack_type == 'melee':
+            if 'monk' in weapon.tags:
+                return True
+            elif 'simple' in weapon.tags and '2h' and 'heavy' not in weapon.tags:
+                return True
+        return False
+
+    def upgrade_weapon(self, weapon):
+        if weapon.dmg_dice_size < self.upgrade_damage_die:
+            debug_print("Martial Arts applied to {}, {}->{}".format(
+                weapon.int_name, weapon.dmg_dice_size, self.upgrade_damage_die))
+            weapon.dmg_dice_size = self.upgrade_damage_die
+            weapon.subtitles.append('Martial Arts')
+        else:
+            debug_print("Martial Arts not applied to {}".format(weapon.int_name))
+
+    def first_pass(self, character: 'Character', npc_gen: 'NPCGenerator', seed):
+        for weapon in character.weapons.values():
+            if self.is_monk_weapon(weapon):
+                self.upgrade_weapon(weapon)
+
+    def get_stat_block_entries(self, character: 'Character', short=True):
+        entry = StatBlockEntry('Martial Arts', 'passive', 1,
+                               'Damage scales to your level when using monk weapons.')
+        return [entry, ]
+

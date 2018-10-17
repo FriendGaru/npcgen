@@ -3,7 +3,7 @@ internal_name,display_name,priority_attributes,hd_size,saves,skills_fixed,skills
 @RANDOM,Random Warrior,,,,,,,,,,,
 soldier,,"str,con",8,con,athletics,"acrobatics,stealth,survival,intimidation",2,soldier,soldier,attack,multiattack:fighter,
 archer,,"dex,con",8,dex,athletics,"acrobatics,stealth,survival,intimidation",2,archer,light_med,attack,multiattack:fighter,
-monk,,"dex,wis",8,"dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,monk,attack,multiattack:fighter,"martial_arts,monk_defense"
+monk,,"dex,wis",8,"dex,con","acrobatics,athletics","stealth,insight,survival",1,monk,monk,attack,multiattack:fighter;martial_arts,monk_defense
 bandit_captain,,"dex,con",10,"str,dex,wis","athletics,deception","acrobatics,persuasion,stealth",1,dex_fighter,light_med,attack,multiattack:fighter,parry
 brute,,"str,con",10,"str,con","athletics,intimidation","acrobatics,stealth,survival",1,brute,light_med,attack,multiattack:fighter,parry
 ,,,,,,,,,,,,
