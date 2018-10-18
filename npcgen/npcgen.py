@@ -11,7 +11,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 0
+DEBUG_LEVEL = 1
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
@@ -1275,13 +1275,15 @@ class NPCGenerator:
         is_valid = True
         clean_dict = {}
 
-        if 'race_choice' in request_dict.keys() and request_dict['race_choice'] in self.race_keys:
+        if 'race_choice' in request_dict.keys() \
+                and (request_dict['race_choice'] in self.race_keys or request_dict['race_choice'] == 'random_race'):
             clean_dict['race_choice'] = request_dict['race_choice']
         else:
             is_valid = False
             clean_dict['race_choice'] = self.get_random_option('race')
 
-        if 'class_choice' in request_dict.keys() and request_dict['class_choice'] in self.class_keys:
+        if 'class_choice' in request_dict.keys() \
+                and (request_dict['class_choice'] in self.class_keys or request_dict['class_choice'] == 'random_class'):
             clean_dict['class_choice'] = request_dict['class_choice']
         else:
             is_valid = False
@@ -3141,7 +3143,6 @@ class FeatureSpellcasting(CharacterFeature):
                     spell_selections_remaining -= 1
 
             spell_selections[spell_level] = spell_selections_for_level
-        print(spell_selections)
         self.spell_choices = spell_selections
 
     def get_spell_dc(self):
