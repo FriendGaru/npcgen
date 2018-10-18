@@ -33,7 +33,7 @@ elf_wood,,"dex:2,wis:1",walk:35,,,"common,elvish",,"darkvision,keen_senses,fey_a
 ,,,,,,,,
 @CATEGORY,Gnomes,,,,,,,
 @RANDOM,Random Gnome,,,,,,,
-gnome_deep_mtf,,"dex:1,int:2",walk:25,,small,"common,gnomish,undercommon",,"superior_darkvision,gnome_cunning,stone_camoflage"
+gnome_deep,,"dex:1,int:2",walk:25,,small,"common,gnomish,undercommon",,"superior_darkvision,gnome_cunning,stone_camoflage"
 gnome_forest,,"dex:1,int:2",walk:25,,small,"common,gnomish",,"darkvision,gnome_cunning,natural_illusionist,speak_with_small_beasts"
 gnome_rock,,"con:1,int:2",walk:25,,small,"common,gnomish",tinker,"darkvision,gnome_cunning,artificers_lore"
 ,,,,,,,,
