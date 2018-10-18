@@ -475,13 +475,17 @@ class NPCGenerator:
         # and can be used for easily grabbing valid random options or for validating requests
 
         self.race_templates = {}
-        self.race_options = []  # For the HTML drop down boxes, includes categories for sorting
+        # For the HTML drop down boxes, includes categories for sorting
+        # Starts with super random option, which isn't reflected in the csv files
+        self.race_options = [('random_race', 'Random Race'), ]
         self.race_keys = []
         self.race_random_categories = {}
         self.build_race_templates_from_csv(race_templates_file_loc)
 
         self.class_templates = {}
-        self.class_options = []  # For the HTML drop down boxes, includes categories for sorting
+        # For the HTML drop down boxes, includes categories for sorting
+        # Starts with super random option, which isn't reflected in the csv files
+        self.class_options = [('random_class', 'Random Class'), ]
         self.class_keys = []
         self.class_random_categories = {}
         self.build_class_templates_from_csv(class_templates_file_loc)
@@ -997,10 +1001,7 @@ class NPCGenerator:
             character.add_language(language)
 
     # Applies everything EXCEPT features/traits
-    def apply_class_template(self, character: 'Character', class_template, seed=None):
-
-        if not seed:
-            seed = random_string(10)
+    def apply_class_template(self, character: 'Character', class_template, seed):
 
         if type(class_template) == str:
             class_template = self.class_templates[class_template]
@@ -1016,7 +1017,7 @@ class NPCGenerator:
         randomized_skills = rnd_instance.sample(class_template.skills_random, class_template.num_random_skills)
         skills_to_add = itertools.chain(fixed_skills, randomized_skills)
         for skill in skills_to_add:
-            character.add_skill(skill, rnd_instance=rnd_instance)
+            character.add_skill(skill)
 
         for save in class_template.saves:
             character.saves.add(save)
@@ -1029,14 +1030,14 @@ class NPCGenerator:
 
         if class_template.armors_loadout_pool:
             loadout_pool = self.armors_loadout_pools[class_template.armors_loadout_pool]
-            loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'armorsloadout'))
+            loadout = loadout_pool.get_random_loadout(seed=seed)
             if loadout.armors:
                 for armor in loadout.armors:
                     self.give_armor(character, armor)
 
         if class_template.weapons_loadout_pool:
             loadout_pool = self.weapons_loadout_pools[class_template.weapons_loadout_pool]
-            loadout = loadout_pool.get_random_loadout(rnd_instance=random.Random(seed + 'weaponsloadout'))
+            loadout = loadout_pool.get_random_loadout(seed=seed)
             if loadout.weapons:
                 for weapon in loadout.weapons:
                     self.give_weapon(character, weapon)
@@ -1067,12 +1068,20 @@ class NPCGenerator:
                     .format(race_choice, class_choice, hit_dice_num, hit_dice_size, bonus_hd,
                             seed, attribute_roll_method), 1)
 
-        rnd_instance = random.Random(seed + 'random_race')
-        if race_choice in self.race_random_categories:
-            race_choice = rnd_instance.choice(self.race_random_categories[race_choice])
+        # This is for the super random option, which is anything at all
+        if race_choice == 'random_race':
+            rnd_instance = random.Random(seed + 'random_race')
+            race_choice = rnd_instance.choice(self.race_keys)
+        if class_choice == 'random_class':
+            rnd_instance = random.Random(seed + 'random_class')
+            class_choice = rnd_instance.choice(self.class_keys)
 
-        rnd_instance = random.Random(seed + 'random_class')
+        # This is for the category specific random option s
+        if race_choice in self.race_random_categories:
+            rnd_instance = random.Random(seed + 'random_race_from_category')
+            race_choice = rnd_instance.choice(self.race_random_categories[race_choice])
         if class_choice in self.class_random_categories:
+            rnd_instance = random.Random(seed + 'random_class_from_category')
             class_choice = rnd_instance.choice(self.class_random_categories[class_choice])
 
         # Sanity checks
@@ -1128,8 +1137,7 @@ class NPCGenerator:
                                       min_total=min_total,
                                       no_attribute_swapping=no_attribute_swapping,
                                       force_optimize=force_optimize,
-                                      fixed_rolls=attribute_roll_fixed_vals,
-                                      rnd_instance=rnd_instance, )
+                                      fixed_rolls=attribute_roll_fixed_vals,)
 
         if hit_dice_size:
             if hit_dice_size == 'Default' and class_template.hd_size:
@@ -1148,13 +1156,9 @@ class NPCGenerator:
         else:
             new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
 
-        rnd_instance = random.Random(seed + 'asi')
         if not no_asi:
-            new_character.generate_asi_progression(priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
-                                                   other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT,
-                                                   rnd_instance=rnd_instance)
-            new_character.apply_asi_progression(hd_per_increase=ASI_HD_PER_INCREASE,
-                                                points_per_increase=ASI_POINTS_PER_INCREASE)
+            new_character.generate_asi_progression()
+            new_character.apply_asi_progression()
 
         new_character.update_derived_stats()
 
@@ -1174,7 +1178,7 @@ class NPCGenerator:
         rnd_instance = random.Random(seed + 'armor')
         self.give_armor(new_character, 'unarmored')
         # Remember, speeds have to come after armor selection
-        new_character.choose_armors(rnd_instance=rnd_instance)
+        new_character.choose_armors()
 
         new_character.update_speeds()
 
@@ -1393,11 +1397,9 @@ class Character:
                         rerolls_allowed=0, min_total=0, fixed_rolls=(),
                         no_attribute_swapping=False,
                         force_optimize=False,
-                        no_racial_bonus=False,
-                        rnd_instance=None, ):
+                        no_racial_bonus=False,):
 
-        if not rnd_instance:
-            rnd_instance = random
+        rnd_instance = random.Random(self.seed + 'attribute rolling')
 
         attribute_dict = {}
 
@@ -1486,11 +1488,9 @@ class Character:
                                  priority_attribute_weight=ASI_PROGRESSION_PRIORITY_WEIGHT,
                                  other_attribute_weight=ASI_PROGRESSION_OTHER_WEIGHT,
                                  priority_attribute_subsequent_scale=ASI_PROGRESSION_PRIORITY_SUBSEQUENT_SCALE,
-                                 asi_attribute_cap=ASI_DEFAULT_ATTRIBUTE_CAP,
-                                 rnd_instance=None):
+                                 asi_attribute_cap=ASI_DEFAULT_ATTRIBUTE_CAP,):
 
-        if not rnd_instance:
-            rnd_instance = random
+        rnd_instance = random.Random(self.seed + 'generateasiprogression')
 
         asi_progression = []
 
@@ -1784,8 +1784,9 @@ class Character:
     # already has it
     # Replacement skills are completely random. Not ideal, but it's fine.
     # Should always give add_skill an rnd_instance, because you never know when it might need it for a replacement skill
-    def add_skill(self, skill, expertise=False, allow_replacement=True, rnd_instance=None):
+    def add_skill(self, skill, expertise=False, allow_replacement=True):
         debug_print("add skill: {} expertise={}".format(skill, str(expertise)), 3)
+        rnd_instance = random.Random(self.seed + skill + str(expertise) + str(allow_replacement) + 'addskill')
         # Tools can have spaces in them, so they use underscores in the csv file
         # Make sure underscores have become spaces, first
         skill = skill.replace('_', ' ')
@@ -1796,20 +1797,20 @@ class Character:
                     self.skills_expertise.add(skill)
             elif skill in self.skills and not expertise:
                 replacement_skill = rnd_instance.choice(self.get_non_proficient_skills())
-                self.add_skill(replacement_skill, rnd_instance=rnd_instance)
+                self.add_skill(replacement_skill)
             elif expertise and skill not in self.skills_expertise:
                 self.skills_expertise.add(skill)
                 if allow_replacement:
                     if not rnd_instance:
                         rnd_instance = random.Random()
                     replacement_skill = rnd_instance.choice(self.get_non_proficient_skills())
-                    self.add_skill(replacement_skill, rnd_instance=rnd_instance)
+                    self.add_skill(replacement_skill)
             elif expertise and skill in self.skills_expertise:
                 if allow_replacement:
                     if not rnd_instance:
                         rnd_instance = random.Random()
                     replacement_skill = rnd_instance.choice(self.get_non_expertise_skills())
-                    self.add_skill(replacement_skill, expertise=True, rnd_instance=rnd_instance)
+                    self.add_skill(replacement_skill, expertise=True)
             else:
                 debug_print("!!!ERROR!!! add_skill method screwed up and could not add skill {} expertise={}"
                             .format(skill, str(expertise)))
@@ -1851,10 +1852,9 @@ class Character:
         if condition_immunity not in self.condition_immunities:
             self.condition_immunities.append(condition_immunity)
 
-    def choose_armors(self, rnd_instance=None):
+    def choose_armors(self):
 
-        if not rnd_instance:
-            rnd_instance = random
+        rnd_instance = random.Random(self.seed + 'choosearmor')
 
         best_ac_armors = []
         # First check for AC
@@ -2328,25 +2328,25 @@ class FeatureTrait(CharacterFeature):
         if 'skill_proficiency' in self.tags:
             for skill in self.tags['skill_proficiency']:
                 skill = skill.replace('_', ' ')
-                self.owner.add_skill(skill, rnd_instance=rnd_instance)
+                self.owner.add_skill(skill)
 
         if 'skill_random' in self.tags:
             num_random_skills = int(self.tags['skill_random'][0])
             for i in range(num_random_skills):
                 if len(self.owner.get_non_proficient_skills()) > 0:
                     random_skill = rnd_instance.choice(sorted(list(SKILLS.keys())))
-                    self.owner.add_skill(random_skill, rnd_instance=rnd_instance)
+                    self.owner.add_skill(random_skill)
 
         if 'expertise_random' in self.tags:
             num_expertise = int(self.tags['expertise_random'][0])
             expertise_choices = rnd_instance.sample(self.owner.skills, num_expertise)
             for choice in expertise_choices:
-                self.owner.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
+                self.owner.add_skill(choice, expertise=True)
 
         if 'expertise_fixed' in self.tags:
             expertise_choices = self.tags['expertise_random']
             for choice in expertise_choices:
-                self.owner.add_skill(choice, expertise=True, rnd_instance=rnd_instance)
+                self.owner.add_skill(choice, expertise=True)
 
         if 'damage_immunity' in self.tags:
             for entry in self.tags['damage_immunity']:
@@ -2865,9 +2865,11 @@ class LoadoutPool:
         self.loadouts.append(loadout)
         self.weights.append(weight)
 
-    def get_random_loadout(self, rnd_instance=None):
-        if not rnd_instance:
+    def get_random_loadout(self, seed=None):
+        if not seed:
             rnd_instance = random
+        else:
+            rnd_instance = random.Random(seed + self.name + 'getrandomloadout')
 
         return rnd_instance.choices(self.loadouts, self.weights)[0]
 
@@ -3466,7 +3468,7 @@ class FeatureTinker(CharacterFeature):
 
     def first_pass(self):
         rnd_instance = random.Random(self.seed + self.int_name + 'first')
-        self.owner.add_skill('tinkers_tools', rnd_instance=rnd_instance)
+        self.owner.add_skill('tinkers_tools')
 
     def get_stat_block_entries(self, short=True):
         entries = []
