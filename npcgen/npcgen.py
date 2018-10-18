@@ -562,8 +562,8 @@ class NPCGenerator:
                     else:
                         new_trait_factory.display_name = line['internal_name'].replace('_', ' ').title()
 
-                    if line['recharge']:
-                        new_trait_factory.recharge = line['recharge']
+                    if line['subtitle']:
+                        new_trait_factory.recharge = line['subtitle']
 
                     new_trait_factory.trait_type = line['trait_type']
 
@@ -573,10 +573,6 @@ class NPCGenerator:
                         new_trait_factory.visibility = 0
 
                     new_trait_factory.text = line['text'].replace('\\n', '\n\t')
-                    if line['text_short']:
-                        new_trait_factory.text_short = line['text_short'].replace('\\n', '\n\t')
-                    else:
-                        new_trait_factory.text_short = new_trait_factory.text
 
                     new_trait_factory.tags = csv_tag_reader(line['tags'])
 
@@ -1111,7 +1107,7 @@ class NPCGenerator:
             debug_print('Trait: {}'.format(trait_name))
             trait_factory = self.traits[trait_name]
             assert isinstance(trait_factory, TraitFactory)
-            trait_feature = trait_factory.get_character_feature(new_character, short=True)
+            trait_feature = trait_factory.get_character_feature(new_character)
             trait_feature.give_to_owner()
         for feature_name, feature_args in itertools.chain((
                 race_template.features.items()), class_template.features.items()):
@@ -2150,7 +2146,7 @@ class CharacterFeature:
     # Randomization and initialization stuff that is not dependent on character stats should happen duing the features's
     # __init__ method.
     # At this point, the only reliable piece of info about the character is how many hd it will have
-    def __init__(self, owner: 'Character', short_stat_block_entries=True):
+    def __init__(self, owner: 'Character'):
         self.int_name = 'dummy'
         self.owner = owner
         self.npc_gen = self.owner.npc_gen
@@ -2159,7 +2155,6 @@ class CharacterFeature:
         self.seed = self.owner.seed
         self.stat_block_entries = []
         self.cr_factors = []
-        self.short = short_stat_block_entries
 
     def __repr__(self):
         return '<Character Feature: {}>'.format(self.int_name)
@@ -2261,7 +2256,6 @@ class StatBlockEntry:
         return ', '.join(self.subtitles)
 
     # The part that is typically in bold with a period at the end.
-    # When using short statblock versions, expect (1/short), etc. for abilities that recharge on a short rest
     def get_title(self, include_subtitles=True):
         if include_subtitles and self.subtitles:
             return '{} ({})'.format(self.title, ', '.join(self.subtitles))
@@ -2298,40 +2292,31 @@ class TraitFactory:
     def __init__(self):
         self.int_name = ''
         self.display_name = ''
-        self.recharge = ''
+        self.subtitle = ''
         self.trait_type = 'hidden'
-        self.text_long = ''
-        self.text_short = ''
+        self.text = ''
         self.visibility = 0
         self.tags = {}
 
-    def get_character_feature(self, character, short=True):
-        if short:
-            text = self.text_short
-        else:
-            text = self.text_long
-
-        if short and self.recharge:
-            title = "{} ({})".format(self.display_name, self.recharge)
-        else:
-            title = self.display_name
-
+    def get_character_feature(self, character):
         return FeatureTrait(
             owner=character,
             int_name=self.int_name,
-            title=title,
+            title=self.display_name,
+            subtitle=self.subtitle,
             trait_type=self.trait_type,
-            text=text,
+            text=self.text,
             visibility=self.visibility,
             tags=self.tags,
         )
 
 
 class FeatureTrait(CharacterFeature):
-    def __init__(self, owner, int_name, title, trait_type, text, visibility, tags, short=True):
-        super().__init__(owner, short_stat_block_entries=short)
+    def __init__(self, owner, int_name, title, subtitle, trait_type, text, visibility, tags):
+        super().__init__(owner)
         self.int_name = int_name
         self.title = title
+        self.subtitle = subtitle
         self.trait_type = trait_type
         self.text = text
         self.visibility = visibility
@@ -2442,7 +2427,7 @@ class FeatureTrait(CharacterFeature):
             factors_list.append(cr_factor)
         return factors_list
 
-    def get_stat_block_entries(self, short=True):
+    def get_stat_block_entries(self):
         text = self.text.format(**self.owner.stats)
         sb_entry = StatBlockEntry(
             title=self.title, text=text, category=self.trait_type, visibility=self.visibility, )
@@ -2950,7 +2935,7 @@ class FeatureMultiattack(CharacterFeature):
         cr_factor = CRFactor(CRFactor.ATTACK, to_hit=best_weapon_to_hit, damage=damage_per_round)
         return [cr_factor, ]
 
-    def get_stat_block_entries(self, short=True):
+    def get_stat_block_entries(self):
         entries = []
         if self.attacks > 1:
             main_entry = StatBlockEntry(
@@ -3311,7 +3296,7 @@ class FeatureSpellcasting(CharacterFeature):
         if 'eldritch blast' in self.spells_readied_set:
             self.spell_attacks.append(SpellAttackEldritchBlast(self))
 
-    def get_main_stat_block_entry(self, short=True):
+    def get_main_stat_block_entry(self):
         caster_level = self.get_caster_level()
         if caster_level == 0:
             return None
@@ -3338,7 +3323,7 @@ class FeatureSpellcasting(CharacterFeature):
                 text += ', '.join(self.spells_readied[i])
         return StatBlockEntry('Spellcasting', 'spellcasting', 0, text)
 
-    def get_warlock_stat_block_entry(self, short=True):
+    def get_warlock_stat_block_entry(self):
         caster_level = self.get_caster_level()
         if caster_level == 0:
             return None
@@ -3376,7 +3361,8 @@ class FeatureSpellcasting(CharacterFeature):
             text = "You have a spellbook containing your readied spells."
         return StatBlockEntry('Spellbook', 'spellcasting', 0, text)
 
-    def get_shield_entry(self):
+    @staticmethod
+    def get_shield_entry():
         text = "When you are hit by an attack or targeted by the magic missile spell, " \
                "an invisible barrier of magical force appears and protects you. " \
                "Until the start of your next turn, you have a +5 bonus to AC, " \
@@ -3398,9 +3384,9 @@ class FeatureSpellcasting(CharacterFeature):
 
         # Stat block entries
         if 'warlock' in self.tags:
-            self.add_stat_block_entry(self.get_warlock_stat_block_entry(short=self.short))
+            self.add_stat_block_entry(self.get_warlock_stat_block_entry())
         else:
-            self.add_stat_block_entry(self.get_main_stat_block_entry(short=self.short))
+            self.add_stat_block_entry(self.get_main_stat_block_entry())
         if 'spellbook' in self.tags:
             self.add_stat_block_entry(self.get_spellbook_entry())
 
@@ -3417,7 +3403,6 @@ class SpellAttack:
     def __init__(self, spellcasting_feature: 'FeatureSpellcasting'):
         self.spellcasting_feature = spellcasting_feature
         self.owner = self.spellcasting_feature.owner
-
 
     def get_stat_block_entry(self):
         pass
@@ -3500,6 +3485,7 @@ def get_character_feature_class(feature_string):
         debug_print("'{}' has not been associated with CharacterFeature class!".format(feature_string), 0)
         raise ValueError
 
+
 FEATURE_TINKER_OPTIONS = {
     'clockwork toy':
         'This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. '
@@ -3526,15 +3512,16 @@ class FeatureTinker(CharacterFeature):
         self.owner.add_skill('tinkers_tools')
 
     def build_cr_factors_and_stat_block_entries(self):
-        self.add_stat_block_entry(StatBlockEntry('Tinker', 'passive', 2,
-                                      "You have proficiency with artisan's tools (tinker's tools). Using those tools, "
-                                      "you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork "
-                                      "device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you "
-                                      "spend 1 hour repairing it to keep the device functioning), or when you use your "
-                                      "action to dismantle it; at that time, you can reclaim the materials used to "
-                                      "create it. You can have up to three such devices active at a time."))
-        self.add_stat_block_entry(StatBlockEntry(self.choice.title(), 'passive', 0,
-                                      FEATURE_TINKER_OPTIONS[self.choice]))
+        self.add_stat_block_entry(StatBlockEntry(
+            'Tinker', 'passive', 2,
+            "You have proficiency with artisan's tools (tinker's tools). Using those tools, "
+            "you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork "
+            "device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you "
+            "spend 1 hour repairing it to keep the device functioning), or when you use your "
+            "action to dismantle it; at that time, you can reclaim the materials used to "
+            "create it. You can have up to three such devices active at a time."))
+        self.add_stat_block_entry(StatBlockEntry(
+            self.choice.title(), 'passive', 0, FEATURE_TINKER_OPTIONS[self.choice]))
 
 
 FEATURE_DRAGONBORN_CHART = {
