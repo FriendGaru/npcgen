@@ -1178,6 +1178,12 @@ class NPCGenerator:
 
         new_character.update_speeds()
 
+        # Fourth pass
+        debug_print('Begin features second_pass', 2)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.fourth_pass()
+
         debug_print('Build success!', 1)
         return new_character
 
@@ -2136,6 +2142,9 @@ class StatBlock:
 # Character features are provided a reference to NPCGenerator, so that they can use functions that rely on its
 # reference dictionaries
 class CharacterFeature:
+    # Randomization and initialization stuff that is not dependent on character stats should happen duing the features's
+    # __init__ method.
+    # At this point, the only reliable piece of info about the character is how many hd it will have
     def __init__(self, owner: 'Character'):
         self.int_name = 'dummy'
         self.owner = owner
@@ -2144,33 +2153,42 @@ class CharacterFeature:
             "Character Feature:{} couldn't find NPCGenerator on owner!".format(self.__class__)
         self.seed = self.owner.seed
 
-    # Shouldn't need to be overriden, but can be if there needs to be some kind of merging function
-    # This could definitely be moved into the __init__ function, but I figured making it explicit would be more clearn,
-    # since in the future there may be some features that
+    # This method is called after initialization, when it's time to assign the feature to the character
+    # This should only be overriden if the function wants to do some sort of merging with other similar features
+    # Some kind of innate magic, for example, might want to check if there's already an innate magic feature
+    # and if so merge with it, rather than having two
+    # This could definitely be moved into the __init__ function, but I figured making it explicit would be more
+    # easily understood
     def give_to_owner(self):
         self.owner.add_character_feature(self)
 
     # first_pass() is called just after race/class templates have been applied,
     # before attributes are rolled or ASI applied
     # At this point, hit dice are known but no attributes or derived stats have been set
-    # Feature should call this method if wants to affect how a character rolls for attributes or generates basic stats
+    # A feature should call this method if wants to affect how a character rolls for attributes or generates basic stats
     # or if it can figure out everything it wants using ONLY hit dice
     def first_pass(self):
         pass
 
     # second_pass() is called after attributes have been rolled and stats derived
     # At this point, the bulk of stats have been set
-    # This is where most action should happen
-    # However, a CharacterFeature cannot rely on other features to have gotten their shit together by this point
-    # Basically, any feature that does stuff that relies on character stats
-    #  but not other features should do their stuff here
+    # Features that want to modify other features but need to take into account character stats should act here
     def second_pass(self):
         pass
 
-    # third_pass() is called right after second_pass()
-    # At this point, a CharacterFeature can expect other CharacterFeatures to have their shit mostly together
-    # Character features that depend on other features or modify other features can do their stuff here
+    # third_pass() is the 'main' pass
+    # This is where most action should happen
+    # At this point features that want to modify other features have already done their thing
+    # However, a CharacterFeature cannot rely on other features to have gotten their shit together by this point
     def third_pass(self):
+        pass
+
+    # fourth_pass() is called right before the character is finished building
+    # At this point, a CharacterFeature can expect other CharacterFeatures to have their shit together
+    # Character features that depend on other features or modify other features can do their stuff here
+    # Mainly, this should be used for things that want to make last minute decisions about CR or stat blocks
+    # By this point armor and speeds have already been set
+    def fourth_pass(self):
         pass
 
     # If the feature should impact the character's CR calculations, this should be overriden to provide an appropriate
@@ -2376,7 +2394,7 @@ class FeatureTrait(CharacterFeature):
                 self.owner.add_language(language)
 
     # Traits shouldn't need to do anything on the second pass
-    def second_pass(self):
+    def third_pass(self):
         pass
 
     def get_cr_factors(self):
@@ -2998,6 +3016,19 @@ class FeatureSpellcasting(CharacterFeature):
         assert isinstance(spell_obj, Spell), "add_free_spell(): Problem finding spell {}".format(spell_name)
         self.free_spells[spell_obj.level].append(spell_name)
 
+    def add_free_spells(self, spells):
+        for spell in spells:
+            self.add_free_spell(spell)
+
+    def add_free_spells_from_spell_list(self, num_spells, spell_list_name):
+        rnd_instance = random.Random(self.seed + spell_list_name + 'addfreespellsfromlist')
+        spell_list = self.npc_gen.spell_lists[spell_list_name]
+        spell_options = list(spell_list.spells.keys())
+        rnd_instance.shuffle(spell_options)
+        while num_spells > 0 and len(spell_options) > 0:
+            self.add_free_spell(spell_options.pop(0))
+            num_spells -= 1
+
     def add_spell_list(self, spell_list, weight=DEFAULT_SPELL_LIST_WEIGHT):
         if spell_list in self.spell_lists.keys():
             debug_print('Adding spell list "{}" to spellcasting feature, but already present. Overwriting weight.')
@@ -3202,7 +3233,7 @@ class FeatureSpellcasting(CharacterFeature):
 
     # Hypothetically, other features might want to do something that affects spellcasting in the first pass,
     # so we do all the big stuff in the second pass
-    def second_pass(self):
+    def third_pass(self):
         self.set_spell_slots()
         self.select_readied_spells()
 
