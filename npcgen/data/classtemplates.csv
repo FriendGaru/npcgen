@@ -22,6 +22,8 @@ transmuter,,"int,con",6,int,arcana,"religion,insight,nature,history",2,mage,mage
 ,,,,,,,,,,,,
 @CATEGORY,Divines,,,,,,,,,,,
 priest,,"wis,cha",6,wis,religion,"arcana,persuasion,medicine,insight",2,mage,mage,caster,spellcasting:priest,
+cleric,,"wis,cha",8,"wis,cha",religion,"arcana,persuasion,medicine,insight",3,mage,mage,,spellcasting:cleric;cleric_domain:random,
+cleric_war,War Cleric,"wis,cha",8,"wis,cha",religion,"arcana,persuasion,medicine,insight",4,mage,mage,,spellcasting:cleric;cleric_domain:war,
 druid,,"wis,cha",6,"wis,dex","nature,herbalism_kit","survival,arcana,medicine",2,mage,mage,caster,spellcasting:druid,
 ,,,,,,,,,,,,
 @CATEGORY,Eldritch,,,,,,,,,,,

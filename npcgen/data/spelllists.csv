@@ -18,3 +18,13 @@ ranger,ranger,,,,,,,restricted
 healing,,,,,"cure wounds,healing word,mass cure wounds,heal",,,restricted
 warlock,warlock,,,,,,,restricted
 eldritch_blast,,,,,eldritch blast,,,restricted
+domain_arcana,,,,,"detect magic,magic missile,magic weapon,nystul's magic aura,dispel magic,magic circle,arcane eye,leomund's secret chest,planar binding,teleportation circle",,,
+domain_forge,,,,,"identify,searing smite,heat metal,magic weapon,elemental weapon,protection from energy,fabricate,wall of fire,animate objects,creation",,,
+domain_grave,,,,,"bane,false life,gentle repose,ray of enfeeblement,revivify,vampiric touch,blight,death ward,antilife shell,raise dead",,,
+domain_knowledge,,,,,"command,identify,augury,suggestion,nondetection,speak with dead,arcane eye,confusion,legend lore,scrying",,,
+domain_life,,,,,"bless,cure wounds,lesser restoration,spiritual weapon,beacon of hope,revivify,death ward,guardian of faith,mass cure wounds,raise dead",,,
+domain_light,,,,,"burning hands,faerie fire,flaming sphere,scorching ray,daylight,fireball,guardian of faith,wall of fire,flame strike,scrying",,,
+domain_nature,,,,,"animal friendship,speak with animals,barkskin,spike growth,plant growth,wind wall,dominate beast,grasping vine,insect plague,tree stride",,,
+domain_tempest,,,,,"fog cloud,thunderwave,gust of wind,shatter,call lightning,sleet storm,control water,ice storm,destructive wave,insect plague",,,
+domain_trickery,,,,,"charm person,disguise self,mirror image,pass without trace,blink,dispel magic,dimension door,polymorph,dominate person,modify memory",,,
+domain_war,,,,,"divine favor,shield of faith,magic weapon,spiritual weapon,crusader's mantle,spirit guardians,freedom of movement,stoneskin,flame strike,hold monster",,,

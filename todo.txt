@@ -14,3 +14,7 @@ Ideally, should consolidate all of the various innate magic traits into one unif
 with the spellcasting system to prevent overlap
 
 nice_list isn't getting the Oxford comma right
+
+supporting verbose trait text is a waste of time, let's just forget about it and get rid of all the stuff for it
+
+need to clean up free spells for spellcasting profiles

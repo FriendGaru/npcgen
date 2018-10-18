@@ -11,7 +11,7 @@ import pkg_resources as pkg
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 1
+DEBUG_LEVEL = 0
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
@@ -40,7 +40,7 @@ STATS_ATTRIBUTES = ('str', 'dex', 'con', 'int', 'wis', 'cha',)
 DEFAULT_ATTRIBUTE_VALUE = 8
 ATTRIBUTES_ABBREVIATION_TO_FULL_WORD: Dict[str, str] = {
     'str': 'Strength', 'dex': 'Dexterity', 'con': 'Constitution',
-    'int': 'Intelligence', 'wis': 'Wisdom', 'cha': ' Charisma',
+    'int': 'Intelligence', 'wis': 'Wisdom', 'cha': 'Charisma',
 }
 
 STATS_BASE = {
@@ -763,7 +763,7 @@ class NPCGenerator:
                         continue
 
                     new_spellcaster_profile = SpellCasterProfile()
-                    new_spellcaster_profile.intName = line['internal_name']
+                    new_spellcaster_profile.int_name = line['internal_name']
                     new_spellcaster_profile.casting_stat = line['casting_stat']
                     new_spellcaster_profile.ready_style = line['ready_style']
 
@@ -790,7 +790,7 @@ class NPCGenerator:
                     if line['free_spell_lists']:
                         new_spellcaster_profile.free_spell_lists = line['free_spell_lists'].replace(" ", "").split(',')
                     else:
-                        new_spellcaster_profile.free_spell_lists = None
+                        new_spellcaster_profile.free_spell_lists = []
 
                     new_spell_lists_dict = {}
                     for rawEntry in line['spell_lists'].replace(" ", "").split(','):
@@ -807,7 +807,7 @@ class NPCGenerator:
                     # In the future, may add support for nonstandard slot progressions, like warlock
                     new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
 
-                    self.spellcaster_profiles[new_spellcaster_profile.intName] = new_spellcaster_profile
+                    self.spellcaster_profiles[new_spellcaster_profile.int_name] = new_spellcaster_profile
 
                 except (ValueError, TypeError):
                     debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
@@ -1129,7 +1129,6 @@ class NPCGenerator:
 
         # Note, for floating attributes bonuses like half-elves to apply, race traits need to be applied before
         # Rolling attributes
-        rnd_instance = random.Random(seed + 'attributes')
         attribute_roll_params = ROLL_METHODS[attribute_roll_method][1]
         attribute_roll_fixed_vals = ROLL_METHODS[attribute_roll_method][2]
         new_character.roll_attributes(*attribute_roll_params,
@@ -1175,7 +1174,7 @@ class NPCGenerator:
         # Update again, just to be sure
         new_character.update_derived_stats()
 
-        rnd_instance = random.Random(seed + 'armor')
+        # All characters get unarmored 'armor'
         self.give_armor(new_character, 'unarmored')
         # Remember, speeds have to come after armor selection
         new_character.choose_armors()
@@ -1183,10 +1182,16 @@ class NPCGenerator:
         new_character.update_speeds()
 
         # Fourth pass
-        debug_print('Begin features second_pass', 2)
+        debug_print('Begin features fourth_pass', 2)
         for feature in new_character.character_features.values():
             assert isinstance(feature, CharacterFeature)
             feature.fourth_pass()
+
+        # cr factor and stat block build time
+        debug_print('Begin features cr/statblock build pass', 2)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.build_cr_factors_and_stat_block_entries()
 
         debug_print('Build success!', 1)
         return new_character
@@ -1211,7 +1216,7 @@ class NPCGenerator:
             raise ValueError("Invalid value type '{}' requested for options list.".format(options_type))
 
     def get_options_dict(self):
-        options_dict = {}  # No, PyCharm, lots of stuff breaks if I rewrite it as a dict literal
+        options_dict = {}  # No, PyCharm, lots of stuff in the flask app breaks if I rewrite it as a dict literal
         options_dict['race_options'] = self.get_options('race_choice')
         options_dict['class_options'] = self.get_options('class_choice')
         options_dict['attribute_roll_options'] = self.get_options('attribute_roll_method')
@@ -1884,16 +1889,16 @@ class Character:
 
         self.chosen_armor = rnd_instance.choice(valid_choices)
 
-    def get_all_stat_block_entries(self, short=True):
+    def get_all_stat_block_entries(self):
         all_entries = []
         for feature in self.character_features.values():
             assert isinstance(feature, CharacterFeature)
-            feature_entries = feature.get_stat_block_entries(short)
+            feature_entries = feature.get_stat_block_entries()
             for stat_block_entry in feature_entries:
                 all_entries.append(stat_block_entry)
         return all_entries
 
-    def build_stat_block(self, short_traits=True, trait_visibility=1):
+    def build_stat_block(self, trait_visibility=1):
         sb = StatBlock()
 
         if self.name:
@@ -2005,7 +2010,7 @@ class Character:
         if self.condition_immunities:
             sb.condition_immunities = ', '.join(sorted(self.condition_immunities))
 
-        all_block_entries = self.get_all_stat_block_entries(short=short_traits)
+        all_block_entries = self.get_all_stat_block_entries()
         # Add weapons as entries, too
         for weapon in self.weapons.values():
             all_block_entries.append(weapon.get_stat_block_entry())
@@ -2145,13 +2150,19 @@ class CharacterFeature:
     # Randomization and initialization stuff that is not dependent on character stats should happen duing the features's
     # __init__ method.
     # At this point, the only reliable piece of info about the character is how many hd it will have
-    def __init__(self, owner: 'Character'):
+    def __init__(self, owner: 'Character', short_stat_block_entries=True):
         self.int_name = 'dummy'
         self.owner = owner
         self.npc_gen = self.owner.npc_gen
         assert isinstance(self.npc_gen, NPCGenerator), \
             "Character Feature:{} couldn't find NPCGenerator on owner!".format(self.__class__)
         self.seed = self.owner.seed
+        self.stat_block_entries = []
+        self.cr_factors = []
+        self.short = short_stat_block_entries
+
+    def __repr__(self):
+        return '<Character Feature: {}>'.format(self.int_name)
 
     # This method is called after initialization, when it's time to assign the feature to the character
     # This should only be overriden if the function wants to do some sort of merging with other similar features
@@ -2191,19 +2202,37 @@ class CharacterFeature:
     def fourth_pass(self):
         pass
 
-    # If the feature should impact the character's CR calculations, this should be overriden to provide an appropriate
-    # list of CRFactor objects
+    # get_cr_factors() and get_stat_block_entries() should NOT be overriden
+    # Instead, when a stat block entry or cr factor is finalized, the add_stat_block_entry or add_cr_factor
+    # methods should be called and handed the item
+    # Then, when the time comes they will be handed off as appropriate
+    def add_stat_block_entry(self, stat_block_entry):
+        assert isinstance(stat_block_entry, StatBlockEntry)
+        self.stat_block_entries.append(stat_block_entry)
+
+    def add_cr_factor(self, cr_factor):
+        assert isinstance(cr_factor, CRFactor)
+        self.cr_factors.append(cr_factor)
+
+    # This is called at the very end, giving each feature a chance to build and add
+    # cr factors and stat block entries if they haven't already
+    def build_cr_factors_and_stat_block_entries(self):
+        pass
+
+    # This will provide all CRFactors to the CR calculator
+    # It should NOT be overriden, instead the specific feature implementations should call add_cr_factor()
+    # when the CRFactor is finalized
     def get_cr_factors(self):
-        return []
+        return self.cr_factors
 
     # When it comes time to build a statblock, every feature will have this function called
     # and the results will be pooled together
     # The StatBlock will then get to decide how to organize and format the results
-    # Note, this is where the short parameter is called,
-    # which if true means shortened versions of entries should be used
     # Visibility and which entries should be hidden is handled by the StatBlock
-    def get_stat_block_entries(self, short=True):
-        return []
+    # It should NOT be overriden, instead the specific feature implementations should call add_stat_block_entry()
+    # when the CRFactor is finalized
+    def get_stat_block_entries(self):
+        return self.stat_block_entries
 
 
 # Everything that can appear as an entry in a stat block musty implement this functionality
@@ -2299,8 +2328,8 @@ class TraitFactory:
 
 
 class FeatureTrait(CharacterFeature):
-    def __init__(self, owner, int_name, title, trait_type, text, visibility, tags):
-        super().__init__(owner)
+    def __init__(self, owner, int_name, title, trait_type, text, visibility, tags, short=True):
+        super().__init__(owner, short_stat_block_entries=short)
         self.int_name = int_name
         self.title = title
         self.trait_type = trait_type
@@ -2829,7 +2858,7 @@ class SpellList:
 
 class SpellCasterProfile:
     def __init__(self):
-        self.intName = ''
+        self.int_name = ''
         self.hd_per_casting_level = 1
         self.cantrips_per_level = None
         self.spells_known_modifier = 0
@@ -2843,6 +2872,25 @@ class SpellCasterProfile:
         # spell_slots_table[caster_level][spell_level]
         self.spell_slots_table = None
         self.tags = {}
+
+    def __repr__(self):
+        return '<SpellCaster Profile: {}>'.format(self.int_name)
+
+    # Give copies so the original profile doesn't get messed up
+    def get_spell_lists(self):
+        out_dict = {}
+        for k, v in self.spell_lists:
+            out_dict[k] = v
+        return out_dict
+
+    def get_tags(self):
+        out_dict = {}
+        for k, v in self.tags.items():
+            out_dict[k] = v
+        return out_dict
+
+    def get_free_spell_lists(self):
+        return self.spell_lists[:]
 
 
 class Loadout:
@@ -2916,6 +2964,9 @@ HIGHEST_SPELL_LEVEL_BY_CASTER_LEVEL = (
         1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 9,
 )
 
+# Although different classes have different progressions, you can actually get any of them from this table
+# You just need their 'caster level', which isn't technically recognized by the rules,
+# but can be derived from HD depending on whether the character is a full, half, or third caster
 SPELL_SLOTS_TABLE = (
     # SPELL_SLOTS_TABLE[caster_level][spell_level]
     (),
@@ -2960,6 +3011,8 @@ CASTER_CANTRIPS_KNOWN = {
     'bard_druid': (-1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,),
 }
 
+# Warlocks have their own thing going on, but it's close enough to use the standard spellcasting system
+# It can be fitted it with just a few special case conditions and these references
 WARLOCK_SLOTS = (
     -1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4
 )
@@ -2969,6 +3022,8 @@ WARLOCK_SLOT_LEVEL = (
 )
 
 
+# Spellcasting is super messy and confusing. Not the least because of all the VERY similar sounding terms used.
+# For our spellcasting feature to be robust, it needs to be able to take into account quite a lot of things.
 class FeatureSpellcasting(CharacterFeature):
     def __init__(self, owner, args_tup=()):
         super().__init__(owner)
@@ -2976,29 +3031,32 @@ class FeatureSpellcasting(CharacterFeature):
         sp_profile = self.npc_gen.spellcaster_profiles[args_tup[0]]
         assert isinstance(sp_profile, SpellCasterProfile)
 
-        # NPCs generally either have spells 'prepared' or 'known'
+        # Characters generally either have spells 'prepared' or 'known'
         self.ready_style = sp_profile.ready_style
         # Which stat is used for casting
         self.casting_stat = sp_profile.casting_stat
         self.hd_per_casting_level = sp_profile.hd_per_casting_level
         self.cantrips_progression = CASTER_CANTRIPS_KNOWN[sp_profile.cantrips_per_level]
-        if sp_profile.fixed_spells_known_by_level:
-            self.fixed_spells_known_by_level = CASTER_FIXED_SPELLS_KNOWN[sp_profile.fixed_spells_known_by_level]
-        else:
-            self.fixed_spells_known_by_level = None
+        self.fixed_spells_known_by_level = CASTER_FIXED_SPELLS_KNOWN.get(sp_profile.fixed_spells_known_by_level, None)
         self.spell_slots_table = sp_profile.spell_slots_table
         self.spells_known_modifier = sp_profile.spells_known_modifier
-        self.free_spell_lists = sp_profile.free_spell_lists
-        self.spell_lists = sp_profile.spell_lists
-        self.tags = sp_profile.tags
+
+        # These values are alterable, so we need COPIES from the profile
+        self.spell_lists = {}
+        for spell_list_name, weight in sp_profile.spell_lists.items():
+            self.add_spell_list(spell_list_name, weight)
+        self.tags = sp_profile.get_tags()
 
         self.bonus_cantrips = 0
-        self.free_spells = [[], [], [], [], [], [], [], [], [], [], ]
+
+        # We need a set of free spells so we know to discard those picks when it comes time to choose spells
+        self.free_spells = set()
+        for spell_list in sp_profile.free_spell_lists:
+            self.add_free_spell_list(spell_list)
 
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
         self.spell_choices = None
-        self.free_spells = self.get_free_spells(npc_gen=self.npc_gen)
-        self.spell_choices = self.get_spell_choices(npc_gen=self.npc_gen, seed=self.seed)
+        self.spell_choices = [[], [], [], [], [], [], [], [], [], [], ]
         self.spell_slots = []
         self.cantrips_readied = 0
         self.spells_readied = [[], [], [], [], [], [], [], [], [], [], ]
@@ -3010,19 +3068,21 @@ class FeatureSpellcasting(CharacterFeature):
 
     # Hypothetically, other feature can add spell_lists to a spellcasting feature
     # For example, you could have a base cleric and have the domain be a feature that modifies the spellcasting feature
-    def add_free_spell_list(self, spell_list):
-        self.free_spell_lists.append(spell_list)
+    def add_free_spell_list(self, spell_list_name):
+        assert spell_list_name in self.npc_gen.spell_lists, \
+            'Invalid list {} for adding free spells!'.format(spell_list_name)
+        spell_list = self.npc_gen.spell_lists[spell_list_name]
+        for spell in spell_list.spells:
+            self.free_spells.add(spell)
 
     def add_free_spell(self, spell_name):
-        spell_obj = self.npc_gen.spells[spell_name]
-        assert isinstance(spell_obj, Spell), "add_free_spell(): Problem finding spell {}".format(spell_name)
-        self.free_spells[spell_obj.level].append(spell_name)
+        self.free_spells.add(spell_name)
 
     def add_free_spells(self, spells):
         for spell in spells:
             self.add_free_spell(spell)
 
-    def add_free_spells_from_spell_list(self, num_spells, spell_list_name):
+    def add_random_free_spells_from_spell_list(self, num_spells, spell_list_name):
         rnd_instance = random.Random(self.seed + spell_list_name + 'addfreespellsfromlist')
         spell_list = self.npc_gen.spell_lists[spell_list_name]
         spell_options = list(spell_list.spells.keys())
@@ -3036,35 +3096,29 @@ class FeatureSpellcasting(CharacterFeature):
             debug_print('Adding spell list "{}" to spellcasting feature, but already present. Overwriting weight.')
         self.spell_lists[spell_list] = weight
 
-    def get_free_spells(self, npc_gen: 'NPCGenerator'):
-        free_spells = self.free_spells
-        if self.free_spell_lists:
-            for free_spell_list_name in self.free_spell_lists:
-                spell_list = npc_gen.spell_lists[free_spell_list_name]
-                for spell in spell_list.spells.values():
-                    free_spells[spell.level].append(spell.name)
-        return free_spells
+    def get_free_spells(self):
+        return self.free_spells
 
     # This function will go ahead and pre-select all of the spells this character might end up knowing
     # When it comes time to get a character's spells known, they'll just grab a selection from those lists
     # Selections are weighted by spelllist as specified in the spellcaster profile
     # Will not select spells that the caster will automatically end up getting
-    def get_spell_choices(self, npc_gen, seed):
+    def set_spell_choices(self):
 
-        rnd_instance = random.Random(seed + 'spellchoices')
+        rnd_instance = random.Random(self.seed + 'spellchoices')
+        npc_gen = self.owner.npc_gen
 
         already_chosen_spells = set()
-        for spell_level in range(0, 10):
-            for spell_name in self.free_spells[spell_level]:
-                already_chosen_spells.add(spell_name)
+        for spell in self.free_spells:
+            already_chosen_spells.add(spell)
 
-        spell_selections = []
+        spell_selections = [[], [], [], [], [], [], [], [], [], [], ]
         # We do this for every spell level
         for spell_level in range(0, 10):
-            total_spell_count = 0
+            total_spells_of_this_level = 0
             for spell_list_name in self.spell_lists.keys():
                 spell_list = npc_gen.spell_lists[spell_list_name]
-                total_spell_count += spell_list.num_spells_of_level(spell_level)
+                total_spells_of_this_level += spell_list.num_spells_of_level(spell_level)
 
             spell_options = []
             spell_weights = []
@@ -3101,8 +3155,9 @@ class FeatureSpellcasting(CharacterFeature):
                     spell_selections_for_level.append(spell_choice)
                     spell_selections_remaining -= 1
 
-            spell_selections.append(spell_selections_for_level)
-        return spell_selections
+            spell_selections[spell_level] = spell_selections_for_level
+        print(spell_selections)
+        self.spell_choices = spell_selections
 
     def get_spell_dc(self):
         return self.owner.get_stat(self.casting_stat + '_dc')
@@ -3144,6 +3199,10 @@ class FeatureSpellcasting(CharacterFeature):
                     break
         return max_spell_level
 
+    def get_spell_level(self, spell_name):
+        assert spell_name in self.npc_gen.spells, "get_spell_level(): invalid spell {}".format(spell_name)
+        return self.npc_gen.spells[spell_name].level
+
     # At this point, we already have our possible spell choices made
     # Now, we're basically going to figure out how which of those spells to have readied
     # First, we figure out how many spells the character is allowed to have readied
@@ -3161,6 +3220,7 @@ class FeatureSpellcasting(CharacterFeature):
         rnd_instance = random.Random(self.seed + self.int_name + 'spellpicking')
         char_hd = self.owner.get_hd()
         caster_level = self.get_caster_level()
+
         if self.fixed_spells_known_by_level:
             spells_readied_remaining = self.fixed_spells_known_by_level[char_hd]
         else:
@@ -3170,9 +3230,8 @@ class FeatureSpellcasting(CharacterFeature):
         max_spell_level = self.get_max_spell_level()
 
         # Add free spells to spells readied
-        for spell_level in range(0, max_spell_level + 1):  # Free spells might include cantrips
-            for free_spell in self.free_spells[spell_level]:
-                self.spells_readied[spell_level].append(free_spell)
+        for spell_name in self.free_spells:
+            self.spells_readied[self.get_spell_level(spell_name)].append(spell_name)
 
         # Cantrips are straightforward, simply pop them from our choices list until we have enough
         cantrips_remaining = self.cantrips_readied
@@ -3236,6 +3295,7 @@ class FeatureSpellcasting(CharacterFeature):
     # Hypothetically, other features might want to do something that affects spellcasting in the first pass,
     # so we do all the big stuff in the second pass
     def third_pass(self):
+        self.set_spell_choices()
         self.set_spell_slots()
         self.select_readied_spells()
 
@@ -3323,40 +3383,34 @@ class FeatureSpellcasting(CharacterFeature):
                "including against the triggering attack, and you take no damage from magic missile."
         return StatBlockEntry('Shield', 'reaction', 0, text, subtitles=['spell'])
 
-    def get_cr_factors(self):
-        entries = []
+    def build_cr_factors_and_stat_block_entries(self):
+        # CR
         caster_level = self.get_caster_level()
         dc = self.get_spell_dc()
-        entries.append(CRFactor(CRFactor.ABILITY, ability_level=caster_level, dc=dc))
+        self.add_cr_factor(CRFactor(CRFactor.ABILITY, ability_level=caster_level, dc=dc))
 
         # Special case spells
         if 'shield' in self.spells_readied_set:
-            entries.append(CRFactor(CRFactor.EFFECTIVE_AC_MOD, extra_ac=1))
+            self.add_cr_factor(CRFactor(CRFactor.EFFECTIVE_AC_MOD, extra_ac=1))
 
         for spell_attack in self.spell_attacks:
-            entries.append(spell_attack.get_cr_factor())
+            self.add_cr_factor(spell_attack.get_cr_factor())
 
-        return entries
-
-    def get_stat_block_entries(self, short=True):
-        entries = []
-
+        # Stat block entries
         if 'warlock' in self.tags:
-            entries.append(self.get_warlock_stat_block_entry(short=short))
+            self.add_stat_block_entry(self.get_warlock_stat_block_entry(short=self.short))
         else:
-            entries.append(self.get_main_stat_block_entry(short=short))
+            self.add_stat_block_entry(self.get_main_stat_block_entry(short=self.short))
         if 'spellbook' in self.tags:
-            entries.append(self.get_spellbook_entry())
+            self.add_stat_block_entry(self.get_spellbook_entry())
 
         # Per spell special entries
         if 'shield' in self.spells_readied_set:
-            entries.append(self.get_shield_entry())
+            self.add_stat_block_entry(self.get_shield_entry())
 
         # All the spells set up as attacks
         for spell_attack in self.spell_attacks:
-            entries.append(spell_attack.get_stat_block_entry())
-
-        return entries
+            self.add_stat_block_entry(spell_attack.get_stat_block_entry())
 
 
 class SpellAttack:
@@ -3440,6 +3494,8 @@ def get_character_feature_class(feature_string):
         return FeatureDragonborn
     elif feature_string == 'martial_arts':
         return FeatureMartialArts
+    elif feature_string == 'cleric_domain':
+        return FeatureClericDomain
     else:
         debug_print("'{}' has not been associated with CharacterFeature class!".format(feature_string), 0)
         raise ValueError
@@ -3467,21 +3523,18 @@ class FeatureTinker(CharacterFeature):
         self.choice = rnd_instance.choice(list(FEATURE_TINKER_OPTIONS.keys()))
 
     def first_pass(self):
-        rnd_instance = random.Random(self.seed + self.int_name + 'first')
         self.owner.add_skill('tinkers_tools')
 
-    def get_stat_block_entries(self, short=True):
-        entries = []
-        entries.append(StatBlockEntry('Tinker', 'passive', 2,
+    def build_cr_factors_and_stat_block_entries(self):
+        self.add_stat_block_entry(StatBlockEntry('Tinker', 'passive', 2,
                                       "You have proficiency with artisan's tools (tinker's tools). Using those tools, "
                                       "you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork "
                                       "device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you "
                                       "spend 1 hour repairing it to keep the device functioning), or when you use your "
                                       "action to dismantle it; at that time, you can reclaim the materials used to "
                                       "create it. You can have up to three such devices active at a time."))
-        entries.append(StatBlockEntry(self.choice.title(), 'passive', 0,
+        self.add_stat_block_entry(StatBlockEntry(self.choice.title(), 'passive', 0,
                                       FEATURE_TINKER_OPTIONS[self.choice]))
-        return entries
 
 
 FEATURE_DRAGONBORN_CHART = {
@@ -3507,8 +3560,7 @@ class FeatureDragonborn(CharacterFeature):
     def first_pass(self):
         self.owner.add_damage_resistance(FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
 
-    def get_stat_block_entries(self, short=True):
-        entries = []
+    def build_cr_factors_and_stat_block_entries(self):
         hd = self.owner.get_hd()
         dmg_dice = increment_from_hd(2, (6, 11, 16), hd)
         text = "When you use your breath weapon, each creature in a {} must make a DC {} {} saving throw. " \
@@ -3517,8 +3569,7 @@ class FeatureDragonborn(CharacterFeature):
                     FEATURE_DRAGONBORN_CHART[self.lineage_type][2], dmg_dice,
                     FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
         breath_weapon_entry = StatBlockEntry('Breath Weapon', 'action', 0, text, subtitles=['1/short', ])
-        entries.append(breath_weapon_entry)
-        return entries
+        self.add_stat_block_entry(breath_weapon_entry)
 
 
 MARTIAL_ARTS_DAMAGE = (
@@ -3561,8 +3612,38 @@ class FeatureMartialArts(CharacterFeature):
             if self.is_monk_weapon(weapon):
                 self.upgrade_weapon(weapon)
 
-    def get_stat_block_entries(self, short=True):
-        entry = StatBlockEntry('Martial Arts', 'passive', 1,
-                               'Damage scales to your level when using monk weapons.')
-        return [entry, ]
+    def build_cr_factors_and_stat_block_entries(self):
+        self.add_stat_block_entry(
+            StatBlockEntry('Martial Arts', 'passive', 1,
+                           'Damage scales to your level when using monk weapons.'))
 
+
+# Currently, spelllists follow the convention 'domain_(name)'
+CLERIC_DOMAINS = (
+    'arcana', 'forge', 'grave', 'knowledge', 'life', 'light', 'nature', 'tempest', 'trickery', 'war'
+)
+
+
+class FeatureClericDomain(CharacterFeature):
+    def __init__(self, owner, args_tup=()):
+        super().__init__(owner)
+        domain_name = args_tup[0]
+        if not domain_name or domain_name == 'random':
+            rnd_instance = random.Random(self.seed + 'chooserandomdomain')
+            domain_name = rnd_instance.choice(CLERIC_DOMAINS)
+        self.int_name = 'domain_' + domain_name
+        self.domain_name = domain_name
+        # This works because domain spell lists follow this naming convention
+        # If that convention were broken, would need to re do this
+        self.domain_spell_list = 'domain_' + domain_name
+
+    def first_pass(self):
+        for feature in self.owner.character_features.values():
+            if isinstance(feature, FeatureSpellcasting):
+                feature.add_free_spell_list(self.domain_spell_list)
+
+    def build_cr_factors_and_stat_block_entries(self):
+        entry_title = '{} Domain'.format(self.domain_name.title())
+        self.add_stat_block_entry(StatBlockEntry(
+            entry_title, 'passive', 2,
+            "Yay cleric domain."))
