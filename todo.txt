@@ -1,10 +1,4 @@
-THE BIG THING:
-rework as much as possible to take owners upon instantiation
-Like, CharacterFeatures always need to belong to a character, so I should just specify the owner upon intantiation
-instead of passing around character references all the time
-Could make the code MUCH more readable
-
-special weapons need exceptions:
+special weapons:
 lance, net
 
 The following traits need randomized spells:
@@ -15,6 +9,12 @@ with the spellcasting system to prevent overlap
 
 nice_list isn't getting the Oxford comma right
 
-supporting verbose trait text is a waste of time, let's just forget about it and get rid of all the stuff for it
+the cr calc should account for damage resistances
+cr calc should also deal with 'minor' abilities somehow
 
-need to clean up free spells for spellcasting profiles
+spellcasting needs more cleanup
+rekajigger the spell reserve choice selection method to use the much simpler shuffle each spell list and pop them
+method. if each shuffle is seeded properly it will make character rebuilds that change spelllists more consistent.
+also, rename spell things to be clearer
+
+give NPCGenerator get_ methods so other places don't have to directly access its weapons/armors/spellcaster_profiles dicts

@@ -435,7 +435,6 @@ class NPCGenerator:
                  spells_file_loc=SPELLS_FILE,
                  spell_lists_file_loc=SPELLLISTS_FILE,
                  spellcaster_profiles_file_loc=SPELLCASTER_PROFILES_FILE,
-                 # loadout_pools_file_loc=LOADOUT_POOLS_FILE,
                  armors_loadout_pools_file_loc=ARMORS_LOADOUT_POOLS_FILE,
                  weapons_loadout_pools_file_loc=WEAPONS_LOADOUT_POOLS_FILE,
                  traits_file_loc=TRAITS_FILE,
@@ -444,28 +443,28 @@ class NPCGenerator:
                  ):
 
         self.weapons = {}
-        self.build_weapons_from_csv(weapons_file_loc)
+        self.load_weapons_from_csv(weapons_file_loc)
 
         self.armors = {}
-        self.build_armors_from_csv(armors_file_loc)
+        self.load_armors_from_csv(armors_file_loc)
 
         self.armors_loadout_pools = {}
-        self.build_armors_loadout_pools_from_csv(armors_loadout_pools_file_loc)
+        self.load_armors_loadout_pools_from_csv(armors_loadout_pools_file_loc)
 
         self.weapons_loadout_pools = {}
-        self.build_weapons_loadout_pools_from_csv(weapons_loadout_pools_file_loc)
+        self.load_weapons_loadout_pools_from_csv(weapons_loadout_pools_file_loc)
 
         self.traits = {}
-        self.build_traits_from_csv(traits_file_loc)
+        self.load_traits_from_csv(traits_file_loc)
 
         self.spells = {}
-        self.build_spells_from_csv(spells_file_loc)
+        self.load_spells_from_csv(spells_file_loc)
 
         self.spell_lists = {}
-        self.build_spell_lists_from_csv(spell_lists_file_loc)
+        self.load_spell_lists_from_csv(spell_lists_file_loc)
 
         self.spellcaster_profiles = {}
-        self.build_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
+        self.load_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
 
         # All ???_options attributes are intended to provide easy access to valid options when it comes time to render
         # They are of the format [(option internal_name, option display_name), ... ]
@@ -480,7 +479,7 @@ class NPCGenerator:
         self.race_options = [('random_race', 'Random Race'), ]
         self.race_keys = []
         self.race_random_categories = {}
-        self.build_race_templates_from_csv(race_templates_file_loc)
+        self.load_race_templates_from_csv(race_templates_file_loc)
 
         self.class_templates = {}
         # For the HTML drop down boxes, includes categories for sorting
@@ -488,14 +487,14 @@ class NPCGenerator:
         self.class_options = [('random_class', 'Random Class'), ]
         self.class_keys = []
         self.class_random_categories = {}
-        self.build_class_templates_from_csv(class_templates_file_loc)
+        self.load_class_templates_from_csv(class_templates_file_loc)
 
         self.roll_options = ROLL_METHODS_OPTIONS
         self.roll_keys = list(ROLL_METHODS.keys())
 
         self.hd_size_options = tuple(itertools.chain(['Default'], ['d' + str(x) for x in VALID_HD_SIZES]))
 
-    def build_armors_from_csv(self, armors_file_loc):
+    def load_armors_from_csv(self, armors_file_loc):
         with open(armors_file_loc, newline='', encoding="utf-8") as armors_file:
             armors_file_reader = csv.DictReader(armors_file)
             for line in armors_file_reader:
@@ -519,7 +518,7 @@ class NPCGenerator:
                 new_armor.tags = set(line['tags'].replace(" ", "").split(','))
                 self.armors[new_armor.int_name] = new_armor
 
-    def build_weapons_from_csv(self, weapons_file_loc):
+    def load_weapons_from_csv(self, weapons_file_loc):
         with open(weapons_file_loc, newline='', encoding="utf-8") as weaponsFile:
             weapons_file_reader = csv.DictReader(weaponsFile)
             for line in weapons_file_reader:
@@ -546,7 +545,7 @@ class NPCGenerator:
                 self.weapons[new_weapon.int_name] = new_weapon
                 debug_print("Weapon Added: " + str(new_weapon), 3)
 
-    def build_traits_from_csv(self, traits_file_loc):
+    def load_traits_from_csv(self, traits_file_loc):
         with open(traits_file_loc, newline='', encoding="utf-8") as traitsFile:
             traits_file_reader = csv.DictReader(traitsFile)
             for line in traits_file_reader:
@@ -580,7 +579,7 @@ class NPCGenerator:
                 except (ValueError, TypeError):
                     print("Error procession trait {}".format(line['internal_name']))
 
-    def build_armors_loadout_pools_from_csv(self, loadout_pools_file_loc):
+    def load_armors_loadout_pools_from_csv(self, loadout_pools_file_loc):
         with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
             loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
             new_loadout_pool = None
@@ -615,7 +614,7 @@ class NPCGenerator:
             # When we get to the end, add the last pool
             self.armors_loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
-    def build_weapons_loadout_pools_from_csv(self, loadout_pools_file_loc):
+    def load_weapons_loadout_pools_from_csv(self, loadout_pools_file_loc):
         with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
             loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
             new_loadout_pool = None
@@ -655,7 +654,7 @@ class NPCGenerator:
             # When we get to the end, add the last pool
             self.weapons_loadout_pools[new_loadout_pool.name] = new_loadout_pool
 
-    def build_spells_from_csv(self, spells_file_loc):
+    def load_spells_from_csv(self, spells_file_loc):
         with open(spells_file_loc, newline='', encoding="utf-8") as spellsFile:
             spells_file_reader = csv.DictReader(spellsFile)
             for line in spells_file_reader:
@@ -672,7 +671,7 @@ class NPCGenerator:
                 new_spell.classes = set(line['classes'].replace(" ", "").split(','))
                 self.spells[new_spell.name] = new_spell
 
-    def build_spell_lists_from_csv(self, spell_lists_file_loc):
+    def load_spell_lists_from_csv(self, spell_lists_file_loc):
         with open(spell_lists_file_loc, newline='', encoding="utf-8") as spellListsFile:
             spell_lists_file_reader = csv.DictReader(spellListsFile)
             for line in spell_lists_file_reader:
@@ -747,7 +746,7 @@ class NPCGenerator:
 
                 self.spell_lists[new_spell_list.name] = new_spell_list
 
-    def build_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
+    def load_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
         with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
             spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
             for line in spellcaster_profiles_file_reader:
@@ -808,7 +807,7 @@ class NPCGenerator:
                 except (ValueError, TypeError):
                     debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
 
-    def build_race_templates_from_csv(self, race_templates_file_loc):
+    def load_race_templates_from_csv(self, race_templates_file_loc):
         with open(race_templates_file_loc, newline='', encoding="utf-8") as race_templates_file:
             race_templates_file_reader = csv.DictReader(race_templates_file)
 
@@ -889,7 +888,7 @@ class NPCGenerator:
                 except ValueError:
                     print("Error processing race template {}".format(line['internal_name']))
 
-    def build_class_templates_from_csv(self, class_templates_file_loc):
+    def load_class_templates_from_csv(self, class_templates_file_loc):
         with open(class_templates_file_loc, newline='', encoding="utf-8") as class_templates_file:
             class_templates_file_reader = csv.DictReader(class_templates_file)
 
@@ -961,6 +960,17 @@ class NPCGenerator:
 
                 except ValueError:
                     print("Error processing class template {}.".format(line['internal_name']))
+
+    @staticmethod
+    def build_character_feature(character, feature_string, args_tup=()):
+        feature_class = FEATURE_CLASS_REFERENCE[feature_string]
+        feature_instance = feature_class(character, args_tup=args_tup)
+        return feature_instance
+
+    def build_trait(self, character, trait_name):
+        trait_factory = self.traits[trait_name]
+        trait_feature_instance = trait_factory.get_character_feature(character)
+        return trait_feature_instance
 
     def give_armor(self, character, armor_name, extra=False):
         armor = self.armors[armor_name].get_copy()
@@ -1038,159 +1048,6 @@ class NPCGenerator:
                 for weapon in loadout.weapons:
                     self.give_weapon(character, weapon)
             character.has_shield = loadout.shield
-
-    def new_character(self,
-
-                      seed=None,
-                      race_choice=DEFAULT_RACE,
-                      class_choice=DEFAULT_CLASS,
-                      hit_dice_num=DEFAULT_HIT_DICE_NUM,
-                      attribute_roll_method=DEFAULT_ROLL_METHOD,
-
-                      name='',
-                      rerolls_allowed=0,
-                      min_total=0,
-                      no_attribute_swapping=False,
-                      force_optimize=False,
-                      hit_dice_size=None,
-                      bonus_hd=0,
-                      no_asi=False,
-                      ):
-
-        if not seed:
-            seed = random_string(10)
-
-        debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={}'
-                    .format(race_choice, class_choice, hit_dice_num, hit_dice_size, bonus_hd,
-                            seed, attribute_roll_method), 1)
-
-        # This is for the super random option, which is anything at all
-        if race_choice == 'random_race':
-            rnd_instance = random.Random(seed + 'random_race')
-            race_choice = rnd_instance.choice(self.race_keys)
-        if class_choice == 'random_class':
-            rnd_instance = random.Random(seed + 'random_class')
-            class_choice = rnd_instance.choice(self.class_keys)
-
-        # This is for the category specific random option s
-        if race_choice in self.race_random_categories:
-            rnd_instance = random.Random(seed + 'random_race_from_category')
-            race_choice = rnd_instance.choice(self.race_random_categories[race_choice])
-        if class_choice in self.class_random_categories:
-            rnd_instance = random.Random(seed + 'random_class_from_category')
-            class_choice = rnd_instance.choice(self.class_random_categories[class_choice])
-
-        # Sanity checks
-        assert 1 <= hit_dice_num <= 20, 'Invalid HD_NUM received: {}'.format(hit_dice_num)
-        assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
-        assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
-
-        new_character = Character(seed, self)
-
-        if name:
-            new_character.name = name
-
-        new_character.set_stat('hit_dice_num', hit_dice_num)
-        new_character.set_stat('hit_dice_extra', bonus_hd)
-
-        race_template = self.race_templates[race_choice]
-        assert isinstance(race_template, RaceTemplate)
-        self.apply_race_template(new_character, race_template)
-
-        class_template = self.class_templates[class_choice]
-        assert isinstance(class_template, ClassTemplate)
-        self.apply_class_template(new_character, class_template, seed=seed)
-
-        # Get all the traits and features from the templates, have the factories instantiate them,
-        # then give them to the new character
-        for trait_name in itertools.chain(race_template.traits, class_template.traits):
-            debug_print('Trait: {}'.format(trait_name))
-            trait_factory = self.traits[trait_name]
-            assert isinstance(trait_factory, TraitFactory)
-            trait_feature = trait_factory.get_character_feature(new_character)
-            trait_feature.give_to_owner()
-        for feature_name, feature_args in itertools.chain((
-                race_template.features.items()), class_template.features.items()):
-            debug_print('Feature: {} args: {}'.format(feature_name, str(feature_args)), 3)
-            feature_class = get_character_feature_class(feature_name)
-            feature_instance = feature_class(
-                new_character, args_tup=feature_args)
-            feature_instance.give_to_owner()
-
-        # Do the pre-attribute rolling first pass of features
-        debug_print('Begin features first_pass', 2)
-        for feature in new_character.character_features.values():
-            assert isinstance(feature, CharacterFeature)
-            feature.first_pass()
-
-        # Note, for floating attributes bonuses like half-elves to apply, race traits need to be applied before
-        # Rolling attributes
-        attribute_roll_params = ROLL_METHODS[attribute_roll_method][1]
-        attribute_roll_fixed_vals = ROLL_METHODS[attribute_roll_method][2]
-        new_character.roll_attributes(*attribute_roll_params,
-                                      rerolls_allowed=rerolls_allowed,
-                                      min_total=min_total,
-                                      no_attribute_swapping=no_attribute_swapping,
-                                      force_optimize=force_optimize,
-                                      fixed_rolls=attribute_roll_fixed_vals,)
-
-        if hit_dice_size:
-            if hit_dice_size == 'Default' and class_template.hd_size:
-                new_character.set_stat('hit_dice_size', class_template.hd_size)
-            elif hit_dice_size == 'Default' and not class_template.hd_size:
-                new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
-            else:
-                try:
-                    hit_dice_size = int(hit_dice_size)
-                    assert hit_dice_size in VALID_HD_SIZES
-                    new_character.set_stat('hit_dice_size', hit_dice_size)
-                except (ValueError, AssertionError, TypeError):
-                    new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
-        elif class_template.hd_size:
-            new_character.set_stat('hit_dice_size', class_template.hd_size)
-        else:
-            new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
-
-        if not no_asi:
-            new_character.generate_asi_progression()
-            new_character.apply_asi_progression()
-
-        new_character.update_derived_stats()
-
-        # Second and third passes for CharacterFeatures
-        debug_print('Begin features second_pass', 2)
-        for feature in new_character.character_features.values():
-            assert isinstance(feature, CharacterFeature)
-            feature.second_pass()
-        debug_print('Begin features third_pass', 2)
-        for feature in new_character.character_features.values():
-            assert isinstance(feature, CharacterFeature)
-            feature.third_pass()
-
-        # Update again, just to be sure
-        new_character.update_derived_stats()
-
-        # All characters get unarmored 'armor'
-        self.give_armor(new_character, 'unarmored')
-        # Remember, speeds have to come after armor selection
-        new_character.choose_armors()
-
-        new_character.update_speeds()
-
-        # Fourth pass
-        debug_print('Begin features fourth_pass', 2)
-        for feature in new_character.character_features.values():
-            assert isinstance(feature, CharacterFeature)
-            feature.fourth_pass()
-
-        # cr factor and stat block build time
-        debug_print('Begin features cr/statblock build pass', 2)
-        for feature in new_character.character_features.values():
-            assert isinstance(feature, CharacterFeature)
-            feature.build_cr_factors_and_stat_block_entries()
-
-        debug_print('Build success!', 1)
-        return new_character
 
     def get_options(self, options_type):
         """
@@ -1332,6 +1189,159 @@ class NPCGenerator:
             clean_dict['name'] = request_dict['name']
 
         return is_valid, clean_dict
+
+    def new_character(self,
+
+                      seed=None,
+                      race_choice=DEFAULT_RACE,
+                      class_choice=DEFAULT_CLASS,
+                      hit_dice_num=DEFAULT_HIT_DICE_NUM,
+                      attribute_roll_method=DEFAULT_ROLL_METHOD,
+
+                      name='',
+                      rerolls_allowed=0,
+                      min_total=0,
+                      no_attribute_swapping=False,
+                      force_optimize=False,
+                      hit_dice_size=None,
+                      bonus_hd=0,
+                      no_asi=False,
+                      ):
+
+        if not seed:
+            seed = random_string(10)
+
+        debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={}'
+                    .format(race_choice, class_choice, hit_dice_num, hit_dice_size, bonus_hd,
+                            seed, attribute_roll_method), 1)
+
+        # This is for the super random option, which is anything at all
+        if race_choice == 'random_race':
+            rnd_instance = random.Random(seed + 'random_race')
+            race_choice = rnd_instance.choice(self.race_keys)
+        if class_choice == 'random_class':
+            rnd_instance = random.Random(seed + 'random_class')
+            class_choice = rnd_instance.choice(self.class_keys)
+
+        # This is for the category specific random options
+        if race_choice in self.race_random_categories:
+            rnd_instance = random.Random(seed + 'random_race_from_category')
+            race_choice = rnd_instance.choice(self.race_random_categories[race_choice])
+        if class_choice in self.class_random_categories:
+            rnd_instance = random.Random(seed + 'random_class_from_category')
+            class_choice = rnd_instance.choice(self.class_random_categories[class_choice])
+
+        # Sanity checks
+        assert 1 <= hit_dice_num <= 20, 'Invalid HD_NUM received: {}'.format(hit_dice_num)
+        assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
+        assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
+
+        new_character = Character(seed, self)
+
+        if name:
+            new_character.name = name
+
+        new_character.set_stat('hit_dice_num', hit_dice_num)
+        new_character.set_stat('hit_dice_extra', bonus_hd)
+
+        race_template = self.race_templates[race_choice]
+        assert isinstance(race_template, RaceTemplate)
+        self.apply_race_template(new_character, race_template)
+
+        class_template = self.class_templates[class_choice]
+        assert isinstance(class_template, ClassTemplate)
+        self.apply_class_template(new_character, class_template, seed=seed)
+
+        # Get all the traits and features from the templates, have the factories instantiate them,
+        # then give them to the new character
+        for trait_name in itertools.chain(race_template.traits, class_template.traits):
+            debug_print('Trait: {}'.format(trait_name))
+            trait_feature = self.build_trait(new_character, trait_name)
+            trait_feature.give_to_owner()
+        for feature_name, feature_args in itertools.chain((
+                race_template.features.items()), class_template.features.items()):
+            debug_print('Feature: {} args: {}'.format(feature_name, str(feature_args)), 3)
+            feature_instance = self.build_character_feature(new_character, feature_name, feature_args)
+            feature_instance.give_to_owner()
+            # It's possible for features to give themselves sub features during instantiation
+            # So, we need this step, too
+            # Right now, this will ignore subfeatures of subfeatures, could change this if a need arises
+            feature_instance.give_sub_features_to_owner()
+
+        # Do the pre-attribute rolling first pass of features
+        debug_print('Begin features first_pass', 2)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.first_pass()
+
+        # Note, for floating attributes bonuses like half-elves to apply, race traits need to be applied before
+        # Rolling attributes
+        attribute_roll_params = ROLL_METHODS[attribute_roll_method][1]
+        attribute_roll_fixed_vals = ROLL_METHODS[attribute_roll_method][2]
+        new_character.roll_attributes(*attribute_roll_params,
+                                      rerolls_allowed=rerolls_allowed,
+                                      min_total=min_total,
+                                      no_attribute_swapping=no_attribute_swapping,
+                                      force_optimize=force_optimize,
+                                      fixed_rolls=attribute_roll_fixed_vals,)
+
+        if hit_dice_size:
+            if hit_dice_size == 'Default' and class_template.hd_size:
+                new_character.set_stat('hit_dice_size', class_template.hd_size)
+            elif hit_dice_size == 'Default' and not class_template.hd_size:
+                new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
+            else:
+                try:
+                    hit_dice_size = int(hit_dice_size)
+                    assert hit_dice_size in VALID_HD_SIZES
+                    new_character.set_stat('hit_dice_size', hit_dice_size)
+                except (ValueError, AssertionError, TypeError):
+                    new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
+        elif class_template.hd_size:
+            new_character.set_stat('hit_dice_size', class_template.hd_size)
+        else:
+            new_character.set_stat('hit_dice_size', DEFAULT_HIT_DICE_SIZE)
+
+        if not no_asi:
+            new_character.generate_asi_progression()
+            new_character.apply_asi_progression()
+
+        new_character.update_derived_stats()
+
+        # Second and third passes for CharacterFeatures
+        debug_print('Begin features second_pass', 2)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.second_pass()
+        debug_print('Begin features third_pass', 2)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.third_pass()
+
+        # Update again, just to be sure
+        new_character.update_derived_stats()
+
+        # All characters get unarmored 'armor'
+        self.give_armor(new_character, 'unarmored')
+        # Remember, speeds have to come after armor selection
+        new_character.choose_armors()
+
+        new_character.update_speeds()
+
+        # Fourth pass
+        debug_print('Begin features fourth_pass', 2)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.fourth_pass()
+
+        # cr factor and stat block build time
+        debug_print('Begin features cr/statblock build pass', 2)
+        for feature in new_character.character_features.values():
+            assert isinstance(feature, CharacterFeature)
+            feature.build_cr_factors_and_stat_block_entries()
+
+        debug_print('Build success!', 1)
+        return new_character
 
 
 class Character:
@@ -2140,14 +2150,16 @@ class StatBlock:
 
 
 # When it comes time to give a character a feature, you must instantiate that feature
-# When doing anything involving randomness, the rng should use the seed plus a method specific salt
-# to instantiate random
-# Character features are provided a reference to NPCGenerator, so that they can use functions that rely on its
-# reference dictionaries
+# Since character features are kinda meaningless without being attached to a character,
+# they MUST have an owner specified as part of instantiation
+# Character features can access the reference to its owner's seed for randomization
+# THey can also use the owners reference to NPCGenerator if they needs to access the generator's data
 class CharacterFeature:
     # Randomization and initialization stuff that is not dependent on character stats should happen duing the features's
     # __init__ method.
     # At this point, the only reliable piece of info about the character is how many hd it will have
+    # If a character feature has associated subfeatures, they MUST be generated during __init__
+    # This ensures that sub features will get the chance to do everything they want to do
     def __init__(self, owner: 'Character'):
         self.int_name = 'dummy'
         self.owner = owner
@@ -2157,9 +2169,18 @@ class CharacterFeature:
         self.seed = self.owner.seed
         self.stat_block_entries = []
         self.cr_factors = []
+        self.sub_features = []
 
     def __repr__(self):
         return '<Character Feature: {}>'.format(self.int_name)
+
+    def add_sub_feature(self, sub_feature_string, args_tup=()):
+        sub_feature = self.npc_gen.build_character_feature(self, sub_feature_string, args_tup=args_tup)
+        self.sub_features.append(sub_feature)
+
+    def add_sub_trait(self, trait_name):
+        trait_feature = self.npc_gen.build_trait(self.owner, trait_name)
+        self.sub_features.append(trait_feature)
 
     # This method is called after initialization, when it's time to assign the feature to the character
     # This should only be overriden if the function wants to do some sort of merging with other similar features
@@ -2169,6 +2190,10 @@ class CharacterFeature:
     # easily understood
     def give_to_owner(self):
         self.owner.add_character_feature(self)
+
+    def give_sub_features_to_owner(self):
+        for sub_feature in self.sub_features:
+            sub_feature.give_to_owner()
 
     # first_pass() is called just after race/class templates have been applied,
     # before attributes are rolled or ASI applied
@@ -3464,28 +3489,7 @@ class SpellAttackEldritchBlast(SpellAttack):
 
 
 # Below this point are classes for particular Character Features
-# If you add a new feature, you MUST update the get_character_feature_class() method
-
-# Take a string, grab the correct CharacterFeature
-# Maybe a bit hacky, but I was getting unresolved reference errors when trying to implement it as a dictionary
-# feature_string is how the feature will be referred to in class/race templates
-def get_character_feature_class(feature_string):
-    if feature_string == 'multiattack':
-        return FeatureMultiattack
-    elif feature_string == 'spellcasting':
-        return FeatureSpellcasting
-    elif feature_string == 'tinker':
-        return FeatureTinker
-    elif feature_string == 'dragonborn_feature':
-        return FeatureDragonborn
-    elif feature_string == 'martial_arts':
-        return FeatureMartialArts
-    elif feature_string == 'cleric_domain':
-        return FeatureClericDomain
-    else:
-        debug_print("'{}' has not been associated with CharacterFeature class!".format(feature_string), 0)
-        raise ValueError
-
+# If you add a new feature, you MUST update the FEATURE_CLASS_REFERENCE constant
 
 FEATURE_TINKER_OPTIONS = {
     'clockwork toy':
@@ -3624,6 +3628,8 @@ class FeatureClericDomain(CharacterFeature):
         # This works because domain spell lists follow this naming convention
         # If that convention were broken, would need to re do this
         self.domain_spell_list = 'domain_' + domain_name
+        if domain_name == 'war':
+            self.add_sub_trait('parry')
 
     def first_pass(self):
         for feature in self.owner.character_features.values():
@@ -3635,3 +3641,13 @@ class FeatureClericDomain(CharacterFeature):
         self.add_stat_block_entry(StatBlockEntry(
             entry_title, 'passive', 2,
             "Yay cleric domain."))
+
+
+FEATURE_CLASS_REFERENCE = {
+    'multiattack': FeatureMultiattack,
+    'spellcasting': FeatureSpellcasting,
+    'tinker': FeatureTinker,
+    'dragonborn_feature': FeatureDragonborn,
+    'martial_arts': FeatureMartialArts,
+    'cleric_domain': FeatureClericDomain,
+}
