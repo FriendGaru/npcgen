@@ -18,3 +18,11 @@ method. if each shuffle is seeded properly it will make character rebuilds that 
 also, rename spell things to be clearer
 
 give NPCGenerator get_ methods so other places don't have to directly access its weapons/armors/spellcaster_profiles dicts
+
+right now, the class/race options are both too numerous and inflexible
+it would be nice, for example, if instead of having a separate entry for every cleric class, we had one 'cleric' entry
+and when the user selects that option, more selection options pop up for each domain
+or, perhaps instead of having a bazillion dragonborn entries, there's just one and when the user selects it they
+can either leave it random or select a specific option.
+a class template, for example, should work in a way to override a class feature parameter with a user supplied one
+and ALSO have a good way of keeping track of options to display.
