@@ -1,1 +1,1 @@
-from npcgen_main import NPCGenerator, StatBlockEntry
+from npcgen.npcgen_main import NPCGenerator, StatBlock, StatBlockEntry
