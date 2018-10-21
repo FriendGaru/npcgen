@@ -26,3 +26,8 @@ or, perhaps instead of having a bazillion dragonborn entries, there's just one a
 can either leave it random or select a specific option.
 a class template, for example, should work in a way to override a class feature parameter with a user supplied one
 and ALSO have a good way of keeping track of options to display.
+
+
+THE BIG THING:
+Gotta work on separating out the modules.
+Content should handle all the stuff generated from

@@ -1,16 +1,21 @@
-import random
-import csv
 import itertools
 import string
-import collections
-from .npcgen_constants import *
+from npcgen.npcgen_content import *
 
 # -1 - Nothing at all
 # 0 - Errors only
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_LEVEL = 1
+DEBUG_VERBOSITY = 1
+
+
+def debug_print(message, required_verbosity=2):
+    """
+    Prints out a message for debugging purposes. Higher numbers are more verbose, uses the DEBUG_VERBOSITY constant.
+    """
+    if DEBUG_VERBOSITY >= required_verbosity:
+        print(message)
 
 
 # Random functions can accept an instance of random,
@@ -60,14 +65,6 @@ def weighted_sample(population, weights, k, rnd_instance=None):
     return list(sample)
 
 
-def debug_print(message, required_level=2):
-    """
-    Prints out a message for debugging purposes. Higher numbers are more verbose, uses the DEBUG_LEVEL constant.
-    """
-    if DEBUG_LEVEL >= required_level:
-        print(message)
-
-
 def num_plusser(num, add_space=False):
     """
     Takes a number, returns a str with a '+' in front of it if it's 0 or more, as is standard for modifiers in DnD.
@@ -102,22 +99,6 @@ def random_string(length, rnd_instance=None):
     return ''.join(rnd_instance.choice(string.ascii_letters) for _ in range(length))
 
 
-# I format my csv tag entries like 'tag_name:tag_val1;tag_val2,second_tag_name'
-# This will break them apart and return dictionaries like {tag_name: [tag_val1, tag_val2], second_tag_name: []}
-def csv_tag_reader(item_line, tag_delimiter=';', tag_value_separator=':', tag_val_delimiter=','):
-    if item_line == '':
-        return {}
-    tags_dict = {}
-    for tag_raw in item_line.replace(" ", "").split(tag_delimiter):
-        if tag_value_separator in tag_raw:
-            tag_name, tag_values_raw = tag_raw.split(tag_value_separator)
-            tag_val_list = tag_values_raw.split(tag_val_delimiter)
-        else:
-            tag_name, tag_val_list = tag_raw, []
-        tags_dict[tag_name] = tag_val_list
-    return tags_dict
-
-
 # There are a bunch of times where you use hd/level to get a simple value
 # Most attack cantrips, for example, do a single die of damage at level one and add a die at levels 5, 11, and 17
 # Since it's very common and takes up an annoying amount of space, this is just a helper function
@@ -126,7 +107,7 @@ def csv_tag_reader(item_line, tag_delimiter=';', tag_value_separator=':', tag_va
 # character_hd: how many hd the character we're check has
 # increment: how much to increase at each point
 # For example, that cantrip progression for a level 10 character would look like
-# increment_from_hd(1, (5, 11, 17), 10)
+# increment_from_hd(1, (5, 11, 17), 10) and would return 2
 def increment_from_hd(starting_val, increase_points, character_hd, increment=1):
     out_val = starting_val
     for point in increase_points:
@@ -141,569 +122,23 @@ class NPCGenerator:
     Character class based on given parameters.
     """
 
-    def __init__(self,
-                 weapons_file_loc=WEAPONS_FILE,
-                 armors_file_loc=ARMORS_FILE,
-                 spells_file_loc=SPELLS_FILE,
-                 spell_lists_file_loc=SPELLLISTS_FILE,
-                 spellcaster_profiles_file_loc=SPELLCASTER_PROFILES_FILE,
-                 armors_loadout_pools_file_loc=ARMORS_LOADOUT_POOLS_FILE,
-                 weapons_loadout_pools_file_loc=WEAPONS_LOADOUT_POOLS_FILE,
-                 traits_file_loc=TRAITS_FILE,
-                 race_templates_file_loc=RACE_TEMPLATES_FILE,
-                 class_templates_file_loc=CLASS_TEMPLATES_FILE,
-                 ):
+    def __init__(self):
 
-        self.weapons = {}
-        self.load_weapons_from_csv(weapons_file_loc)
-
-        self.armors = {}
-        self.load_armors_from_csv(armors_file_loc)
-
-        self.armors_loadout_pools = {}
-        self.load_armors_loadout_pools_from_csv(armors_loadout_pools_file_loc)
-
-        self.weapons_loadout_pools = {}
-        self.load_weapons_loadout_pools_from_csv(weapons_loadout_pools_file_loc)
-
-        self.traits = {}
-        self.load_traits_from_csv(traits_file_loc)
-
-        self.spells = {}
-        self.load_spells_from_csv(spells_file_loc)
-
-        self.spell_lists = {}
-        self.load_spell_lists_from_csv(spell_lists_file_loc)
-
-        self.spellcaster_profiles = {}
-        self.load_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
-
-        # All ???_options attributes are intended to provide easy access to valid options when it comes time to render
-        # They are of the format [(option internal_name, option display_name), ... ]
-        # Entries may have the internal name "@CATEGORY", which indicates it is not a valid option, but rather a sorting
-        # category, such as for categories in an html drop down menu
-        # ???_keys, on the other hand, contain ONLY valid options for new_character() parameters
-        # and can be used for easily grabbing valid random options or for validating requests
-
-        self.race_templates = {}
-        # For the HTML drop down boxes, includes categories for sorting
-        # Starts with super random option, which isn't reflected in the csv files
-        self.race_options = [('random_race', 'Random Race'), ]
-        self.race_keys = []
-        self.race_random_categories = {}
-        self.load_race_templates_from_csv(race_templates_file_loc)
-
-        self.class_templates = {}
-        # For the HTML drop down boxes, includes categories for sorting
-        # Starts with super random option, which isn't reflected in the csv files
-        self.class_options = [('random_class', 'Random Class'), ]
-        self.class_keys = []
-        self.class_random_categories = {}
-        self.load_class_templates_from_csv(class_templates_file_loc)
+        self.content_source = ContentSource()
 
         self.roll_options = ROLL_METHODS_OPTIONS
         self.roll_keys = list(ROLL_METHODS.keys())
 
         self.hd_size_options = tuple(itertools.chain(['Default'], ['d' + str(x) for x in VALID_HD_SIZES]))
 
-    def load_armors_from_csv(self, armors_file_loc):
-        with open(armors_file_loc, newline='', encoding="utf-8") as armors_file:
-            armors_file_reader = csv.DictReader(armors_file)
-            for line in armors_file_reader:
-
-                # Ignore blank lines or comments using hashtags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
-
-                new_armor = Armor()
-                new_armor.int_name = line['internal_name']
-                if line['display_name']:
-                    new_armor.display_name = line['display_name']
-                else:
-                    new_armor.display_name = new_armor.int_name.capitalize()
-                new_armor.base_ac = int(line['base_ac'])
-                new_armor.armor_type = line['armor_type']
-                if line['min_str']:
-                    new_armor.min_str = int(line['min_str'])
-                if line['stealth_disadvantage'] == 'TRUE':
-                    new_armor.stealth_disadvantage = True
-                new_armor.tags = set(line['tags'].replace(" ", "").split(','))
-                self.armors[new_armor.int_name] = new_armor
-
-    def load_weapons_from_csv(self, weapons_file_loc):
-        with open(weapons_file_loc, newline='', encoding="utf-8") as weaponsFile:
-            weapons_file_reader = csv.DictReader(weaponsFile)
-            for line in weapons_file_reader:
-
-                # Ignore blank lines or comments using hastags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
-
-                new_weapon = Weapon()
-                new_weapon.int_name = line['internal_name']
-                if line['display_name']:
-                    new_weapon.display_name = line['display_name']
-                else:
-                    new_weapon.display_name = line['internal_name'].capitalize()
-                new_weapon.dmg_dice_num = int(line['dmg_dice_num'])
-                new_weapon.dmg_dice_size = int(line['dmg_dice_size'])
-                new_weapon.damage_type = line['damage_type']
-                new_weapon.attack_type = line['attack_type']
-                if line['short_range']:
-                    new_weapon.range_short = int(line['short_range'])
-                if line['long_range']:
-                    new_weapon.range_long = int(line['long_range'])
-                new_weapon.tags = set(line['tags'].replace(" ", "").split(','))
-                self.weapons[new_weapon.int_name] = new_weapon
-                debug_print("Weapon Added: " + str(new_weapon), 3)
-
-    def load_traits_from_csv(self, traits_file_loc):
-        with open(traits_file_loc, newline='', encoding="utf-8") as traitsFile:
-            traits_file_reader = csv.DictReader(traitsFile)
-            for line in traits_file_reader:
-
-                # Ignore blank lines or comments using hastags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
-                try:
-                    new_trait_factory = TraitFactory()
-                    new_trait_factory.int_name = line['internal_name']
-                    if line['display_name']:
-                        new_trait_factory.display_name = line['display_name']
-                    else:
-                        new_trait_factory.display_name = line['internal_name'].replace('_', ' ').title()
-
-                    if line['subtitle']:
-                        new_trait_factory.recharge = line['subtitle']
-
-                    new_trait_factory.trait_type = line['trait_type']
-
-                    if line['visibility']:
-                        new_trait_factory.visibility = int(line['visibility'])
-                    else:
-                        new_trait_factory.visibility = 0
-
-                    new_trait_factory.text = line['text'].replace('\\n', '\n\t')
-
-                    new_trait_factory.tags = csv_tag_reader(line['tags'])
-
-                    self.traits[new_trait_factory.int_name] = new_trait_factory
-                except (ValueError, TypeError):
-                    print("Error procession trait {}".format(line['internal_name']))
-
-    def load_armors_loadout_pools_from_csv(self, loadout_pools_file_loc):
-        with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
-            loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
-            new_loadout_pool = None
-            for line in loadout_pools_file_reader:
-
-                # loadout pools are a little different, blank lines mean they get added to the previous pool
-                # Hashtag comment lines are still skippable
-                # Completely blank lines should also be skipped
-                if '#' in line['name']:
-                    continue
-                elif not line['name'] and not line['armors']:
-                    continue
-
-                if line['name']:
-                    # If we get a new loadout pool, as specified by something int he name column,
-                    # Add the current pool and start a new one
-                    if new_loadout_pool:
-                        self.armors_loadout_pools[new_loadout_pool.name] = new_loadout_pool
-                    new_loadout_pool = LoadoutPool()
-                    new_loadout_pool.name = line['name']
-                if line['weight']:
-                    weight = int(line['weight'])
-                else:
-                    weight = DEFAULT_LOADOUT_WEIGHT
-
-                armors = line['armors'].replace(" ", "").split(',')
-
-                new_loadout = Loadout()
-                new_loadout.armors = armors
-                new_loadout_pool.add_loadout(new_loadout, weight)
-
-            # When we get to the end, add the last pool
-            self.armors_loadout_pools[new_loadout_pool.name] = new_loadout_pool
-
-    def load_weapons_loadout_pools_from_csv(self, loadout_pools_file_loc):
-        with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
-            loadout_pools_file_reader = csv.DictReader(loadoutPoolsFile)
-            new_loadout_pool = None
-            for line in loadout_pools_file_reader:
-
-                # loadout pools are a little different, blank lines mean they get added to the previous pool
-                # Hashtag comment lines are still skippable
-                # Completely blank lines should also be skipped
-                if '#' in line['name']:
-                    continue
-                elif not line['name'] and not line['weapons']:
-                    continue
-
-                if line['name']:
-                    # If we get a new loadout pool, as specified by something int he name column,
-                    # Add the current pool and start a new one
-                    if new_loadout_pool:
-                        self.weapons_loadout_pools[new_loadout_pool.name] = new_loadout_pool
-                    new_loadout_pool = LoadoutPool()
-                    new_loadout_pool.name = line['name']
-                if line['weight']:
-                    weight = int(line['weight'])
-                else:
-                    weight = DEFAULT_LOADOUT_WEIGHT
-
-                weapons = line['weapons'].replace(" ", "").split(',')
-                if line['shield']:
-                    shield = True
-                else:
-                    shield = False
-
-                new_loadout = Loadout()
-                new_loadout.weapons = weapons
-                new_loadout.shield = shield
-                new_loadout_pool.add_loadout(new_loadout, weight)
-
-            # When we get to the end, add the last pool
-            self.weapons_loadout_pools[new_loadout_pool.name] = new_loadout_pool
-
-    def load_spells_from_csv(self, spells_file_loc):
-        with open(spells_file_loc, newline='', encoding="utf-8") as spellsFile:
-            spells_file_reader = csv.DictReader(spellsFile)
-            for line in spells_file_reader:
-
-                # Ignore blank lines or comments using hastags
-                if line['name'] == '' or '#' in line['name']:
-                    continue
-
-                new_spell = Spell()
-                new_spell.name = line['name']
-                new_spell.source = line['source']
-                new_spell.level = ORDINAL_TO_NUM[line['level']]
-                new_spell.school = line['school']
-                new_spell.classes = set(line['classes'].replace(" ", "").split(','))
-                self.spells[new_spell.name] = new_spell
-
-    def load_spell_lists_from_csv(self, spell_lists_file_loc):
-        with open(spell_lists_file_loc, newline='', encoding="utf-8") as spellListsFile:
-            spell_lists_file_reader = csv.DictReader(spellListsFile)
-            for line in spell_lists_file_reader:
-
-                # Ignore blank lines or comments using hastags
-                if line['name'] == '' or '#' in line['name']:
-                    continue
-
-                new_spell_list = SpellList()
-                new_spell_list.name = line['name']
-
-                # Check for if it's an autolist
-                # If all these fields are blank, it's not an autolist
-                if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
-                        or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
-                    req_classes = None
-                    if line['req_classes']:
-                        req_classes = line['req_classes'].replace(" ", "").split(",")
-                    req_schools = None
-                    if line['req_schools']:
-                        req_schools = set(line['req_schools'].replace(" ", "").split(","))
-                    req_levels = None
-                    if line['req_levels']:
-                        req_levels = line['req_levels'].replace(" ", "").split(",")
-                    req_sources = None
-                    if line['req_sources']:
-                        req_sources = line['req_sources'].replace(" ", "").split(",")
-
-                    for spell_name, spell in self.spells.items():
-                        if req_classes and spell.classes.isdisjoint(req_classes):
-                            continue
-                        if req_schools and spell.school not in req_schools:
-                            continue
-                        if req_levels and spell.level not in req_levels:
-                            continue
-                        if req_sources and spell.source not in req_sources:
-                            continue
-                        new_spell_list.add_spell(spell)
-
-                if line['fixed_include']:
-                    fixed_include_spells = line['fixed_include'].split(',')
-                    for spell_name in fixed_include_spells:
-                        spell_name = spell_name.strip()
-                        if spell_name not in self.spells:
-                            debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                        .format(spell_name, new_spell_list.name), 0)
-                        else:
-                            new_spell_list.add_spell(self.spells[spell_name])
-
-                if line['fixed_exclude']:
-                    fixed_exclude_spells = line['fixed_exclude'].split(',')
-                    for spell_name in fixed_exclude_spells:
-                        spell_name = spell_name.strip()
-                        if spell_name not in self.spells:
-                            debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                        .format(spell_name, new_spell_list.name), 0)
-                        else:
-                            new_spell_list.remove_spell(spell_name)
-
-                if line['spelllists_include']:
-                    spell_lists_to_include = line['spelllists_include'].replace(" ", "").split(',')
-                    for spellListToInclude in spell_lists_to_include:
-                        for spell_name, spell in spellListToInclude.spells.items():
-                            new_spell_list.add_spell(spell)
-
-                if line['spelllists_exclude']:
-                    spell_lists_to_exclude = line['spelllists_exclude'].replace(" ", "").split(',')
-                    for spellListToExclude in spell_lists_to_exclude:
-                        spell_list = self.spell_lists[spellListToExclude]
-                        for spell_name, spell in spell_list.spells.items():
-                            new_spell_list.remove_spell(spell)
-
-                self.spell_lists[new_spell_list.name] = new_spell_list
-
-    def load_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
-        with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
-            spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
-            for line in spellcaster_profiles_file_reader:
-
-                try:
-
-                    # Ignore blank lines or comments using hastags
-                    if line['internal_name'] == '' or '#' in line['internal_name']:
-                        continue
-
-                    new_spellcaster_profile = SpellCasterProfile()
-                    new_spellcaster_profile.int_name = line['internal_name']
-                    new_spellcaster_profile.casting_stat = line['casting_stat']
-                    new_spellcaster_profile.ready_style = line['ready_style']
-
-                    if line["hd_per_casting_level"]:
-                        new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
-                    else:
-                        new_spellcaster_profile.hd_per_casting_level = 1
-
-                    if line['cantrips_per_level']:
-                        new_spellcaster_profile.cantrips_per_level = line['cantrips_per_level']
-                    else:
-                        new_spellcaster_profile.cantrips_per_level = None
-
-                    if line['fixed_spells_known_by_level']:
-                        new_spellcaster_profile.fixed_spells_known_by_level = line['fixed_spells_known_by_level']
-                    else:
-                        new_spellcaster_profile.fixed_spells_known_by_level = None
-
-                    if line['spells_known_modifier']:
-                        new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
-                    else:
-                        new_spellcaster_profile.spells_known_modifier = 0
-
-                    if line['free_spell_lists']:
-                        new_spellcaster_profile.free_spell_lists = line['free_spell_lists'].replace(" ", "").split(',')
-                    else:
-                        new_spellcaster_profile.free_spell_lists = []
-
-                    new_spell_lists_dict = {}
-                    for rawEntry in line['spell_lists'].replace(" ", "").split(','):
-                        if ':' in rawEntry:
-                            spell_list_name, weight = rawEntry.split(':')
-                            new_spell_lists_dict[spell_list_name] = weight
-                        else:
-                            new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_LIST_WEIGHT
-                    new_spellcaster_profile.spell_lists = new_spell_lists_dict
-
-                    new_spellcaster_profile.tags = csv_tag_reader(line['tags'])
-
-                    # For now, only standard slots progression
-                    # In the future, may add support for nonstandard slot progressions, like warlock
-                    new_spellcaster_profile.spell_slots_table = SPELL_SLOTS_TABLE
-
-                    self.spellcaster_profiles[new_spellcaster_profile.int_name] = new_spellcaster_profile
-
-                except (ValueError, TypeError):
-                    debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
-
-    def load_race_templates_from_csv(self, race_templates_file_loc):
-        with open(race_templates_file_loc, newline='', encoding="utf-8") as race_templates_file:
-            race_templates_file_reader = csv.DictReader(race_templates_file)
-
-            current_category = ''
-            add_random_entries = False
-            for line in race_templates_file_reader:
-
-                # Ignore blank lines or comments using hashtags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
-
-                # For building random categories automatically
-                elif line['internal_name'] == '@CATEGORY':
-                    self.race_options.append(('@CATEGORY', line['display_name']))
-                    current_category = line['display_name'].lower().replace(' ', '_')
-                    add_random_entries = False
-                    continue
-                elif line['internal_name'] == '@RANDOM':
-                    self.race_options.append(('random_' + current_category, line['display_name']))
-                    self.race_random_categories['random_' + current_category] = []
-                    self.race_keys.append('random_' + current_category)
-                    add_random_entries = True
-                    continue
-                elif add_random_entries:
-                    self.race_random_categories['random_' + current_category].append(line['internal_name'])
-
-                try:
-                    new_race_template = RaceTemplate()
-                    new_race_template.int_name = line["internal_name"]
-                    if line["display_name"]:
-                        new_race_template.display_name = line['display_name']
-                    else:
-                        # The main race name is always the start of the internal name
-                        # So, for most entries a bit of finagling is called for
-                        name_parts = line['internal_name'].split('_')
-                        name_parts.append(name_parts.pop(0))
-                        name = ' '.join(name_parts)
-                        name = name.title()
-                        new_race_template.display_name = name
-
-                    new_attribute_bonuses_dict = {}
-                    if line['attribute_bonuses']:
-                        for raw_attribute_bonus in line['attribute_bonuses'].replace(' ', '').split(','):
-                            attribute, bonus = raw_attribute_bonus.split(':')
-                            bonus = int(bonus)
-                            new_attribute_bonuses_dict[attribute] = bonus
-                    new_race_template.attribute_bonuses = new_attribute_bonuses_dict
-
-                    new_race_template.languages = line['languages'].replace(" ", "").split(',')
-
-                    if line['creature_type']:
-                        new_race_template.creature_type = line['creature_type']
-                    else:
-                        new_race_template.creature_type = DEFAULT_CREATURE_TYPE
-
-                    if line['size']:
-                        new_race_template.size = line['size']
-                    else:
-                        new_race_template.size = DEFAULT_SIZE
-
-                    if line['speeds']:
-                        for entry in line['speeds'].replace(' ', '').split(','):
-                            speed, val = entry.split(':')
-                            new_race_template.speeds[speed] = int(val)
-
-                    if line['traits']:
-                        new_race_template.traits = line['traits'].replace(" ", "").split(',')
-
-                    if line['languages']:
-                        new_race_template.languages = line['languages'].replace(" ", "").split(',')
-
-                    new_race_template.features = csv_tag_reader(line['features'])
-
-                    self.race_options.append((new_race_template.int_name, new_race_template.display_name))
-                    self.race_templates[new_race_template.int_name] = new_race_template
-                    self.race_keys.append(new_race_template.int_name)
-
-                except ValueError:
-                    print("Error processing race template {}".format(line['internal_name']))
-
-    def load_class_templates_from_csv(self, class_templates_file_loc):
-        with open(class_templates_file_loc, newline='', encoding="utf-8") as class_templates_file:
-            class_templates_file_reader = csv.DictReader(class_templates_file)
-
-            current_category = ''
-            add_random_entries = False
-            for line in class_templates_file_reader:
-
-                # Ignore blank lines or comments using hashtags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
-
-                # For building random categories automatically
-                elif line['internal_name'] == '@CATEGORY':
-                    self.class_options.append(('@CATEGORY', line['display_name']))
-                    current_category = line['display_name'].lower().replace(' ', '_')
-                    add_random_entries = False
-                    continue
-                elif line['internal_name'] == '@RANDOM':
-                    self.class_options.append(('random_' + current_category, line['display_name']))
-                    self.class_random_categories['random_' + current_category] = []
-                    self.class_keys.append('random_' + current_category)
-                    add_random_entries = True
-                    continue
-                elif add_random_entries:
-                    self.class_random_categories['random_' + current_category].append(line['internal_name'])
-
-                try:
-                    new_class_template = ClassTemplate()
-                    new_class_template.int_name = line['internal_name']
-
-                    if line['display_name']:
-                        new_class_template.display_name = line['display_name']
-                    else:
-                        new_class_template.display_name = line['internal_name'].replace('_', ' ').capitalize()
-
-                    new_class_template.priority_attributes = line['priority_attributes'].replace(" ", "").split(',')
-                    new_class_template.hd_size = int(line['hd_size'])
-
-                    new_class_template.saves = line['saves'].replace(" ", "").split(',')
-                    new_class_template.skills_fixed = line['skills_fixed'].replace(" ", "").split(',')
-                    new_class_template.skills_random = line['skills_random'].replace(" ", "").split(',')
-                    if line['num_random_skills']:
-                        new_class_template.num_random_skills = int(line['num_random_skills'])
-                    else:
-                        new_class_template.num_random_skills = 0
-
-                    # if line['loadout_pool']:
-                    #     new_class_template.loadout_pool = line['loadout_pool']
-
-                    if line['weapons_loadout']:
-                        new_class_template.weapons_loadout_pool = line['weapons_loadout']
-
-                    if line['armors_loadout']:
-                        new_class_template.armors_loadout_pool = line['armors_loadout']
-
-                    if line['traits']:
-                        new_class_template.traits = line['traits'].replace(" ", "").split(',')
-
-                    if line['cr_calc']:
-                        new_class_template.cr_calc_type = line['cr_calc']
-                    else:
-                        new_class_template.cr_calc_type = 'attack'
-
-                    new_class_template.features = csv_tag_reader(line['features'])
-
-                    self.class_options.append((new_class_template.int_name, new_class_template.display_name))
-                    self.class_templates[new_class_template.int_name] = new_class_template
-                    self.class_keys.append(new_class_template.int_name)
-
-                except ValueError:
-                    print("Error processing class template {}.".format(line['internal_name']))
-
-    @staticmethod
-    def build_character_feature(character, feature_string, args_tup=()):
-        feature_class = FEATURE_CLASS_REFERENCE[feature_string]
-        feature_instance = feature_class(character, args_tup=args_tup)
-        return feature_instance
-
-    def build_trait(self, character, trait_name):
-        trait_factory = self.traits[trait_name]
-        trait_feature_instance = trait_factory.get_character_feature(character)
+    def build_trait(self, character: 'Character', trait_name):
+        trait_template = self.content_source.get_trait_template(trait_name)
+        trait_feature_instance = FeatureTrait(character, trait_template)
         return trait_feature_instance
 
-    def give_armor(self, character, armor_name, extra=False):
-        armor = self.armors[armor_name].get_copy()
-        armor.owner = character
-        if extra:
-            character.extra_armors[armor_name] = armor
-        else:
-            character.armors[armor_name] = armor
-
-    def give_weapon(self, character, weapon_name):
-        weapon = self.weapons[weapon_name].get_copy()
-        weapon.owner = character
-        character.weapons[weapon_name] = weapon
-
     # Applies everything EXCEPT features/traits
-    def apply_race_template(self, character: 'Character', race_template):
-
-        if type(race_template) == str:
-            race_template = self.race_templates[race_template]
-        assert isinstance(race_template, RaceTemplate), \
-            "apply_race_template() requires either a RaceTemplate or a string indicating a valid RaceTemplate"
+    @staticmethod
+    def apply_race_template(character: 'Character', race_template: 'RaceTemplate'):
 
         character.race_name = race_template.display_name
         character.attribute_bonuses = race_template.attribute_bonuses
@@ -719,12 +154,7 @@ class NPCGenerator:
             character.add_language(language)
 
     # Applies everything EXCEPT features/traits
-    def apply_class_template(self, character: 'Character', class_template, seed):
-
-        if type(class_template) == str:
-            class_template = self.class_templates[class_template]
-        assert isinstance(class_template, ClassTemplate), \
-            "apply_class_template() requires either a ClassTemplate or a string indicating a valid ClassTemplate"
+    def apply_class_template(self, character: 'Character', class_template: 'ClassTemplate', seed):
 
         character.class_name = class_template.display_name
         character.priority_attributes = class_template.priority_attributes
@@ -747,28 +177,37 @@ class NPCGenerator:
             character.multiattack = class_template.multiattack_type
 
         if class_template.armors_loadout_pool:
-            loadout_pool = self.armors_loadout_pools[class_template.armors_loadout_pool]
+            armors_pool_name = class_template.armors_loadout_pool
+            assert self.content_source.is_valid_content(
+                ContentType.ARMOR_LOADOUT_POOL, armors_pool_name), \
+                "apply_class_template('{}'): {} is invalid armors pool"\
+                .format(class_template.int_name, armors_pool_name)
+            loadout_pool = self.content_source.get_armor_loadout_pool(armors_pool_name)
             loadout = loadout_pool.get_random_loadout(seed=seed)
             if loadout.armors:
                 for armor in loadout.armors:
-                    self.give_armor(character, armor)
+                    character.give_armor(armor)
 
         if class_template.weapons_loadout_pool:
-            loadout_pool = self.weapons_loadout_pools[class_template.weapons_loadout_pool]
+            weapons_pool_name = class_template.weapons_loadout_pool
+            assert self.content_source.is_valid_content(
+                ContentType.WEAPON_LOADOUT_POOL, weapons_pool_name), \
+                "apply_class_template('{}'): {} is invalid weapons pool"\
+                .format(class_template.int_name, weapons_pool_name)
+            loadout_pool = self.content_source.get_weapon_loadout_pool(weapons_pool_name)
             loadout = loadout_pool.get_random_loadout(seed=seed)
             if loadout.weapons:
                 for weapon in loadout.weapons:
-                    self.give_weapon(character, weapon)
-            character.has_shield = loadout.shield
+                    character.give_weapon(weapon)
 
     def get_options(self, options_type):
         """
         Returns a list of tuples for potential race options: [(internal_name, display_name),...]
         """
         if options_type == 'race_choice':
-            return self.race_options
+            return self.content_source.get_race_user_options()
         elif options_type == 'class_choice':
-            return self.class_options
+            return self.content_source.get_class_user_options()
         elif options_type == 'attribute_roll_method':
             return self.roll_options
         elif options_type == 'hit_dice_num':
@@ -792,43 +231,13 @@ class NPCGenerator:
 
     def get_random_option(self, option_type):
         if option_type == 'race':
-            return random.choice(self.race_keys)
+            return random.choice(self.content_source.get_race_choices())
         elif option_type == 'class':
-            return random.choice(self.class_keys)
+            return random.choice(self.content_source.get_class_choices())
         elif option_type == 'roll':
             return random.choice(self.roll_keys)
         else:
             raise ValueError("Invalid value type '{}' requested for random option.".format(option_type))
-
-    def validate_params(self, class_choice=None, race_choice=None,
-                        hd=None, hd_size=None, roll_choice=None):
-
-        if class_choice is not None:
-            if class_choice not in self.class_keys:
-                return False
-
-        if race_choice is not None:
-            if race_choice not in self.race_keys:
-                return False
-
-        if hd is not None:
-            if int(hd) < 1 or int(hd) > 20:
-                return False
-
-        if hd_size is not None:
-            if hd_size != 'Default':
-                try:
-                    hd_size = int(hd_size)
-                    if hd_size not in self.hd_size_options:
-                        return False
-                except ValueError:
-                    return False
-
-        if roll_choice is not None:
-            if roll_choice not in self.roll_keys:
-                return False
-
-        return True
 
     # This function takes in a dictionary intended for building a new npc
     # It goes through and makes sure the dictionary is ready to go
@@ -845,14 +254,14 @@ class NPCGenerator:
         clean_dict = {}
 
         if 'race_choice' in request_dict.keys() \
-                and (request_dict['race_choice'] in self.race_keys or request_dict['race_choice'] == 'random_race'):
+                and request_dict['race_choice'] in self.content_source.valid_user_race_choices():
             clean_dict['race_choice'] = request_dict['race_choice']
         else:
             is_valid = False
             clean_dict['race_choice'] = self.get_random_option('race')
 
         if 'class_choice' in request_dict.keys() \
-                and (request_dict['class_choice'] in self.class_keys or request_dict['class_choice'] == 'random_class'):
+                and request_dict['class_choice'] in self.content_source.valid_user_class_choices():
             clean_dict['class_choice'] = request_dict['class_choice']
         else:
             is_valid = False
@@ -930,25 +339,27 @@ class NPCGenerator:
         # This is for the super random option, which is anything at all
         if race_choice == 'random_race':
             rnd_instance = random.Random(seed + 'random_race')
-            race_choice = rnd_instance.choice(self.race_keys)
+            race_choice = rnd_instance.choice(self.content_source.get_race_choices())
         if class_choice == 'random_class':
             rnd_instance = random.Random(seed + 'random_class')
-            class_choice = rnd_instance.choice(self.class_keys)
+            class_choice = rnd_instance.choice(self.content_source.get_class_choices())
 
         # This is for the category specific random options
-        if race_choice in self.race_random_categories:
+        if 'random_' in race_choice:
+            category = race_choice.replace('random_', '')
             rnd_instance = random.Random(seed + 'random_race_from_category')
-            race_choice = rnd_instance.choice(self.race_random_categories[race_choice])
-        if class_choice in self.class_random_categories:
+            race_choice = rnd_instance.choice(self.content_source.race_categories[category])
+        if 'random_' in class_choice:
+            category = class_choice.replace('random_', '')
             rnd_instance = random.Random(seed + 'random_class_from_category')
-            class_choice = rnd_instance.choice(self.class_random_categories[class_choice])
+            class_choice = rnd_instance.choice(self.content_source.class_categories[category])
 
         # Sanity checks
         assert 1 <= hit_dice_num <= 20, 'Invalid HD_NUM received: {}'.format(hit_dice_num)
-        assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
-        assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
+        # assert class_choice in self.class_keys, 'Invalid class_template: {}'.format(class_choice)
+        # assert race_choice in self.race_keys, 'Invalid race_template: {}'.format(race_choice)
 
-        new_character = Character(seed, self)
+        new_character = Character(seed, self.content_source)
 
         if name:
             new_character.name = name
@@ -956,11 +367,11 @@ class NPCGenerator:
         new_character.set_stat('hit_dice_num', hit_dice_num)
         new_character.set_stat('hit_dice_extra', bonus_hd)
 
-        race_template = self.race_templates[race_choice]
+        race_template = self.content_source.get_race_template(race_choice)
         assert isinstance(race_template, RaceTemplate)
         self.apply_race_template(new_character, race_template)
 
-        class_template = self.class_templates[class_choice]
+        class_template = self.content_source.get_class_template(class_choice)
         assert isinstance(class_template, ClassTemplate)
         self.apply_class_template(new_character, class_template, seed=seed)
 
@@ -973,7 +384,7 @@ class NPCGenerator:
         for feature_name, feature_args in itertools.chain((
                 race_template.features.items()), class_template.features.items()):
             debug_print('Feature: {} args: {}'.format(feature_name, str(feature_args)), 3)
-            feature_instance = self.build_character_feature(new_character, feature_name, feature_args)
+            feature_instance = build_character_feature(new_character, feature_name, feature_args)
             feature_instance.give_to_owner()
             # It's possible for features to give themselves sub features during instantiation
             # So, we need this step, too
@@ -1034,7 +445,7 @@ class NPCGenerator:
         new_character.update_derived_stats()
 
         # All characters get unarmored 'armor'
-        self.give_armor(new_character, 'unarmored')
+        new_character.give_armor('unarmored')
         # Remember, speeds have to come after armor selection
         new_character.choose_armors()
 
@@ -1057,13 +468,12 @@ class NPCGenerator:
 
 
 class Character:
-    def __init__(self, seed, npc_gen):
+    def __init__(self, seed, content_source):
 
         # Character Features get their seed from here, so even if Character doesn't use it it should be present
         self.seed = seed
-        # I originally wanted a complete break between NPCGenerator and Character,
-        # but Character Features are allowed to look at NPCGens for reference data, so might as well streamline it
-        self.npc_gen = npc_gen
+        # Characters are allowed to look at the content source
+        self.content_source = content_source
 
         self.name = ''
 
@@ -1305,7 +715,7 @@ class Character:
         # Python lets us multiply bools by ints, so yay
         # This val should only be nonzero if a character is wearing heavy armor, doesn't have enough strength,
         # and hasn't has their penalty reduced, such as by the heavy_armor_training_trait
-        armor_move_penalty = self.chosen_armor.speed_penalty(self)
+        armor_move_penalty = self.chosen_armor.speed_penalty()
 
         # If the base move for any is zero, that means they don't have that ype of movement at all
         # Technically, I guess if speed is reduced below zero they should lose that movement, so let's do that too
@@ -1355,23 +765,36 @@ class Character:
     def set_stat(self, stat, value):
         self.stats[stat] = value
 
+    def give_armor(self, armor_name, extra=False):
+        armor_template = self.content_source.get_armor(armor_name)
+        equipped_armor = EquippedArmor(armor_template, self)
+        if extra:
+            self.extra_armors[armor_name] = equipped_armor
+        else:
+            self.armors[armor_name] = equipped_armor
+
+    def give_weapon(self, weapon_name):
+        weapon_template = self.content_source.get_weapon(weapon_name)
+        equipped_weapon = EquippedWeapon(weapon_template, self)
+        self.weapons[weapon_name] = equipped_weapon
+
     def get_best_weapon_hit_dmg(self):
         best_to_hit = 0
         best_avg_dmg = 0
         for weapon in self.weapons.values():
-            if weapon.get_to_hit(self) > best_to_hit:
-                best_to_hit = weapon.get_to_hit(self)
-                best_avg_dmg = weapon.get_damage(self, use_versatile=True)[0]
-            elif weapon.get_to_hit(self) == best_to_hit:
-                best_avg_dmg = max(best_avg_dmg, weapon.get_damage(self, use_versatile=True)[0])
+            if weapon.get_to_hit() > best_to_hit:
+                best_to_hit = weapon.get_to_hit()
+                best_avg_dmg = weapon.get_damage(use_versatile=True)[0]
+            elif weapon.get_to_hit() == best_to_hit:
+                best_avg_dmg = max(best_avg_dmg, weapon.get_damage(use_versatile=True)[0])
         return best_to_hit, best_avg_dmg
 
     def get_best_ac(self):
-        assert type(self.chosen_armor) == Armor, "Can't get AC before setting armor!"
-        best_ac = self.chosen_armor.get_ac(self)
+        assert type(self.chosen_armor) == EquippedArmor, "Can't get AC before setting armor!"
+        best_ac = self.chosen_armor.get_ac()
         if self.extra_armors:
             for extra_armor in self.extra_armors.values():
-                best_ac = max(best_ac, extra_armor.get_ac(self))
+                best_ac = max(best_ac, extra_armor.get_ac())
         return best_ac
 
     def get_cr(self):
@@ -1770,6 +1193,59 @@ class Character:
         return sb
 
 
+# Everything that can appear as an entry in a stat block musty implement this functionality
+# These blocks are "ready to go" for the renderer
+# The only logic done here is separating things into logical chunks for the renderer
+class StatBlockEntry:
+    def __init__(self, title, category, visibility, text, subtitles=None):
+        self.title = title
+        self.subtitles = subtitles
+        if not self.subtitles:
+            self.subtitles = []
+        self.text = text
+        self.category = category
+        self.visibility = visibility
+
+    def __str__(self):
+        return "{}. {}".format(self.title, self.text)
+
+    def __repr__(self):
+        return "<StatBlockEntry:{}>".format(self.title)
+
+    def add_subtitle(self, subtitle):
+        self.subtitles.append(subtitle)
+
+    def get_subtitles(self):
+        return ', '.join(self.subtitles)
+
+    # The part that is typically in bold with a period at the end.
+    def get_title(self, include_subtitles=True):
+        if include_subtitles and self.subtitles:
+            return '{} ({})'.format(self.title, ', '.join(self.subtitles))
+        else:
+            return self.title
+
+    # The normal text stuff
+    def get_entry(self):
+        return self.text
+
+    # Categories are used for organizing the statblock when it comes time for rendering
+    # The renderer is allowed to decide on the order
+    # Features with the 'hidden' category will never be shown, regardless of visibility
+    def get_category(self):
+        return self.category
+
+    # When building a statblock, visibility determines what makes the cut
+    # 0 - always show
+    # 1 - (default) usually show, but may be hidden to save space
+    # 2 - usually hide, but may be shown if a verbose version is requested
+    # 3 - always hide, probably because the character can't actually use the feature,
+    #     i.e. the feature has a minimum hd requirement the character doesn't meet
+    # Features with the 'hidden' category will never be shown, regardless of visibility
+    def get_visibility(self):
+        return self.visibility
+
+
 class StatBlock:
     """
     Stablock contains all the entries needed for displaying a stablock without any logic
@@ -1861,6 +1337,12 @@ class StatBlock:
         return self.__dict__
 
 
+def build_character_feature(character: 'Character', feature_string, args_tup=()):
+    feature_class = FEATURE_CLASS_REFERENCE[feature_string]
+    feature_instance = feature_class(character, args_tup=args_tup)
+    return feature_instance
+
+
 # When it comes time to give a character a feature, you must instantiate that feature
 # Since character features are kinda meaningless without being attached to a character,
 # they MUST have an owner specified as part of instantiation
@@ -1875,8 +1357,8 @@ class CharacterFeature:
     def __init__(self, owner: 'Character'):
         self.int_name = 'dummy'
         self.owner = owner
-        self.npc_gen = self.owner.npc_gen
-        assert isinstance(self.npc_gen, NPCGenerator), \
+        self.content_source = self.owner.content_source
+        assert isinstance(self.content_source, ContentSource), \
             "Character Feature:{} couldn't find NPCGenerator on owner!".format(self.__class__)
         self.seed = self.owner.seed
         self.stat_block_entries = []
@@ -1887,11 +1369,12 @@ class CharacterFeature:
         return '<Character Feature: {}>'.format(self.int_name)
 
     def add_sub_feature(self, sub_feature_string, args_tup=()):
-        sub_feature = self.npc_gen.build_character_feature(self, sub_feature_string, args_tup=args_tup)
+        sub_feature = build_character_feature(self.owner, sub_feature_string, args_tup=args_tup)
         self.sub_features.append(sub_feature)
 
     def add_sub_trait(self, trait_name):
-        trait_feature = self.npc_gen.build_trait(self.owner, trait_name)
+        trait_template = self.content_source.get_trait_template(trait_name)
+        trait_feature = FeatureTrait(self.owner, trait_template)
         self.sub_features.append(trait_feature)
 
     # This method is called after initialization, when it's time to assign the feature to the character
@@ -1969,97 +1452,23 @@ class CharacterFeature:
         return self.stat_block_entries
 
 
-# Everything that can appear as an entry in a stat block musty implement this functionality
-# These blocks are "ready to go" for the renderer
-# The only logic done here is separating things into logical chunks for the renderer
-class StatBlockEntry:
-    def __init__(self, title, category, visibility, text, subtitles=None):
-        self.title = title
-        self.subtitles = subtitles
-        if not self.subtitles:
-            self.subtitles = []
-        self.text = text
-        self.category = category
-        self.visibility = visibility
-
-    def __str__(self):
-        return "{}. {}".format(self.title, self.text)
-
-    def __repr__(self):
-        return "<StatBlockEntry:{}>".format(self.title)
-
-    def add_subtitle(self, subtitle):
-        self.subtitles.append(subtitle)
-
-    def get_subtitles(self):
-        return ', '.join(self.subtitles)
-
-    # The part that is typically in bold with a period at the end.
-    def get_title(self, include_subtitles=True):
-        if include_subtitles and self.subtitles:
-            return '{} ({})'.format(self.title, ', '.join(self.subtitles))
-        else:
-            return self.title
-
-    # The normal text stuff
-    def get_entry(self):
-        return self.text
-
-    # Categories are used for organizing the statblock when it comes time for rendering
-    # The renderer is allowed to decide on the order
-    # Features with the 'hidden' category will never be shown, regardless of visibility
-    def get_category(self):
-        return self.category
-
-    # When building a statblock, visibility determines what makes the cut
-    # 0 - always show
-    # 1 - (default) usually show, but may be hidden to save space
-    # 2 - usually hide, but may be shown if a verbose version is requested
-    # 3 - always hide, probably because the character can't actually use the feature,
-    #     i.e. the feature has a minimum hd requirement the character doesn't meet
-    # Features with the 'hidden' category will never be shown, regardless of visibility
-    def get_visibility(self):
-        return self.visibility
-
-
 # Traits are the most common and simplest form of CharacterFeature
 # Traits are allowed to make simple changes to a character based on the tags they've been given and will always
 # generate only a single StatBlock entry
-# That stat block entry text may insert values from the character's stats dictionary, but is otherwise static
+# The stat block entry text may insert values from the character's stats dictionary, but is otherwise static
 # Anything requiring additional functionality must be implemented as a custom CharacterFeature
-class TraitFactory:
-    def __init__(self):
-        self.int_name = ''
-        self.display_name = ''
-        self.subtitle = ''
-        self.trait_type = 'hidden'
-        self.text = ''
-        self.visibility = 0
-        self.tags = {}
-
-    def get_character_feature(self, character):
-        return FeatureTrait(
-            owner=character,
-            int_name=self.int_name,
-            title=self.display_name,
-            subtitle=self.subtitle,
-            trait_type=self.trait_type,
-            text=self.text,
-            visibility=self.visibility,
-            tags=self.tags,
-        )
-
-
+# FeatureTraits MUST be built from a TraitTemplate and cannot take any additional arguments
+# Other than that, they can be treated like a regular CharacterFeature after instantiation
 class FeatureTrait(CharacterFeature):
-    def __init__(self, owner, int_name, title, subtitle, trait_type, text, visibility, tags):
+    def __init__(self, owner, trait_template: 'TraitTemplate'):
         super().__init__(owner)
-        self.int_name = int_name
-        self.title = title
-        self.subtitle = subtitle
-        self.trait_type = trait_type
-        self.text = text
-        self.visibility = visibility
-        self.tags = tags
+        self.int_name = trait_template.int_name
+        self.title = trait_template.display_name
+        self.subtitle = trait_template.subtitle
+        self.trait_type = trait_template.trait_type
+        self.text = trait_template.text
+        self.visibility = trait_template.visibility
+        self.tags = trait_template.tags
 
     def first_pass(self):
 
@@ -2067,11 +1476,11 @@ class FeatureTrait(CharacterFeature):
 
         if 'give_armor' in self.tags:
             for armor in self.tags['give_armor']:
-                self.npc_gen.give_armor(self.owner, armor)
+                self.owner.give_armor(armor)
 
         if 'give_weapon' in self.tags:
             for weapon in self.tags['give_weapon']:
-                self.npc_gen.give_weapon(self.owner, weapon)
+                self.owner.give_weapon(weapon)
 
         if 'give_tag' in self.tags:
             for character_tag in self.tags['give_tag']:
@@ -2173,54 +1582,6 @@ class FeatureTrait(CharacterFeature):
         return [sb_entry, ]
 
 
-class RaceTemplate:
-    def __init__(self):
-        self.int_name = ''
-        self.display_name = ''
-
-        self.attribute_bonuses = {}
-        self.base_stats = {}
-
-        self.creature_type = DEFAULT_CREATURE_TYPE
-        self.size = DEFAULT_SIZE
-
-        self.speeds = {}
-        self.senses = {}
-
-        self.languages = []
-
-        self.traits = []
-        self.features = collections.OrderedDict()
-
-
-class ClassTemplate:
-    def __init__(self):
-        self.int_name = ''
-        self.display_name = ''
-
-        self.priority_attributes = []
-
-        self.hd_size = None
-
-        self.skills_fixed = []
-        self.num_random_skills = 0
-        self.skills_random = []
-
-        self.saves = []
-        self.languages = []
-
-        self.multiattack_type = None
-
-        self.armors_loadout_pool = None
-        self.weapons_loadout_pool = None
-        self.spell_casting_profile = None
-
-        self.traits = []
-        self.features = collections.OrderedDict()
-
-        self.cr_calc_type = ''
-
-
 # When it comes time for the CR calculation, each ClassFeature may choose to provide one or more CRFactor instances
 # The method for calculating CR will collect them and figure out how to use them
 class CRFactor:
@@ -2244,45 +1605,31 @@ class CRFactor:
         self.extra_hp = extra_hp
 
 
-class Armor:
-    def __init__(self):
-        self.int_name = ''
-        self.display_name = ''
-        self.base_ac = -1
-        self.armor_type = ''
-        self.min_str = 0
-        self.stealth_disadvantage = False
-        self.tags = set()
+class EquippedArmor:
+    def __init__(self, armor_template: 'ArmorTemplate', owner: 'Character'):
+        self.int_name = armor_template.int_name
+        self.display_name = armor_template.display_name
+        self.base_ac = armor_template.base_ac
+        self.armor_type = armor_template.armor_type
+        self.min_str = armor_template.min_str
+        self.stealth_disadvantage = armor_template.stealth_disadvantage
+        self.tags = armor_template.tags.copy()
 
         # Owner can be assigned to make references easier
-        self.owner = None
+        self.owner = owner
 
         # This stuff is usually default, but can be overriden by character features
         self.enchantment = 0
 
     def __repr__(self):
-        return self.int_name
-
-    # Characters get copies of equipment
-    # That way, they can let their features modify them without screwing up armors for everyone
-    def get_copy(self):
-        copy_armor = Armor()
-        copy_armor.int_name = self.int_name
-        copy_armor.display_name = self.display_name
-        copy_armor.base_ac = self.base_ac
-        copy_armor.armor_type = self.armor_type
-        copy_armor.min_str = self.min_str
-        copy_armor.stealth_disadvantage = self.stealth_disadvantage
-        copy_armor.tags = self.tags.copy()
-        copy_armor.enchantment = self.enchantment
-        return copy_armor
+        return "<EquippedArmor:{}, owner:{}>".format(self.int_name, self.owner.name)
 
     def is_extra(self):
         return 'extra' in self.tags
 
-    def get_ac(self, owner=None):
-        if not owner:
-            owner = self.owner
+    def get_ac(self,):
+
+        owner = self.owner
         assert isinstance(owner, Character), 'Armor obj {} has no owner!'.format(self.int_name)
 
         base_ac = self.base_ac + self.enchantment
@@ -2308,10 +1655,9 @@ class Armor:
     # This method returns true if a character should take a speed penalty
     # For dwarves or other characters who have heavy armor training, this will still return true,
     # but their penalty should have been reduced to zero, so it won't affect them
-    def speed_penalty(self, owner=None):
+    def speed_penalty(self):
 
-        if not owner:
-            owner = self.owner
+        owner = self.owner
         assert isinstance(owner, Character), 'Armor obj {} has no owner!'.format(self.int_name)
 
         if 'heavy_armor_penalty' in owner.character_tags:
@@ -2322,10 +1668,9 @@ class Armor:
         else:
             return 0
 
-    def stealth_penalty(self, owner):
+    def stealth_penalty(self):
 
-        if not owner:
-            owner = self.owner
+        owner = self.owner
         assert isinstance(owner, Character), 'Armor obj {} has no owner!'.format(self.int_name)
 
         # Special case for medium armor master
@@ -2343,28 +1688,28 @@ class Armor:
         armor_name = self.display_name
         if self.enchantment:
             armor_name = '{} {}'.format(self.display_name, num_plusser(self.enchantment))
-        outstring = str(self.get_ac(owner)) + ' (' + armor_name
+        outstring = str(self.get_ac()) + ' (' + armor_name
         if owner.has_shield:
             outstring += ', with shield'
         outstring += ')'
         return outstring
 
 
-class Weapon:
-    def __init__(self):
-        self.int_name = ''
-        self.display_name = ''
-        self.dmg_dice_num = 0
-        self.dmg_dice_size = 0
-        self.damage_type = ''
-        self.attack_type = ''
-        self.range_short = 0
-        self.range_long = 0
-        self.tags = set()
-        self.num_targets = 1
+class EquippedWeapon:
+    def __init__(self, weapon_template: 'WeaponTemplate', owner: 'Character'):
+        self.int_name = weapon_template.int_name
+        self.display_name = weapon_template.display_name
+        self.dmg_dice_num = weapon_template.dmg_dice_num
+        self.dmg_dice_size = weapon_template.dmg_dice_size
+        self.damage_type = weapon_template.damage_type
+        self.attack_type = weapon_template.attack_type
+        self.range_short = weapon_template.range_short
+        self.range_long = weapon_template.range_long
+        self.tags = weapon_template.tags.copy()
+        self.num_targets = weapon_template.num_targets
 
         # Can be assigned as owner, making referencing easier
-        self.owner = None
+        self.owner = owner
 
         # Typically not used, but can be modified by other things
         self.subtitles = []
@@ -2373,37 +1718,18 @@ class Weapon:
         self.extra_effects = []
 
     def __repr__(self):
+        return "<EquippedWeapon:{} owner:{}>".format(self.int_name, self.owner.name)
+
+    def __str__(self):
         outstring = '[{},{},{},{},{},{},{},{},{},{},' \
             .format(self.int_name, self.display_name, self.dmg_dice_num, self.dmg_dice_size, self.damage_type,
                     self.attack_type, str(self.range_short), str(self.range_long), str(self.tags),
                     str(self.num_targets))
         return outstring
 
-    def __str__(self):
-        return self.__repr__()
+    def get_to_hit(self):
 
-    def get_copy(self):
-        copy_weapon = Weapon()
-        copy_weapon.int_name = self.int_name
-        copy_weapon.display_name = self.display_name
-        copy_weapon.dmg_dice_num = self.dmg_dice_num
-        copy_weapon.dmg_dice_size = self.dmg_dice_size
-        copy_weapon.damage_type = self.damage_type
-        copy_weapon.attack_type = self.attack_type
-        copy_weapon.range_short = self.range_short
-        copy_weapon.range_long = self.range_long
-        copy_weapon.tags = self.tags.copy()
-        copy_weapon.num_targets = self.num_targets
-        copy_weapon.subtitles = self.subtitles.copy()
-        copy_weapon.enchantment = self.enchantment
-        copy_weapon.extra_damages = self.extra_damages.copy()
-        copy_weapon.extra_effects = self.extra_effects.copy()
-        return copy_weapon
-
-    def get_to_hit(self, owner=None):
-
-        if not owner:
-            owner = self.owner
+        owner = self.owner
         assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
 
         owner_str = owner.get_stat('str_mod')
@@ -2422,10 +1748,9 @@ class Weapon:
                 attack_stat = owner_dex
         return attack_stat + owner_prof
 
-    def get_damage(self, owner=None, use_versatile=False):
+    def get_damage(self, use_versatile=False):
 
-        if not owner:
-            owner = self.owner
+        owner = self.owner
         assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
 
         owner_str = owner.get_stat('str_mod')
@@ -2450,29 +1775,26 @@ class Weapon:
 
         return int(avg_dmg), dmg_dice_num, dmg_dice_size, attack_stat, self.damage_type, avg_dmg
 
-    def get_avg_dmg(self, owner=None):
+    def get_avg_dmg(self):
 
-        if not owner:
-            owner = self.owner
+        owner = self.owner
         assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
 
-        return self.get_damage(owner, use_versatile=True)[5]
+        return self.get_damage(use_versatile=True)[5]
 
-    def get_cr_factors(self, owner=None):
+    def get_cr_factors(self):
 
-        if not owner:
-            owner = self.owner
+        owner = self.owner
         assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
 
-        to_hit = self.get_to_hit(owner)
-        avg_dmg = self.get_avg_dmg(owner)
+        to_hit = self.get_to_hit()
+        avg_dmg = self.get_avg_dmg()
         cr_factor = CRFactor(CRFactor.ATTACK, to_hit=to_hit, damage=avg_dmg)
         return [cr_factor, ]
 
-    def get_stat_block_entry(self, owner=None):
+    def get_stat_block_entry(self):
 
-        if not owner:
-            owner = self.owner
+        owner = self.owner
         assert isinstance(owner, Character), 'Weapon obj {} has no owner!'.format(self.int_name)
 
         text = ''
@@ -2485,7 +1807,7 @@ class Weapon:
         elif is_ranged:
             text += 'Ranged weapon attack: '
 
-        text += '{} to hit, '.format(num_plusser(self.get_to_hit(owner)))
+        text += '{} to hit, '.format(num_plusser(self.get_to_hit()))
 
         if is_melee and 'reach' in self.tags:
             weapon_reach = WEAPON_REACH_W_BONUS
@@ -2504,14 +1826,14 @@ class Weapon:
         else:
             text += NUM_TO_TEXT.get(self.num_targets) + ' targets. '
         ##
-        avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = self.get_damage(owner)
+        avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = self.get_damage()
         text += 'Hit: {}({}d{} {}) {} damage' \
             .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
 
         # Check for versatile, which increases damage with two hands.
         if is_melee and 'versatile' in self.tags:
             avg_dmg_int, num_dmg_dice, dmg_dice_size, attack_mod, dmg_type, avg_dmg_float = \
-                self.get_damage(owner, use_versatile=True)
+                self.get_damage(use_versatile=True)
             text += ' or {}({}d{} {}) {} damage if used with two hands' \
                 .format(avg_dmg_int, num_dmg_dice, dmg_dice_size, num_plusser(attack_mod, add_space=True), dmg_type)
         text += '.'
@@ -2525,125 +1847,6 @@ class Weapon:
 
     def add_tag(self, tag):
         self.tags.add(tag)
-
-
-class Spell:
-    def __init__(self):
-        self.name = ''
-        self.source = ''
-        self.level = -1
-        self.school = ''
-        self.classes = set()
-
-    def __repr__(self):
-        return '<Spell: {}>'.format(self.name)
-
-    def __str__(self):
-        return "[{},{},{},{},{}]".format(self.name, self.source, str(self.level), self.school, str(self.classes))
-
-
-class SpellList:
-    def __init__(self):
-        self.name = None
-        self.spells = {}
-
-    def __str__(self):
-        return "[{}: {}]".format(self.name, ",".join(self.spells))
-
-    def add_spell(self, spell_obj):
-        self.spells[spell_obj.name] = spell_obj
-
-    def remove_spell(self, spell):
-        if type(spell) == Spell:
-            spell = spell.name
-        if spell in self.spells:
-            self.spells.pop(spell)
-
-    def get_spell_names_by_level(self):
-        out_spells = [set(), set(), set(), set(), set(), set(), set(), set(), set(), set(), ]
-        for spell in self.spells.values():
-            out_spells[spell.level].add(spell.name)
-        return out_spells
-
-    def get_spell_set_of_level(self, level):
-        outset = set()
-        for spell in self.spells.values():
-            if spell.level == level:
-                outset.add(spell.name)
-        return outset
-
-    def num_spells_of_level(self, level):
-        count = 0
-        for spell in self.spells.values():
-            if spell.level == level:
-                count += 1
-        return count
-
-
-class SpellCasterProfile:
-    def __init__(self):
-        self.int_name = ''
-        self.hd_per_casting_level = 1
-        self.cantrips_per_level = None
-        self.spells_known_modifier = 0
-        # spell_lists = {spell_list : weight}
-        self.spell_lists = {}
-        self.free_spell_lists = []
-        self.ready_style = ''
-        self.casting_stat = ''
-        self.fixed_spells_known_by_level = None
-        # For now, only the standard slots table is supported
-        # spell_slots_table[caster_level][spell_level]
-        self.spell_slots_table = None
-        self.tags = {}
-
-    def __repr__(self):
-        return '<SpellCaster Profile: {}>'.format(self.int_name)
-
-    # Give copies so the original profile doesn't get messed up
-    def get_spell_lists(self):
-        out_dict = {}
-        for k, v in self.spell_lists:
-            out_dict[k] = v
-        return out_dict
-
-    def get_tags(self):
-        out_dict = {}
-        for k, v in self.tags.items():
-            out_dict[k] = v
-        return out_dict
-
-    def get_free_spell_lists(self):
-        return self.spell_lists[:]
-
-
-class Loadout:
-    def __init__(self):
-        self.weapons = None
-        self.armors = None
-        self.shield = None
-
-    def __str__(self):
-        return '<{},{},{}>'.format(str(self.weapons), str(self.armors), str(self.shield))
-
-
-class LoadoutPool:
-    def __init__(self):
-        self.name = ''
-        self.loadouts = []
-        self.weights = []
-
-    def add_loadout(self, loadout: Loadout, weight=DEFAULT_LOADOUT_WEIGHT):
-        self.loadouts.append(loadout)
-        self.weights.append(weight)
-
-    def get_random_loadout(self, seed=None):
-        if not seed:
-            rnd_instance = random
-        else:
-            rnd_instance = random.Random(seed + self.name + 'getrandomloadout')
-
-        return rnd_instance.choices(self.loadouts, self.weights)[0]
 
 
 class FeatureMultiattack(CharacterFeature):
@@ -2751,8 +1954,10 @@ WARLOCK_SLOT_LEVEL = (
 class FeatureSpellcasting(CharacterFeature):
     def __init__(self, owner, args_tup=()):
         super().__init__(owner)
-        self.int_name = 'spellcasting_' + args_tup[0]
-        sp_profile = self.npc_gen.spellcaster_profiles[args_tup[0]]
+        sp_profile_name = args_tup[0]
+        self.int_name = 'spellcasting_' + sp_profile_name
+
+        sp_profile = self.content_source.get_spellcaster_profile(sp_profile_name)
         assert isinstance(sp_profile, SpellCasterProfile)
 
         # Characters generally either have spells 'prepared' or 'known'
@@ -2762,7 +1967,8 @@ class FeatureSpellcasting(CharacterFeature):
         self.hd_per_casting_level = sp_profile.hd_per_casting_level
         self.cantrips_progression = CASTER_CANTRIPS_KNOWN[sp_profile.cantrips_per_level]
         self.fixed_spells_known_by_level = CASTER_FIXED_SPELLS_KNOWN.get(sp_profile.fixed_spells_known_by_level, None)
-        self.spell_slots_table = sp_profile.spell_slots_table
+        # Currently no support for alternative spell slots tables
+        self.spell_slots_table = SPELL_SLOTS_TABLE
         self.spells_known_modifier = sp_profile.spells_known_modifier
 
         # These values are alterable, so we need COPIES from the profile
@@ -2793,9 +1999,9 @@ class FeatureSpellcasting(CharacterFeature):
     # Hypothetically, other feature can add spell_lists to a spellcasting feature
     # For example, you could have a base cleric and have the domain be a feature that modifies the spellcasting feature
     def add_free_spell_list(self, spell_list_name):
-        assert spell_list_name in self.npc_gen.spell_lists, \
+        assert spell_list_name in self.content_source.spell_lists, \
             'Invalid list {} for adding free spells!'.format(spell_list_name)
-        spell_list = self.npc_gen.spell_lists[spell_list_name]
+        spell_list = self.content_source.get_spell_list(spell_list_name)
         for spell in spell_list.spells:
             self.free_spells.add(spell)
 
@@ -2808,7 +2014,7 @@ class FeatureSpellcasting(CharacterFeature):
 
     def add_random_free_spells_from_spell_list(self, num_spells, spell_list_name):
         rnd_instance = random.Random(self.seed + spell_list_name + 'addfreespellsfromlist')
-        spell_list = self.npc_gen.spell_lists[spell_list_name]
+        spell_list = self.content_source.get_spell_list(spell_list_name)
         spell_options = list(spell_list.spells.keys())
         rnd_instance.shuffle(spell_options)
         while num_spells > 0 and len(spell_options) > 0:
@@ -2830,7 +2036,7 @@ class FeatureSpellcasting(CharacterFeature):
     def set_spell_choices(self):
 
         rnd_instance = random.Random(self.seed + 'spellchoices')
-        npc_gen = self.owner.npc_gen
+        content_source = self.content_source
 
         already_chosen_spells = set()
         for spell in self.free_spells:
@@ -2841,14 +2047,14 @@ class FeatureSpellcasting(CharacterFeature):
         for spell_level in range(0, 10):
             total_spells_of_this_level = 0
             for spell_list_name in self.spell_lists.keys():
-                spell_list = npc_gen.spell_lists[spell_list_name]
+                spell_list = content_source.get_spell_list(spell_list_name)
                 total_spells_of_this_level += spell_list.num_spells_of_level(spell_level)
 
             spell_options = []
             spell_weights = []
 
             for spell_list_name, weight in self.spell_lists.items():
-                spell_list = npc_gen.spell_lists[spell_list_name]
+                spell_list = content_source.get_spell_list(spell_list_name)
                 num_spells_of_level = spell_list.num_spells_of_level(spell_level)
                 if num_spells_of_level == 0:
                     continue
@@ -2923,8 +2129,7 @@ class FeatureSpellcasting(CharacterFeature):
         return max_spell_level
 
     def get_spell_level(self, spell_name):
-        assert spell_name in self.npc_gen.spells, "get_spell_level(): invalid spell {}".format(spell_name)
-        return self.npc_gen.spells[spell_name].level
+        return self.content_source.get_spell(spell_name).level
 
     # At this point, we already have our possible spell choices made
     # Now, we're basically going to figure out how which of those spells to have readied
@@ -3027,7 +2232,7 @@ class FeatureSpellcasting(CharacterFeature):
 
         # Now, we can do some of those special case things
         if 'mage armor' in self.spells_readied_set:
-            self.npc_gen.give_armor(self.owner, 'mage_armor', extra=True)
+            self.owner.give_armor('mage_armor', extra=True)
 
         if 'chill touch' in self.spells_readied_set:
             self.spell_attacks.append(SpellAttackChillTouch(self))
@@ -3292,7 +2497,7 @@ class FeatureMartialArts(CharacterFeature):
         self.upgrade_damage_die = MARTIAL_ARTS_DAMAGE[self.owner.get_hd()]
 
     @staticmethod
-    def is_monk_weapon(weapon: 'Weapon'):
+    def is_monk_weapon(weapon: 'EquippedWeapon'):
         if weapon.attack_type == 'melee':
             if 'monk' in weapon.tags:
                 return True

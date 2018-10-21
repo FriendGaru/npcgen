@@ -1,28 +1,4 @@
 from typing import Dict
-import pkg_resources as pkg
-
-DATA_PATH = pkg.resource_filename('npcgen', 'data/')
-
-ARMORS_FILE = \
-    pkg.resource_filename(__name__, 'data/armors.csv')
-WEAPONS_FILE = \
-    pkg.resource_filename(__name__, 'data/weapons.csv')
-TRAITS_FILE = \
-    pkg.resource_filename(__name__, 'data/traits.csv')
-SPELLS_FILE = \
-    pkg.resource_filename(__name__, 'data/spells.csv')
-SPELLLISTS_FILE = \
-    pkg.resource_filename(__name__, 'data/spelllists.csv')
-SPELLCASTER_PROFILES_FILE = \
-    pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
-ARMORS_LOADOUT_POOLS_FILE = \
-    pkg.resource_filename(__name__, 'data/loadoutpools_armors.csv')
-WEAPONS_LOADOUT_POOLS_FILE = \
-    pkg.resource_filename(__name__, 'data/loadoutpools_weapons.csv')
-RACE_TEMPLATES_FILE = \
-    pkg.resource_filename(__name__, 'data/racetemplates.csv')
-CLASS_TEMPLATES_FILE = \
-    pkg.resource_filename(__name__, 'data/classtemplates.csv')
 
 STATS_ATTRIBUTES = ('str', 'dex', 'con', 'int', 'wis', 'cha',)
 DEFAULT_ATTRIBUTE_VALUE = 8
