@@ -79,7 +79,7 @@ RANDOMIZABLE_RACE_CATEGORIES = (
 )
 
 RANDOMIZABLE_CLASS_CATEGORIES = (
-    'warrior', 
+    'warrior',
 )
 
 
