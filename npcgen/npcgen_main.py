@@ -1,9 +1,5 @@
 import itertools
 import string
-
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'my_script'))
-
 from .npcgen_content import *
 
 # -1 - Nothing at all
