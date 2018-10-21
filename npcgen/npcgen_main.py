@@ -1,6 +1,6 @@
 import itertools
 import string
-from npcgen.npcgen_content import *
+from .npcgen_content import *
 
 # -1 - Nothing at all
 # 0 - Errors only

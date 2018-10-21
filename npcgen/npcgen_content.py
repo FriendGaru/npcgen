@@ -2,7 +2,7 @@ import collections
 import random
 import csv
 from enum import Enum
-from npcgen.npcgen_constants import *
+from .npcgen_constants import *
 import pkg_resources as pkg
 
 # -1 - Nothing at all
