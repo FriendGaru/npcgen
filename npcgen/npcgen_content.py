@@ -525,6 +525,16 @@ class ContentSource:
                         new_race_template.languages = line['languages'].replace(" ", "").split(',')
 
                     new_race_template.features = csv_tag_reader(line['features'])
+                    
+                    if line['arg_one_options']:
+                        new_race_template.arg_one_options = line['arg_one_options'].replace(' ', '').split(',')
+                    else:
+                        new_race_template.arg_one_options = None
+                        
+                    if line['arg_two_options']:
+                        new_race_template.arg_two_options = line['arg_two_options'].replace(' ', '').split(',')
+                    else:
+                        new_race_template.arg_two_options = None
 
                     self.race_templates[new_race_template.int_name] = new_race_template
                     for category in new_race_template.categories:
@@ -580,6 +590,16 @@ class ContentSource:
                         new_class_template.cr_calc_type = 'attack'
 
                     new_class_template.features = csv_tag_reader(line['features'])
+
+                    if line['arg_one_options']:
+                        new_class_template.arg_one_options = line['arg_one_options'].replace(' ', '').split(',')
+                    else:
+                        new_class_template.arg_one_options = None
+
+                    if line['arg_two_options']:
+                        new_class_template.arg_two_options = line['arg_two_options'].replace(' ', '').split(',')
+                    else:
+                        new_class_template.arg_two_options = None
 
                     self.class_templates[new_class_template.int_name] = new_class_template
                     for category in new_class_template.categories:
@@ -714,6 +734,9 @@ class RaceTemplate:
         self.traits = []
         self.features = collections.OrderedDict()
 
+        self.arg_one_options = None
+        self.arg_two_options = None
+
 
 class ClassTemplate:
     def __init__(self):
@@ -743,6 +766,9 @@ class ClassTemplate:
         self.features = collections.OrderedDict()
 
         self.cr_calc_type = ''
+
+        self.arg_one_options = None
+        self.arg_two_options = None
 
 
 class Spell:

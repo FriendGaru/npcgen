@@ -7,7 +7,7 @@ from .npcgen_content import *
 # 1 - Basic operations
 # 2 - Minor operations
 # 3 - Painfully Verbose
-DEBUG_VERBOSITY = 1
+DEBUG_VERBOSITY = 2
 
 
 def debug_print(message, required_verbosity=2):
@@ -309,6 +309,10 @@ class NPCGenerator:
         if 'name' in request_dict.keys():
             clean_dict['name'] = request_dict['name']
 
+        if is_valid:
+            debug_print('Request accepted.', 2)
+        else:
+            debug_print('Request rejected', 2)
         return is_valid, clean_dict
 
     def new_character(self,
@@ -327,14 +331,20 @@ class NPCGenerator:
                       hit_dice_size=None,
                       bonus_hd=0,
                       no_asi=False,
+
+                      class_arg_one=None,
+                      class_arg_two=None,
+                      race_arg_one=None,
+                      race_arg_two=None,
                       ):
 
         if not seed:
             seed = random_string(10)
 
-        debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={}'
+        debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={} race-args= {} {} class-args= {} {}'
                     .format(race_choice, class_choice, hit_dice_num, hit_dice_size, bonus_hd,
-                            seed, attribute_roll_method), 1)
+                            seed, attribute_roll_method,
+                            race_arg_one, race_arg_two, class_arg_one, class_arg_two), 1)
 
         # This is for the super random option, which is anything at all
         if race_choice == 'random_race':
@@ -374,6 +384,21 @@ class NPCGenerator:
         class_template = self.content_source.get_class_template(class_choice)
         assert isinstance(class_template, ClassTemplate)
         self.apply_class_template(new_character, class_template, seed=seed)
+        
+        # If the race/class template can accept override options, we need to check them
+        # If we didn't get any override or got a bad one, replace it with the default
+        if race_template.arg_one_options:
+            if not race_arg_one or race_arg_one not in race_template.arg_one_options:
+                race_arg_one = race_template.arg_one_options[0]
+        if race_template.arg_two_options:
+            if not race_arg_two or race_arg_two not in race_template.arg_two_options:
+                race_arg_two = race_template.arg_two_options[0]
+        if class_template.arg_one_options:
+            if not class_arg_one or class_arg_one not in class_template.arg_one_options:
+                class_arg_one = class_template.arg_one_options[0]
+        if class_template.arg_two_options:
+            if not class_arg_two or class_arg_two not in class_template.arg_two_options:
+                class_arg_two = class_template.arg_two_options[0]
 
         # Get all the traits and features from the templates, have the factories instantiate them,
         # then give them to the new character
@@ -381,14 +406,33 @@ class NPCGenerator:
             debug_print('Trait: {}'.format(trait_name))
             trait_feature = self.build_trait(new_character, trait_name)
             trait_feature.give_to_owner()
-        for feature_name, feature_args in itertools.chain((
-                race_template.features.items()), class_template.features.items()):
-            debug_print('Feature: {} args: {}'.format(feature_name, str(feature_args)), 3)
+            
+        for feature_name, feature_args in race_template.features.items():
+            debug_print('RaceFeature: {} args: {} overrides- arg1:{} arg2:{}'
+                        .format(feature_name, str(feature_args), race_arg_one, race_arg_two), 3)
+            feature_args = list(feature_args)
+            if feature_args and feature_args[0]:
+                if race_arg_one:
+                    feature_args[0] = feature_args[0].replace('@ARG1', race_arg_one)
+                if feature_args and feature_args[0]:
+                    if race_arg_two:
+                        feature_args[0] = feature_args[0].replace('@ARG2', race_arg_two)
             feature_instance = build_character_feature(new_character, feature_name, feature_args)
             feature_instance.give_to_owner()
-            # It's possible for features to give themselves sub features during instantiation
-            # So, we need this step, too
-            # Right now, this will ignore subfeatures of subfeatures, could change this if a need arises
+            feature_instance.give_sub_features_to_owner()
+            
+        for feature_name, feature_args in class_template.features.items():
+            debug_print('classFeature: {} args: {} overrides- arg1:{} arg2:{}'
+                        .format(feature_name, str(feature_args), class_arg_one, class_arg_two), 3)
+            feature_args = list(feature_args)
+            if feature_args and feature_args[0]:
+                if class_arg_one:
+                    feature_args[0] = feature_args[0].replace('@ARG1', class_arg_one)
+                if feature_args and feature_args[0]:
+                    if class_arg_two:
+                        feature_args[0] = feature_args[0].replace('@ARG2', class_arg_two)
+            feature_instance = build_character_feature(new_character, feature_name, feature_args)
+            feature_instance.give_to_owner()
             feature_instance.give_sub_features_to_owner()
 
         # Do the pre-attribute rolling first pass of features
@@ -1000,6 +1044,12 @@ class Character:
         if condition_immunity not in self.condition_immunities:
             self.condition_immunities.append(condition_immunity)
 
+    def add_class_prefix(self, prefix):
+        self.class_name = prefix + ' ' + self.class_name
+
+    def add_race_prefix(self, prefix):
+        self.race_name = prefix + ' ' + self.race_name
+
     def choose_armors(self):
 
         rnd_instance = random.Random(self.seed + 'choosearmor')
@@ -1047,10 +1097,10 @@ class Character:
         if self.name:
             sb.name = self.name
         else:
-            sb.name = '{} {}'.format(self.race_name, self.class_name)
+            sb.name = '{} {}'.format(self.race_name.title(), self.class_name.title())
 
-        sb.race = self.race_name
-        sb._class = self.class_name
+        sb.race = self.race_name.lower()
+        sb._class = self.class_name.lower()
 
         sb.creature_type = self.creature_type
 
@@ -2464,9 +2514,14 @@ class FeatureDragonborn(CharacterFeature):
     def __init__(self, owner, args_tup=()):
         super().__init__(owner)
         self.int_name = 'dragonborn_feature'
-        self.lineage_type = args_tup[0]
+        if args_tup[0] == 'random':
+            self.lineage_type = random.Random(self.seed + 'dragonbornrandom')\
+                .choice(sorted(list(FEATURE_DRAGONBORN_CHART.keys())))
+        else:
+            self.lineage_type = args_tup[0]
 
     def first_pass(self):
+        self.owner.add_race_prefix(self.lineage_type)
         self.owner.add_damage_resistance(FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
 
     def build_cr_factors_and_stat_block_entries(self):
@@ -2536,19 +2591,20 @@ CLERIC_DOMAINS = (
 class FeatureClericDomain(CharacterFeature):
     def __init__(self, owner, args_tup=()):
         super().__init__(owner)
-        domain_name = args_tup[0]
-        if not domain_name or domain_name == 'random':
-            rnd_instance = random.Random(self.seed + 'chooserandomdomain')
-            domain_name = rnd_instance.choice(CLERIC_DOMAINS)
-        self.int_name = 'domain_' + domain_name
-        self.domain_name = domain_name
+        domain_arg = args_tup[0]
+        if not domain_arg or domain_arg == 'random':
+            self.domain_name = random.Random(self.seed + 'clericdomain').choice(CLERIC_DOMAINS)
+        else:
+            self.domain_name = domain_arg
+        self.int_name = 'domain_' + self.domain_name
         # This works because domain spell lists follow this naming convention
         # If that convention were broken, would need to re do this
-        self.domain_spell_list = 'domain_' + domain_name
-        if domain_name == 'war':
+        self.domain_spell_list = 'domain_' + self.domain_name
+        if self.domain_name == 'war':
             self.add_sub_trait('parry')
 
     def first_pass(self):
+        self.owner.add_class_prefix(self.domain_name)
         for feature in self.owner.character_features.values():
             if isinstance(feature, FeatureSpellcasting):
                 feature.add_free_spell_list(self.domain_spell_list)
