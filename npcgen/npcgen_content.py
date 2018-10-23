@@ -688,30 +688,79 @@ class ContentSource:
             options.append((k, v.display_name))
         return options
 
+    def get_race_class_options(self):
+        options_inst = CharacterBuildOptions()
+        options_inst.add_race_option('RACES', RaceClassOptionEntry('random_race', 'Random Race'))
+        options_inst.add_class_option('CLASSES', RaceClassOptionEntry('random_class', 'Random Class'))
 
-# class OptionsDict:
-#     options_dict = collections.OrderedDict()
-#
-#     def add_option(self, option, category):
-#         if category in self.options_dict:
-#             self.options_dict[category].append(option)
-#         else:
-#             self.options_dict[category] = [option, ]
-#
-#     def get_categories(self):
-#         return list(self.options_dict.keys())
-#
-#
-# class Option:
-#     def __init__(self, value, display,
-#                  first_override_title=None, first_override_options=(),
-#                  second_override_title=None, second_override_options=(),):
-#         self.value = value
-#         self.display = display
-#         self.first_override_title = first_override_title
-#         self.first_override_options = first_override_options
-#         self.second_override_title = second_override_title
-#         self.second_override_options = second_override_options
+        for race_category in self.race_categories.keys():
+            for race_option in self.race_categories[race_category]:
+                temp = self.get_race_template(race_option)
+                assert isinstance(temp, RaceTemplate)
+                option_entry = RaceClassOptionEntry(race_option, temp.display_name,
+                                                    temp.arg_one_label, temp.arg_one_options,
+                                                    temp.arg_two_label, temp.arg_two_options)
+                options_inst.add_race_option(race_category, option_entry)
+                
+        for class_category in self.class_categories.keys():
+            for class_option in self.class_categories[class_category]:
+                temp = self.get_class_template(class_option)
+                assert isinstance(temp, ClassTemplate)
+                option_entry = RaceClassOptionEntry(class_option, temp.display_name,
+                                                    temp.arg_one_label, temp.arg_one_options,
+                                                    temp.arg_two_label, temp.arg_two_options)
+                options_inst.add_class_option(class_category, option_entry)
+
+        return options_inst
+
+
+# This is the object that will ultimately be handed to the renderer that presents options to the user
+# The keys of the ordered dicts are intended to be categories with the values as lists of entries to go into them
+# For now, just race and class, will add rolld/hd after, and MUCH later support for optional parameters will go here
+class CharacterBuildOptions:
+    def __init__(self):
+        self.race_options = collections.OrderedDict()
+        self.class_options = collections.OrderedDict()
+
+    def add_race_option(self, category, option: 'RaceClassOptionEntry'):
+        if category in self.race_options:
+            self.race_options[category].append(option)
+        else:
+            self.race_options[category] = [option, ]
+
+    def add_class_option(self, category, option: 'RaceClassOptionEntry'):
+        if category in self.class_options:
+            self.class_options[category].append(option)
+        else:
+            self.class_options[category] = [option, ]
+
+    def __str__(self):
+        outstring = "Races:{} Classes:{}".format(','.join(self.race_options), ','.join(self.class_options))
+        return outstring
+
+
+class RaceClassOptionEntry:
+    def __init__(self, int_name, display, arg_one_label=None, arg_one_options=None,
+                 arg_two_label=None, arg_two_options=None):
+        self.int_name = int_name
+        self.display = display
+        self.arg_one_label = arg_one_label
+        self.arg_one_options = arg_one_options
+        self.arg_two_label = arg_two_label
+        self.arg_two_options = arg_two_options
+
+    def __repr__(self):
+        return "<RaceClassOptionEntry:{},{}>".format(self.int_name, self.display)
+
+    def __str__(self):
+        outstring = "[{},{},".format(self.int_name, self.display)
+        if self.arg_one_label:
+            outstring += self.arg_one_label + ',' + str(self.arg_one_options) + ','
+        if self.arg_two_label:
+            outstring += self.arg_two_label + ',' + str(self.arg_two_options) + ','
+        outstring += ']'
+        return outstring
+
 
 class RaceTemplate:
     def __init__(self):
@@ -734,7 +783,9 @@ class RaceTemplate:
         self.traits = []
         self.features = collections.OrderedDict()
 
+        self.arg_one_label = None
         self.arg_one_options = None
+        self.arg_two_label = None
         self.arg_two_options = None
 
 
@@ -767,7 +818,9 @@ class ClassTemplate:
 
         self.cr_calc_type = ''
 
+        self.arg_one_label = None
         self.arg_one_options = None
+        self.arg_two_label = None
         self.arg_two_options = None
 
 
