@@ -721,6 +721,21 @@ class ContentSource:
                                                     arg_two_options=temp.arg_two_options)
                 options_inst.add_class_option(class_category, option_entry)
 
+        for roll_option, roll_tup in ROLL_METHODS.items():
+            category = roll_tup[3]
+            display = roll_tup[0]
+            roll_entry = OptionMenuEntry(roll_option, display)
+            options_inst.add_roll_option(category, roll_entry)
+
+        for i in range(1, 21):
+            entry = OptionMenuEntry(str(i), str(i))
+            options_inst.hd_options.append(entry)
+
+        options_inst.hd_size_options.append(OptionMenuEntry('default', 'Default'))
+        for size in VALID_HD_SIZES:
+            entry = OptionMenuEntry(str(size), 'd' + str(size))
+            options_inst.hd_size_options.append(entry)
+
         return options_inst
 
 
@@ -731,7 +746,11 @@ class CharacterBuildOptions:
     def __init__(self):
         self.race_options = collections.OrderedDict()
         self.class_options = collections.OrderedDict()
+
         self.roll_options = collections.OrderedDict()
+
+        self.hd_options = []
+        self.hd_size_options = []
         
     def every_race_option(self):
         race_options_list = []
@@ -760,6 +779,20 @@ class CharacterBuildOptions:
             self.class_options[category].append(option)
         else:
             self.class_options[category] = [option, ]
+            
+    def every_roll_option(self):
+        roll_options_list = []
+        for category in self.roll_options:
+            for option in self.roll_options[category]:
+                roll_options_list.append(option)
+        return roll_options_list
+
+    def add_roll_option(self, category, option: 'RacerollOptionEntry'):
+        category = category.title()
+        if category in self.roll_options:
+            self.roll_options[category].append(option)
+        else:
+            self.roll_options[category] = [option, ]
 
     def __str__(self):
         outstring = "Races:{} Classes:{}".format(','.join(self.race_options), ','.join(self.class_options))
@@ -775,16 +808,39 @@ class CharacterBuildOptions:
         for class_option in self.every_class_option():
             out += '"{}":{},'.format(class_option.int_name, class_option.jsonify())
         out = out[:-1]
+        out += '},"roll_options" : {'
+        for roll_option in self.every_roll_option():
+            out += '"{}":"{}",'.format(roll_option.int_name, roll_option.display)
+        out = out[:-1]
         out += '}}'
         return out
-        
 
 
-class RaceClassOptionEntry:
-    def __init__(self, int_name, display, arg_one_label=None, arg_one_options=None,
-                 arg_two_label=None, arg_two_options=None):
+class OptionMenuEntry:
+    def __init__(self, int_name, display):
         self.int_name = int_name
         self.display = display
+
+    def __repr__(self):
+        return "<MenuEntry:{},{}>".format(self.int_name, self.display)
+
+    def __str__(self):
+        outstring = "[{},{},".format(self.int_name, self.display)
+        outstring += ']'
+        return outstring
+
+    def jsonify(self):
+        out = '{'
+        out += '"int_name":"{}",'.format(self.int_name)
+        out += '"display":"{}"'.format(self.display)
+        out += '}'
+        return out
+
+
+class RaceClassOptionEntry(OptionMenuEntry):
+    def __init__(self, int_name, display, arg_one_label=None, arg_one_options=None,
+                 arg_two_label=None, arg_two_options=None):
+        super().__init__(int_name, display)
         self.arg_one_label = arg_one_label
         self.arg_one_options = arg_one_options
         self.arg_two_label = arg_two_label

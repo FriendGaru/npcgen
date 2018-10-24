@@ -50,42 +50,50 @@ ROLL_METHODS = {
     '3d6': (
         'Roll 3d6',
         (6, 3, 0, 0),
-        ()
+        (),
+        'roll'
     ),
     '4d6dl': (
         'Roll 4d6, drop the lowest',
         (6, 3, 1, 0),
-        ()
+        (),
+        'roll'
     ),
     '4d6dh': (
         'Roll 4d6, drop the highest',
         (6, 3, 0, 1),
-        ()
+        (),
+        'roll'
     ),
     '5d6dldh': (
         'Roll 5d6, drop the lowest and highest',
         (6, 3, 1, 1),
-        ()
+        (),
+        'roll'
     ),
     '5d6dl2': (
         'Roll 5d6, drop the two lowest',
         (6, 3, 2, 0),
-        ()
+        (),
+        'roll'
     ),
     '5d6dh2': (
         'Roll 5d6, drop the two highest',
         (6, 3, 0, 2),
-        ()
+        (),
+        'roll',
     ),
     '7d6dl2dh2': (
         'Roll 7d6, drop the two lowest and the two highest',
         (6, 3, 2, 2,),
-        ()
+        (),
+        'roll'
     ),
     'array_standard': (
         'Standard Array (15, 14, 13, 12, 10, 8)',
         (6, 3, 0, 0,),
         (15, 14, 13, 12, 10, 8),
+        'fixed'
     ),
 }
 
