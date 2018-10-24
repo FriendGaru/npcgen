@@ -125,6 +125,7 @@ class NPCGenerator:
     def __init__(self):
 
         self.content_source = ContentSource()
+        self.character_build_options = self.content_source.get_character_build_options()
 
         self.roll_options = ROLL_METHODS_OPTIONS
         self.roll_keys = list(ROLL_METHODS.keys())

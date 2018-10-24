@@ -526,14 +526,18 @@ class ContentSource:
 
                     new_race_template.features = csv_tag_reader(line['features'])
                     
-                    if line['arg_one_options']:
+                    if line['arg_one_label']:
+                        new_race_template.arg_one_label = line['arg_one_label']
                         new_race_template.arg_one_options = line['arg_one_options'].replace(' ', '').split(',')
                     else:
+                        new_race_template.arg_one_label = None
                         new_race_template.arg_one_options = None
-                        
-                    if line['arg_two_options']:
+                    
+                    if line['arg_two_label']:
+                        new_race_template.arg_two_label = line['arg_two_label']
                         new_race_template.arg_two_options = line['arg_two_options'].replace(' ', '').split(',')
                     else:
+                        new_race_template.arg_two_label = None
                         new_race_template.arg_two_options = None
 
                     self.race_templates[new_race_template.int_name] = new_race_template
@@ -591,14 +595,18 @@ class ContentSource:
 
                     new_class_template.features = csv_tag_reader(line['features'])
 
-                    if line['arg_one_options']:
+                    if line['arg_one_label']:
+                        new_class_template.arg_one_label = line['arg_one_label']
                         new_class_template.arg_one_options = line['arg_one_options'].replace(' ', '').split(',')
                     else:
+                        new_class_template.arg_one_label = None
                         new_class_template.arg_one_options = None
 
-                    if line['arg_two_options']:
+                    if line['arg_two_label']:
+                        new_class_template.arg_two_label = line['arg_two_label']
                         new_class_template.arg_two_options = line['arg_two_options'].replace(' ', '').split(',')
                     else:
+                        new_class_template.arg_two_label = None
                         new_class_template.arg_two_options = None
 
                     self.class_templates[new_class_template.int_name] = new_class_template
@@ -688,7 +696,7 @@ class ContentSource:
             options.append((k, v.display_name))
         return options
 
-    def get_race_class_options(self):
+    def get_character_build_options(self):
         options_inst = CharacterBuildOptions()
         options_inst.add_race_option('RACES', RaceClassOptionEntry('random_race', 'Random Race'))
         options_inst.add_class_option('CLASSES', RaceClassOptionEntry('random_class', 'Random Class'))
@@ -699,7 +707,7 @@ class ContentSource:
                 assert isinstance(temp, RaceTemplate)
                 option_entry = RaceClassOptionEntry(race_option, temp.display_name,
                                                     temp.arg_one_label, temp.arg_one_options,
-                                                    temp.arg_two_label, temp.arg_two_options)
+                                                    temp.arg_two_label, temp.arg_two_options,)
                 options_inst.add_race_option(race_category, option_entry)
                 
         for class_category in self.class_categories.keys():
@@ -707,8 +715,10 @@ class ContentSource:
                 temp = self.get_class_template(class_option)
                 assert isinstance(temp, ClassTemplate)
                 option_entry = RaceClassOptionEntry(class_option, temp.display_name,
-                                                    temp.arg_one_label, temp.arg_one_options,
-                                                    temp.arg_two_label, temp.arg_two_options)
+                                                    arg_one_label=temp.arg_one_label,
+                                                    arg_one_options=temp.arg_one_options,
+                                                    arg_two_label=temp.arg_two_label,
+                                                    arg_two_options=temp.arg_two_options)
                 options_inst.add_class_option(class_category, option_entry)
 
         return options_inst
@@ -721,14 +731,31 @@ class CharacterBuildOptions:
     def __init__(self):
         self.race_options = collections.OrderedDict()
         self.class_options = collections.OrderedDict()
+        self.roll_options = collections.OrderedDict()
+        
+    def every_race_option(self):
+        race_options_list = []
+        for category in self.race_options:
+            for option in self.race_options[category]:
+                race_options_list.append(option)
+        return race_options_list
 
     def add_race_option(self, category, option: 'RaceClassOptionEntry'):
+        category = category.title()
         if category in self.race_options:
             self.race_options[category].append(option)
         else:
             self.race_options[category] = [option, ]
+            
+    def every_class_option(self):
+        class_options_list = []
+        for category in self.class_options:
+            for option in self.class_options[category]:
+                class_options_list.append(option)
+        return class_options_list
 
     def add_class_option(self, category, option: 'RaceClassOptionEntry'):
+        category = category.title()
         if category in self.class_options:
             self.class_options[category].append(option)
         else:
@@ -737,6 +764,20 @@ class CharacterBuildOptions:
     def __str__(self):
         outstring = "Races:{} Classes:{}".format(','.join(self.race_options), ','.join(self.class_options))
         return outstring
+
+    def jsonify(self):
+        out = "{"
+        out += '"race_options" : {'
+        for race_option in self.every_race_option():
+            out += '"{}":{},'.format(race_option.int_name, race_option.jsonify())
+        out = out[:-1]
+        out += '},"class_options" : {'
+        for class_option in self.every_class_option():
+            out += '"{}":{},'.format(class_option.int_name, class_option.jsonify())
+        out = out[:-1]
+        out += '}}'
+        return out
+        
 
 
 class RaceClassOptionEntry:
@@ -760,6 +801,26 @@ class RaceClassOptionEntry:
             outstring += self.arg_two_label + ',' + str(self.arg_two_options) + ','
         outstring += ']'
         return outstring
+
+    def jsonify(self):
+        out = '{'
+        out += '"int_name":"{}",'.format(self.int_name)
+        out += '"display":"{}",'.format(self.display)
+        if self.arg_one_label:
+            out += '"arg_one_label":"{}",'.format(self.arg_one_label)
+            out += '"arg_one_options":['
+            for option in self.arg_one_options:
+                out += '"{}",'.format(option)
+            out = out[:-1] + '],'  # Json doesn't like dangling commas
+        if self.arg_two_label:
+            out += '"arg_two_label":"{}",'.format(self.arg_two_label)
+            out += '"arg_two_options":['
+            for option in self.arg_two_options:
+                out = '"{}",'.format(option)
+            out += out[:-1] + '],'  # Json doesn't like dangling commas
+        out = out[:-1]  # Get rid of last comment or JSON breaks
+        out += '}'
+        return out
 
 
 class RaceTemplate:
