@@ -257,6 +257,13 @@ class NPCGenerator:
         if 'race_choice' in request_dict.keys() \
                 and request_dict['race_choice'] in self.content_source.valid_user_race_choices():
             clean_dict['race_choice'] = request_dict['race_choice']
+            race_template = self.content_source.get_race_template(request_dict['race_choice'])
+            if 'race_arg_one' in request_dict.keys() \
+                    and race_template.arg_one_options and request_dict['race_arg_one'] in race_template.arg_one_options:
+                clean_dict['race_arg_one'] = request_dict['race_arg_one']
+            if 'race_arg_two' in request_dict.keys() \
+                    and race_template.arg_two_options and request_dict['race_arg_two'] in race_template.arg_two_options:
+                clean_dict['race_arg_two'] = request_dict['race_arg_two']
         else:
             is_valid = False
             clean_dict['race_choice'] = self.get_random_option('race')
@@ -264,6 +271,13 @@ class NPCGenerator:
         if 'class_choice' in request_dict.keys() \
                 and request_dict['class_choice'] in self.content_source.valid_user_class_choices():
             clean_dict['class_choice'] = request_dict['class_choice']
+            class_template = self.content_source.get_class_template(request_dict['class_choice'])
+            if 'class_arg_one' in request_dict.keys() \
+                    and class_template.arg_one_options and request_dict['class_arg_one'] in class_template.arg_one_options:
+                clean_dict['class_arg_one'] = request_dict['class_arg_one']
+            if 'class_arg_two' in request_dict.keys() \
+                    and class_template.arg_two_options and request_dict['class_arg_two'] in class_template.arg_two_options:
+                clean_dict['class_arg_two'] = request_dict['class_arg_two']
         else:
             is_valid = False
             clean_dict['class_choice'] = self.get_random_option('class')
@@ -311,7 +325,7 @@ class NPCGenerator:
             clean_dict['name'] = request_dict['name']
 
         if is_valid:
-            debug_print('Request accepted.', 2)
+            debug_print('Request accepted', 2)
         else:
             debug_print('Request rejected', 2)
         return is_valid, clean_dict
