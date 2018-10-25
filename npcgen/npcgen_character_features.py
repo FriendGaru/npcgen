@@ -276,6 +276,8 @@ class FeatureSpellcasting(CharacterFeature):
     def get_max_spell_level(self):
         if 'warlock' in self.tags:
             return WARLOCK_SLOT_LEVEL[self.get_caster_level()]
+        elif self.get_caster_level() <= 0:
+            return 0
         else:
             max_spell_level = 9
             for spell_level in range(1, 10):
@@ -485,7 +487,9 @@ class FeatureSpellcasting(CharacterFeature):
         if 'warlock' in self.tags:
             self.add_stat_block_entry(self.get_warlock_stat_block_entry())
         else:
-            self.add_stat_block_entry(self.get_main_stat_block_entry())
+            main_entry = self.get_main_stat_block_entry()
+            if main_entry:
+                self.add_stat_block_entry(self.get_main_stat_block_entry())
         if 'spellbook' in self.tags:
             self.add_stat_block_entry(self.get_spellbook_entry())
 
@@ -720,6 +724,44 @@ class FeatureClericDomain(CharacterFeature):
             entry_title, 'passive', 2,
             "Yay cleric domain."))
 
+
+PALADIN_OATHS = (
+    'ancients', 'conquest', 'crown', 'devotion', 'redemption', 'vengeance'
+)
+
+
+class FeaturePaladinOath(CharacterFeature):
+    def __init__(self, owner, args_tup=()):
+        super().__init__(owner)
+        oath_arg = args_tup[0]
+        if not oath_arg or oath_arg == 'random':
+            self.oath_name = random.Random(self.seed + 'paladinoath').choice(PALADIN_OATHS)
+        else:
+            self.oath_name = oath_arg
+        self.int_name = 'oath_' + self.oath_name
+        # This works because oath spell lists follow this naming convention
+        # If that convention were broken, would need to re do this
+        self.oath_spell_list = 'oath_' + self.oath_name
+
+        self.oath_title = self.oath_name
+        if self.oath_name in ('crown', 'ancients'):
+            self.oath_title = 'of the ' + self.oath_title
+        else:
+            self.oath_title = 'of ' + self.oath_title
+
+    def first_pass(self):
+        self.owner.add_class_suffix(self.oath_title)
+        for feature in self.owner.character_features.values():
+            if isinstance(feature, FeatureSpellcasting):
+                feature.add_free_spell_list(self.oath_spell_list)
+
+    def build_cr_factors_and_stat_block_entries(self):
+        entry_title = 'Oath {}'.format(self.oath_title).title()
+        self.add_stat_block_entry(StatBlockEntry(
+            entry_title, 'passive', 2,
+            "Yay oath."))
+
+
 FEATURE_CLASS_REFERENCE = {
     'multiattack': FeatureMultiattack,
     'spellcasting': FeatureSpellcasting,
@@ -727,4 +769,5 @@ FEATURE_CLASS_REFERENCE = {
     'dragonborn_feature': FeatureDragonborn,
     'martial_arts': FeatureMartialArts,
     'cleric_domain': FeatureClericDomain,
+    'paladin_oath': FeaturePaladinOath
 }

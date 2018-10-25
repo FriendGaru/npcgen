@@ -1063,6 +1063,9 @@ class Character:
     def add_class_prefix(self, prefix):
         self.class_name = prefix + ' ' + self.class_name
 
+    def add_class_suffix(self, suffix):
+        self.class_name = self.class_name + ' ' + suffix
+
     def add_race_prefix(self, prefix):
         self.race_name = prefix + ' ' + self.race_name
 

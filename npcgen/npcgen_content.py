@@ -843,8 +843,17 @@ class RaceClassOptionEntry(OptionMenuEntry):
         super().__init__(int_name, display)
         self.arg_one_label = arg_one_label
         self.arg_one_options = arg_one_options
+        self.arg_one_option_displays = []
+        if self.arg_one_label:
+            for option in self.arg_one_options:
+                self.arg_one_option_displays.append(option.title())
+
         self.arg_two_label = arg_two_label
         self.arg_two_options = arg_two_options
+        self.arg_two_option_displays = []
+        if self.arg_two_label:
+            for option in self.arg_two_options:
+                self.arg_one_option_displays.append(option.title())
 
     def __repr__(self):
         return "<RaceClassOptionEntry:{},{}>".format(self.int_name, self.display)

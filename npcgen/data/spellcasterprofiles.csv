@@ -10,7 +10,7 @@ necromancer,int,prepared,,cleric_wizard,,,,"wiz_essentials:2,wizard:1,wiz_necrom
 transmuter,int,prepared,,cleric_wizard,,,,"wiz_essentials:2,wizard:1,wiz_transmutation:2",spellbook
 priest,wis,prepared,,sorcerer,,,,"healing:3,cleric",
 sorcerer,cha,known,,sorcerer,sorcerer,,,wizard,
-paladin,wis,prepared,2,none,,,,paladin,
+paladin,wis,prepared,2,none,,,,"healing,paladin",
 druid,wis,prepared,,bard_druid,,,,"healing:3,druid",
 warlock,cha,known,,bard_druid,warlock,,,"eldritch_blast:9999,warlock",warlock
 cleric,wis,prepared,,cleric_wizard,,,,"healing:3,cleric",
