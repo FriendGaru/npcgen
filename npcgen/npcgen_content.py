@@ -491,6 +491,8 @@ class ContentSource:
             set_obj_attr_from_dict(new_race_template, race_dict, 'traits')
             set_obj_attr_from_dict(new_race_template, race_dict, 'features')
             set_obj_attr_from_dict(new_race_template, race_dict, 'subraces_label')
+            if 'subraces_label' not in race_dict and 'subraces' in race_dict:
+                new_race_template.subraces_label = 'Subrace'
 
             if 'subraces' in race_dict:
                 subraces_dict = collections.OrderedDict()
@@ -933,7 +935,7 @@ class RaceTemplate:
         self.traits = []
         self.features = collections.OrderedDict()
 
-        self.subraces_label = 'Subrace'
+        self.subraces_label = None
         self.subraces = {}
 
 
