@@ -1,0 +1,472 @@
+[artificers_lore]
+display_name = "Artificer’s Lore"
+text = "Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus, instead of any proficiency bonus you normally apply. "
+trait_type = "passive"
+visibility = 0
+
+[brave]
+display_name = "Brave"
+text = "You have advantage on saving throws against being frightened."
+trait_type = "passive"
+visibility = 2
+
+    [brave.tags]
+    save_advantage = ["frightened"]
+
+[celestial_legacy]
+display_name = "Celestial Legacy"
+text = "You know the light cantrip. Once you reach 3rd level, you can cast the lesser restoration spell once with this trait, and you regain the ability to do so when you finish a long rest. Once you reach 5th level, you can cast the daylight spell once with this trait as a 3rd-level spell, and you regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+trait_type = "passive"
+visibility = 0
+
+[celestial_resistance]
+display_name = "Celestial Resistance"
+text = "This character has resistance to necrotic and radiant damage."
+trait_type = "passive"
+visibility = 2
+
+    [celestial_resistance.tags]
+    damage_resistance = ["necrotic", "radiant"]
+
+[damage_resistance_acid]
+display_name = "Damage Resistance Acid"
+trait_type = "hidden"
+visibility = 0
+
+    [damage_resistance_acid.tags]
+    damage_resistance = ["acid"]
+
+[damage_resistance_cold]
+display_name = "Damage Resistance Cold"
+trait_type = "hidden"
+visibility = 0
+
+    [damage_resistance_cold.tags]
+    damage_resistance = ["cold"]
+
+[damage_resistance_fire]
+display_name = "Damage Resistance Fire"
+trait_type = "hidden"
+visibility = 0
+
+    [damage_resistance_fire.tags]
+    damage_resistance = ["fire"]
+
+[damage_resistance_lightning]
+display_name = "Damage Resistance Lightning"
+trait_type = "hidden"
+visibility = 0
+
+    [damage_resistance_lightning.tags]
+    damage_resistance = ["lightning"]
+
+[damage_resistance_poison]
+display_name = "Damage Resistance Poison"
+trait_type = "hidden"
+visibility = 0
+
+    [damage_resistance_poison.tags]
+    damage_resistance = ["poison"]
+
+[darkvision]
+display_name = "Darkvision"
+text = "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray. "
+trait_type = "passive"
+visibility = 2
+
+    [darkvision.tags]
+    sense_darkvision = ["60"]
+
+[drow_magic]
+display_name = "Drow Magic"
+text = "You know the dancing lights cantrip. When you reach 3rd level, you can cast the faerie fire spell once per day; you must finish a long rest in order to cast the spell again using this trait. When you reach 5th level, you can also cast the darkness spell once per day; you must finish a long rest in order to cast the spell again using this trait. Charisma is your spellcasting ability for these spells. "
+trait_type = "passive"
+visibility = 0
+
+[drow_weapon_training]
+display_name = "Drow Weapon Training"
+text = "You have proficiency with rapiers, shortswords, and hand crossbows. "
+trait_type = "passive"
+visibility = 2
+
+[duergar_magic]
+display_name = "Duergar Magic"
+text = "When you reach 3rd level, you can cast the Enlarge/Reduce spell on yourself once with this trait, using only the spell's enlarge option. When you reach 5th level, you can cast the Invisibility spell on yourself once with this trait. You don't need material components for either spell, and you can't cast them while you're in direct sunlight, although sunlight has no effect on them once cast. You regain the ability to cast these spells with this trait when you finish a long rest. Intelligence is your spellcasting ability for these spells. "
+trait_type = "passive"
+visibility = 0
+
+[duergar_resilience]
+display_name = "Duergar Resilience"
+text = "You have advantage on saving throws against poison, and you have resistance against poison damage. You also have advantage on saving throws against illusions and against being charmed or paralyzed. "
+trait_type = "passive"
+visibility = 2
+
+    [duergar_resilience.tags]
+    damage_resistance = ["poison"]
+    save_advantage = ["poison", "illusion", "charmed", "paralyzed"]
+
+[dwarven_armor_training]
+display_name = "Dwarven Armor Training"
+text = "You have proficiency with light and medium armor. "
+trait_type = "passive"
+visibility = 2
+
+[dwarven_combat_training]
+display_name = "Dwarven Combat Training"
+text = "You have proficiency with the battleaxe, handaxe, light hammer, and warhammer. "
+trait_type = "passive"
+visibility = 2
+
+[dwarven_reslience]
+display_name = "Dwarven Reslience"
+text = "Your transformation lasts for 1 minute or until you end it as a bonus action. During it, you shed bright light in a 10-foot radius and dim light for an additional 10 feet, and at the end of each of your turns, you and each creature within 10 feet of you take radiant damage equal to half your level (rounded up). In addition, once on each of your turns, you can deal extra radiant damage to one target when you deal damage to it with an attack or a spell. The extra radiant damage equals your level."
+trait_type = "passive"
+visibility = 0
+
+    [dwarven_reslience.tags]
+    damage_resistance = ["poison"]
+    save_advantage = ["poison"]
+
+[dwarven_toughness]
+display_name = "Dwarven Toughness"
+text = "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level. "
+trait_type = "passive"
+visibility = 2
+
+    [dwarven_toughness.tags]
+    bonus_hp_per_level = ["1"]
+
+[elf_weapon_training]
+display_name = "Elf Weapon Training"
+text = "You have proficiency with the longsword, shortsword, shortbow, and longbow. "
+trait_type = "passive"
+visibility = 2
+
+[expertise_single]
+display_name = "Expertise Single"
+trait_type = "hidden"
+visibility = 0
+
+    [expertise_single.tags]
+    expertise_random = ["1"]
+
+[expertise_stealth]
+display_name = "Expertise Stealth"
+trait_type = "hidden"
+visibility = 0
+
+    [expertise_stealth.tags]
+    expertise_fixed = ["stealth"]
+
+[extra_cantrip]
+display_name = "Cantrip"
+text = "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it. "
+trait_type = "passive"
+visibility = 0
+
+[extra_language]
+display_name = "Extra Language"
+text = "You can speak, read, and write one extra language of your choosing. "
+trait_type = "passive"
+visibility = 2
+
+    [extra_language.tags]
+    language_random = ["1"]
+    repeatable = []
+
+[extra_skill]
+display_name = "Extra Skill"
+trait_type = "hidden"
+visibility = 0
+
+    [extra_skill.tags]
+    repeatable = []
+    skill_random = ["1"]
+
+[fey_ancestry]
+display_name = "Fey Ancestry"
+text = "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+trait_type = "passive"
+visibility = 2
+
+    [fey_ancestry.tags]
+    condition_immunity = ["sleep"]
+    save_advantage = ["charmed"]
+
+[fey_step]
+display_name = "Fey Step"
+text = "You can cast the misty step spell once using this trait. You regain the ability to do so when you finish a short or long rest. "
+trait_type = "passive"
+visibility = 0
+
+[fleet_of_foot]
+display_name = "Fleet Of Foot"
+text = "Your base walking speed increases to 35 feet. "
+trait_type = "passive"
+visibility = 2
+
+[floating_attribute_bonus]
+display_name = "Floating Attribute Bonus"
+trait_type = "hidden"
+visibility = 0
+
+    [floating_attribute_bonus.tags]
+    floating_attribute_bonus = ["1"]
+    repeatable = []
+
+[floating_attribute_bonus_double]
+display_name = "Floating Attribute Bonus Double"
+trait_type = "hidden"
+visibility = 0
+
+    [floating_attribute_bonus_double.tags]
+    floating_attribute_bonus = ["2"]
+    repeatable = []
+
+[gnome_cunning]
+display_name = "Gnome Cunning"
+text = "You have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic. "
+trait_type = "passive"
+visibility = 0
+
+[halfling_nimbleness]
+display_name = "Halfling Nimbleness"
+text = "You can move through the space of any creature that is of a size larger than yours. "
+trait_type = "passive"
+visibility = 0
+
+[healing_hands]
+display_name = "Healing Hands"
+text = "As an action, you can touch a creature and cause it to regain a number of hit points equal to your level. Once you use this trait, you can't use it again until you finish a long rest. "
+trait_type = "passive"
+visibility = 0
+
+[heavy_armor_training]
+display_name = "Dwarven Armor Training"
+text = "Your speed is not reduced by wearing heavy armor. "
+trait_type = "passive"
+visibility = 1
+
+    [heavy_armor_training.tags]
+    give_tag = ["heavy_armor_training"]
+
+[hellish_resistance]
+display_name = "Hellish Resistance"
+text = "You have resistance to fire damage. "
+trait_type = "passive"
+visibility = 2
+
+    [hellish_resistance.tags]
+    damage_resistance = ["fire"]
+
+[infernal_legacy]
+display_name = "Infernal Legacy"
+text = "You know the thaumaturgy cantrip. Once you reach 3rd level, you can cast the hellish rebuke spell as a 2nd-level spell; you must finish a long rest in order to cast the spell again using this trait. Once you reach 5th level, you can also cast the darkness spell; you must finish a long rest in order to cast the spell again using this trait. Charisma is your spellcasting ability for these spells. "
+trait_type = "passive"
+visibility = 0
+
+[keen_senses]
+display_name = "Keen Senses"
+text = "You have proficiency in the Perception skill. "
+trait_type = "passive"
+visibility = 2
+
+    [keen_senses.tags]
+    skill_proficiency = ["perception"]
+
+[light_bearer]
+display_name = "Light Bearer"
+text = "You know the light cantrip. Charisma is your spellcasting ability for it. "
+trait_type = "passive"
+visibility = 0
+
+[lucky]
+display_name = "Lucky"
+text = "When you roll a 1 on an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll. "
+trait_type = "passive"
+visibility = 0
+
+[mask_of_the_wild]
+display_name = "Mask Of The Wild"
+text = "You can attempt to hide even when you are only lightly obscured by foliage, heavy rain, falling snow, mist, and other natural phenomena. "
+trait_type = "passive"
+visibility = 0
+
+[medium_armor_master]
+display_name = "Medium Armor Master"
+text = "Wearing medium armor does not impose disadvantage on stealth checks for you. You may add 3 to your AC if your dexterity is 16 or higher while wearing medium armor."
+trait_type = "passive"
+visibility = 1
+
+    [medium_armor_master.tags]
+    give_tag = ["medium_armor_training"]
+
+[menacing]
+display_name = "Menacing"
+text = "You gain proficiency in the Intimidation skill. "
+trait_type = "passive"
+visibility = 2
+
+    [menacing.tags]
+    skill_proficiency = ["intimidation"]
+
+[monk_defense]
+display_name = "Monk Defense"
+trait_type = "hidden"
+visibility = 1
+
+    [monk_defense.tags]
+    give_armor = ["unarmored_defense_monk"]
+
+[natural_armor]
+display_name = "Natural Armor"
+text = "When you aren't wearing armor, your AC is 13 + your Dexterity modifier. "
+trait_type = "passive"
+visibility = 1
+
+    [natural_armor.tags]
+    give_armor = ["natural_armor"]
+
+[natural_illusionist]
+display_name = "Natural Illusionist"
+text = "You know the minor illusion cantrip. Intelligence is your spellcasting ability for it. "
+trait_type = "passive"
+visibility = 0
+
+[naturally_stealthy]
+display_name = "Naturally Stealthy"
+text = "You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you. "
+trait_type = "passive"
+visibility = 0
+
+[necrotic_shroud]
+display_name = "Necrotic Shroud"
+recharge = "1/long"
+text = "You can use your action to unleash the divine energy within yourself, causing your eyes to turn into pools of darkness and two skeletal, ghostly, flightless wings to sprout from your back. The instant you transform, other creatures within 10 feet of you that can see you must succeed on a Charisma saving throw (DC 8 + your proficiency bonus + your Charisma modifier) or become frightened of you until the end of your next turn.\nYour transformation lasts for 1 minute or until you end it as a bonus action. During it, once on each of your turns, you can deal extra necrotic damage to one target when you deal damage to it with an attack or a spell. The extra necrotic damage equals your level."
+trait_type = "passive"
+visibility = 0
+
+    [necrotic_shroud.tags]
+    min_hd = ["3"]
+
+[parry]
+display_name = "Parry"
+text = "You add 2 to its AC against one melee attack that would hit you. To do so, you must see the attacker and be wielding a melee weapon."
+trait_type = "reaction"
+visibility = 0
+
+    [parry.tags]
+    cr_ac_shift = ["1"]
+
+[radiant_consumption]
+display_name = "Radiant Consumption"
+recharge = "1/long"
+text = "You can use your action to unleash the divine energy within yourself, causing a searing light to radiate from you, pour out of your eyes and mouth, and threaten to char you."
+trait_type = "passive"
+visibility = 0
+
+    [radiant_consumption.tags]
+    min_hd = ["3"]
+
+[radiant_soul]
+display_name = "Radiant Soul"
+recharge = "1/long"
+text = "You can use your action to unleash the divine energy within yourself, causing your eyes to glimmer and two luminous, incorporeal wings to sprout from your back.\nYour transformation lasts for 1 minute or until you end it as a bonus action. During it, you have a flying speed of 30 feet, and once on each of your turns, you can deal extra radiant damage to one target when you deal damage to it with an attack or a spell. The extra radiant damage equals your level."
+trait_type = "passive"
+visibility = 0
+
+    [radiant_soul.tags]
+    min_hd = ["3"]
+
+[relentless_endurance]
+display_name = "Relentless Endurance"
+text = "When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can't use this feature again until you finish a long rest. "
+trait_type = "passive"
+visibility = 0
+
+[savage_attack]
+display_name = "Savage Attack"
+text = "When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit. "
+trait_type = "passive"
+visibility = 0
+
+[silent_speech]
+display_name = "Silent Speech"
+text = "You can speak telepathically to any creature within 30 feet of you. The creature understands you only if the two of you share a language. You can speak telepathically in this way to one creature at a time."
+trait_type = "passive"
+visibility = 0
+
+[speak_with_small_beasts]
+display_name = "Speak With Small Beasts"
+text = "Through sounds and gestures, you can communicate simple ideas with Small or smaller beasts. Forest gnomes love animals and often keep squirrels, badgers, rabbits, moles, woodpeckers, and other creatures as beloved pets. "
+trait_type = "passive"
+visibility = 0
+
+[stone_camoflage]
+display_name = "Stone Camoflage"
+text = "You have advantage on Dexterity (Stealth) checks to hide in rocky terrain. "
+trait_type = "passive"
+visibility = 0
+
+[stonecunning]
+display_name = "Stonecunning"
+text = "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus. "
+trait_type = "passive"
+visibility = 0
+
+[stout_resilience]
+display_name = "Stout Resilience"
+text = "You have advantage on saving throws against poison, and you have resistance against poison damage. "
+trait_type = "passive"
+visibility = 2
+
+    [stout_resilience.tags]
+    damage_resistance = ["poison"]
+    save_advantage = ["poison"]
+
+[sunlight_sensitivity]
+display_name = "Sunlight Sensitivity"
+text = "You have disadvantage on attack rolls and Wisdom (Perception) checks that rely on sight when you, the target of your attack, or whatever you are trying to perceive is in direct sunlight. "
+trait_type = "passive"
+visibility = 0
+
+[superior_darkvision]
+display_name = "Superior Darkvision"
+text = "You can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray. "
+trait_type = "passive"
+visibility = 2
+
+    [superior_darkvision.tags]
+    sense_darkvision = ["120"]
+
+[talons]
+display_name = "Talons"
+trait_type = "hidden"
+visibility = 1
+
+    [talons.tags]
+    give_weapon = ["talons"]
+
+[tool_proficiency_dwarven]
+display_name = "Dwarven Tool Proficiency"
+text = "You gain proficiency with the artisan's tools of your choice: smith's tools, brewer's supplies, or mason's tools. "
+trait_type = "passive"
+visibility = 2
+
+[toughy]
+display_name = "Toughy"
+text = "Testy resistances"
+trait_type = "passive"
+visibility = 1
+
+    [toughy.tags]
+    condition_immunity = ["charmed", "sleep"]
+    damage_immunity = ["bludgeoning", "slashing"]
+    damage_resistance = ["fire", "ice"]
+    damage_vulnerability = ["electricity", "acid"]
+
+[trance]
+display_name = "Trance"
+text = "Elves don't need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day."
+trait_type = "passive"
+visibility = 0

@@ -1,0 +1,243 @@
+[aarakocra]
+categories = ["PC"]
+languages = ["common", "aarakocra", "auran"]
+size = "medium"
+traits = ["talons"]
+attribute_bonuses ={dex = 2, wis = 2}
+speeds= {fly = 50, walk = 20}
+
+[aasimar]
+categories = ["PC"]
+languages = ["common", "celestial"]
+size = "medium"
+traits = ["darkvision", "celestial_resistance", ]
+attribute_bonuses = {cha = 2}
+
+    [aasimar.subraces.aasimar]
+    display_name = "Aasimar"
+    traits = ["celestial_legacy", ]
+    attribute_bonuses = {wis = 1}
+
+    [aasimar.subraces.fallen]
+    traits = ["healing_hands", "light_bearer", "necrotic_shroud"]
+    attribute_bonuses = {str = 1}
+
+    [aasimar.subraces.protector]
+    traits = ["celestial_legacy", "healing_hands", "light_bearer", "radiant_soul"]
+    attribute_bonuses = {wis = 1}
+
+    [aasimar.subraces.scourge]
+    traits = ["celestial_legacy", "healing_hands", "light_bearer", "radiant_consumption"]
+    attribute_bonuses = {con = 1}
+
+[dragonborn]
+categories = ["PC"]
+languages = ["common", "draconic"]
+size = "medium"
+traits = []
+subrace_label = "Draconic Lineage"
+attribute_bonuses = {con = 1, str = 2}
+
+    [dragonborn.subraces.black]
+    display_name = "Black Dragonborn"
+
+        [dragonborn.subraces.black.features]
+        dragonborn_feature = "black"
+        
+    [dragonborn.subraces.blue]
+    display_name = "Blue Dragonborn"
+
+        [dragonborn.subraces.blue.features]
+        dragonborn_feature = "blue"
+
+    [dragonborn.subraces.brass]
+    display_name = "Brass Dragonborn"
+
+        [dragonborn.subraces.brass.features]
+        dragonborn_feature = "brass"
+    
+    [dragonborn.subraces.bronze]
+    display_name = "Bronze Dragonborn"
+
+        [dragonborn.subraces.bronze.features]
+        dragonborn_feature = "bronze"
+        
+    [dragonborn.subraces.copper]
+    display_name = "Copper Dragonborn"
+
+        [dragonborn.subraces.copper.features]
+        dragonborn_feature = "copper"
+        
+    [dragonborn.subraces.gold]
+    display_name = "Gold Dragonborn"
+
+        [dragonborn.subraces.gold.features]
+        dragonborn_feature = "gold"
+        
+    [dragonborn.subraces.green]
+    display_name = "Green Dragonborn"
+
+        [dragonborn.subraces.green.features]
+        dragonborn_feature = "green"
+        
+    [dragonborn.subraces.red]
+    display_name = "Red Dragonborn"
+
+        [dragonborn.subraces.red.features]
+        dragonborn_feature = "red"
+        
+    [dragonborn.subraces.silver]
+    display_name = "Silver Dragonborn"
+
+        [dragonborn.subraces.silver.features]
+        dragonborn_feature = "silver"
+        
+    [dragonborn.subraces.white]
+    display_name = "White Dragonborn"
+
+        [dragonborn.subraces.white.features]
+        dragonborn_feature = "white"
+
+[dwarf]
+categories = ["PC"]
+languages = ["common", "dwarvish", ]
+size = "medium"
+traits = ["heavy_armor_training", "stonecunning", "tool_proficiency_dwarven", "dwarven_combat_training", ]
+attribute_bonuses = {con = 2}
+speeds = {walk = 25}
+
+    [dwarf.subraces.duergar]
+    languages = ["undercommon"]
+    traits = ["superior_darkvision", "duergar_resilience", "duergar_magic", "sunlight_sensitivity"]
+    attribute_bonuses = {str = 1}
+
+    [dwarf.subraces.hill]
+    traits = ["darkvision", "dwarven_toughness"]
+    attribute_bonuses = {wis = 1}
+
+    [dwarf.subraces.mountain]
+    traits = ["darkvision", "dwarven_armor_training"]
+    attribute_bonuses = {str = 2}
+
+[elf]
+categories = ["PC"]
+languages = ["common", "elvish"]
+size = "medium"
+traits =  ["keen_senses", "fey_ancestry", "trance",]
+attribute_bonuses = {dex = 2}
+
+    [elf.subraces.drow]
+    traits = ["superior_darkvision", "sunlight_sensitivity", "drow_magic", "drow_weapon_training"]
+    attribute_bonuses = {cha = 1}
+
+
+    [elf.subraces.eladrin]
+    traits = ["darkvision", "elf_weapon_training", "fey_step"]
+    attribute_bonuses = {int = 1}
+
+    [elf.subraces.high]
+    traits =  ["darkvision", "elf_weapon_training", "extra_cantrip", "extra_language"]
+    attribute_bonuses = {int = 1}
+
+    [elf.subraces.wood]
+    speeds = {walk = 35}
+    traits = ["darkvision", "elf_weapon_training", "fleet_of_foot", "mask_of_the_wild"]
+    attribute_bonuses = {wis = 1}
+
+
+[gnome]
+categories = ["PC"]
+languages = ["common", "gnomish",]
+size = "small"
+speeds = {walk = 25}
+traits = ["gnome_cunning"]
+attribute_bonuses = {int = 2}
+
+    [gnome.subraces.deep]
+    languages = ["undercommon"]
+    traits = ["superior_darkvision", "stone_camoflage"]
+    attribute_bonuses = {dex = 1}
+
+
+    [gnome.subraces.forest]
+    traits = ["darkvision", "natural_illusionist", "speak_with_small_beasts"]
+    attribute_bonuses = {dex = 1}
+
+
+    [gnome.subraces.rock]
+    traits = ["darkvision", "artificers_lore"]
+    attribute_bonuses = {con = 1}
+    features = {tinker = true }
+
+
+[half-elf]
+categories = ["PC"]
+languages = ["common", "elvish"]
+size = "medium"
+traits = ["extra_language", "floating_attribute_bonus_double", "extra_skill", "extra_skill", "darkvision", "fey_ancestry"]
+attribute_bonuses = {cha = 2}
+
+[half-orc]
+categories = ["PC"]
+languages = ["common", "orc"]
+size = "medium"
+traits = ["darkvision", "menacing", "savage_attack", "relentless_endurance"]
+attribute_bonuses = {con = 1, str = 2}
+
+[halfling]
+categories = ["PC"]
+languages = ["common", "halfling"]
+size = "small"
+speeds = {walk = 25}
+traits = ["lucky", "brave", "halfling_nimbleness",]
+attribute_bonuses = {dex = 2}
+
+    [halfling.subraces.ghostwise]
+    traits = [ "silent_speech"]
+    attribute_bonuses = {wis = 1}
+
+    [halfling.subraces.lightfoot]
+    traits = ["naturally_stealthy"]
+    attribute_bonuses = {wis = 1}
+
+    [halfling.subraces.stout]
+    traits = ["stout_resilience"]
+    attribute_bonuses = {con = 1}
+
+
+[human]
+categories = ["PC"]
+languages = ["common"]
+size = "medium"
+traits = ["extra_language"]
+
+    [human.subraces.standard]
+    display_name = "Human"
+    attribute_bonuses = { cha = 1, con = 1, dex = 1, int = 1, str = 1, wis = 1}
+
+    [human.subraces.variant]
+    traits = ["floating_attribute_bonus_double", "extra_skill"]
+
+
+[humanoid]
+categories = ["generic"]
+languages = ["common"]
+size = "medium"
+traits = []
+
+
+[lizardfolk]
+categories = ["monstrous"]
+languages = ["common", "draconic"]
+size = "medium"
+speeds = {swim = 30}
+traits = ["natural_armor"]
+attribute_bonuses = {con = 2, wis = 1}
+
+
+[tiefling]
+categories = ["PC"]
+languages = ["common", "infernal"]
+size = "medium"
+traits = ["darkvision", "hellish_resistance", "infernal_legacy"]
+attribute_bonuses= {cha = 2, int = 1}

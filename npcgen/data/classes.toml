@@ -1,0 +1,366 @@
+[arcanist]
+armors_loadout_pool = "mage"
+categories = ["arcanist"]
+cr_calc = "caster"
+hd_size = 6
+num_random_skills = 2
+priority_attributes = ["int", "con"]
+saves = ["int"]
+skills_fixed = ["arcana"]
+skills_random = ["religion", "insight", "nature", "history"]
+traits = []
+weapons_loadout_pool = "mage"
+
+    [arcanist.spell_casting_profile]
+    casting_stat = 'int'
+    ready_style = 'prepared'
+    cantrips_per_level = 'cleric_wizard'
+    tags = ['spellbook']
+
+        [[arcanist.spell_casting_profile.spell_lists]]
+        weight = 2
+        fixed_include = ["mage armor","shield"]
+
+        [[arcanist.spell_casting_profile.spell_lists]]
+        req_classes = ['wizard']
+
+    [arcanist.subclasses_primary.abjurer]
+    display_name = "Abjurer"
+
+        [arcanist.subclasses_primary.abjurer.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['abjuration']}
+
+    [arcanist.subclasses_primary.conjurer]
+    display_name = "Conjurer"
+
+        [arcanist.subclasses_primary.conjurer.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['conjuration']}
+
+    [arcanist.subclasses_primary.diviner]
+    display_name = "Diviner"
+
+        [arcanist.subclasses_primary.diviner.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['divination']}
+
+    [arcanist.subclasses_primary.enchanter]
+    display_name = "Enchanter"
+
+        [arcanist.subclasses_primary.enchanter.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['enchantment']}
+
+    [arcanist.subclasses_primary.evoker]
+    display_name = "Evoker"
+
+        [arcanist.subclasses_primary.evoker.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['evocation']}
+
+    [arcanist.subclasses_primary.illusionist]
+    display_name = "Illusionist"
+
+        [arcanist.subclasses_primary.illusionist.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['illusion']}
+
+    [arcanist.subclasses_primary.necromancer]
+    display_name = "Necromancer"
+
+        [arcanist.subclasses_primary.necromancer.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['necromancy']}
+
+    [arcanist.subclasses_primary.transmuter]
+    display_name = "Transmuter"
+
+        [arcanist.subclasses_primary.transmuter.features]
+            add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['transmutation']}
+
+
+[archer]
+armors_loadout_pool = "light_med"
+categories = ["warrior"]
+cr_calc = "attack"
+hd_size = 8
+num_random_skills = 2
+priority_attributes = ["dex", "con"]
+saves = ["dex"]
+skills_fixed = ["athletics"]
+skills_random = ["acrobatics", "stealth", "survival", "intimidation"]
+traits = []
+weapons_loadout_pool = "archer"
+
+    [archer.features]
+    multiattack = "fighter"
+
+[bandit_captain]
+armors_loadout_pool = "light_med"
+categories = ["warrior"]
+cr_calc = "attack"
+hd_size = 10
+num_random_skills = 1
+priority_attributes = ["dex", "con"]
+saves = ["str", "dex", "wis"]
+skills_fixed = ["athletics", "deception"]
+skills_random = ["acrobatics", "persuasion", "stealth"]
+traits = ["parry"]
+weapons_loadout_pool = "dex_fighter"
+
+    [bandit_captain.features]
+    multiattack = "fighter"
+
+[brute]
+armors_loadout_pool = "light_med"
+categories = ["warrior"]
+cr_calc = "attack"
+hd_size = 10
+num_random_skills = 1
+priority_attributes = ["str", "con"]
+saves = ["str", "con"]
+skills_fixed = ["athletics", "intimidation"]
+skills_random = ["acrobatics", "stealth", "survival"]
+traits = ["parry"]
+weapons_loadout_pool = "brute"
+
+    [brute.features]
+    multiattack = "fighter"
+
+[cleric]
+categories = ["divine"]
+hd_size = 8
+priority_attributes = ["wis", "cha"]
+saves = ["wis", "cha"]
+skills_fixed = ["religion"]
+skills_random = ["arcana", "persuasion", "medicine", "insight"]
+num_random_skills = 2
+cr_calc = "attack"
+traits = []
+weapons_loadout_pool = "mage"
+armors_loadout_pool = "mage"
+subclass_primary_label = "Domain"
+
+    [cleric.spell_casting_profile]
+    casting_stat = 'wis'
+    ready_style = 'prepared'
+    cantrips_per_level = 'cleric_wizard'
+
+        [[cleric.spell_casting_profile.spell_lists]]
+        weight = 3
+        fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
+
+        [[cleric.spell_casting_profile.spell_lists]]
+        req_classes = ['cleric']
+
+    [cleric.subclasses_primary.arcana]
+
+        [cleric.subclasses_primary.arcana.features]
+        add_free_spells = ["detect magic","magic missile","magic weapon","nystul's magic aura",
+        "dispel magic","magic circle","arcane eye","leomund's secret chest","planar binding","teleportation circle"]
+
+    [cleric.subclasses_primary.forge]
+
+        [cleric.subclasses_primary.forge.features]
+            add_free_spells = ["identify","searing smite","heat metal","magic weapon","elemental weapon",
+            "protection from energy","fabricate","wall of fire","animate objects","creation"]
+
+
+    [cleric.subclasses_primary.grave]
+
+        [cleric.subclasses_primary.grave.features]
+            add_free_spells = ["bane","false life","gentle repose","ray of enfeeblement","revivify",
+            "vampiric touch","blight","death ward","antilife shell","raise dead"]
+
+
+    [cleric.subclasses_primary.knowledge]
+
+        [cleric.subclasses_primary.knowledge.features]
+        add_free_spells = ["command","identify","augury","suggestion","nondetection","speak with dead",
+        "arcane eye","confusion","legend lore","scrying"]
+
+
+    [cleric.subclasses_primary.life]
+
+        [cleric.subclasses_primary.life.features]
+            add_free_spells = ["bless","cure wounds","lesser restoration","spiritual weapon","beacon of hope",
+            "revivify","death ward","guardian of faith","mass cure wounds","raise dead"]
+
+
+    [cleric.subclasses_primary.light]
+
+        [cleric.subclasses_primary.light.features]
+            add_free_spells = ["burning hands","faerie fire","flaming sphere","scorching ray","daylight",
+            "fireball","guardian of faith","wall of fire","flame strike","scrying"]
+
+
+    [cleric.subclasses_primary.nature]
+
+        [cleric.subclasses_primary.nature.features]
+            add_free_spells = ["animal friendship","speak with animals","barkskin","spike growth","plant growth",
+            "wind wall","dominate beast","grasping vine","insect plague","tree stride"]
+
+
+    [cleric.subclasses_primary.tempest]
+
+        [cleric.subclasses_primary.tempest.features]
+            add_free_spells = ["fog cloud","thunderwave","gust of wind","shatter","call lightning","sleet storm",
+            "control water","ice storm","destructive wave","insect plague"]
+
+
+    [cleric.subclasses_primary.trickery]
+
+        [cleric.subclasses_primary.trickery.features]
+            add_free_spells = ["charm person","disguise self","mirror image","pass without trace","blink",
+            "dispel magic","dimension door","polymorph","dominate person","modify memory"]
+
+
+    [cleric.subclasses_primary.war]
+
+        [cleric.subclasses_primary.war.features]
+            add_free_spells = ["divine favor","shield of faith","magic weapon","spiritual weapon",
+            "crusader's mantle","spirit guardians","freedom of movement","stoneskin","flame strike","hold monster"]
+
+
+[druid]
+armors_loadout_pool = "mage"
+categories = ["divine"]
+cr_calc = "caster"
+hd_size = 6
+num_random_skills = 2
+priority_attributes = ["wis", "cha"]
+saves = ["wis", "dex"]
+skills_fixed = ["nature", "herbalism_kit"]
+skills_random = ["survival", "arcana", "medicine"]
+traits = []
+weapons_loadout_pool = "mage"
+
+    [druid.spell_casting_profile]
+    casting_stat = 'wis'
+    ready_style = 'prepared'
+    cantrips_per_level = 'bard_druid'
+
+        [[druid.spell_casting_profile.spell_lists]]
+        weight = 3
+        fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
+
+        [[druid.spell_casting_profile.spell_lists]]
+        req_classes = ['druid']
+
+[monk]
+armors_loadout_pool = "monk"
+categories = ["warrior"]
+cr_calc = "attack"
+hd_size = 8
+num_random_skills = 1
+priority_attributes = ["dex", "wis"]
+saves = ["dex", "con"]
+skills_fixed = ["acrobatics", "athletics"]
+skills_random = ["stealth", "insight", "survival"]
+traits = ["monk_defense"]
+weapons_loadout_pool = "monk"
+
+    [monk.features]
+    martial_arts = true
+    multiattack = "fighter"
+
+
+[paladin]
+armors_loadout_pool = "med_heavy"
+categories = ["divine"]
+cr_calc = "attack"
+hd_size = 10
+num_random_skills = 2
+priority_attributes = ["str", "cha"]
+saves = ["wis", "cha"]
+skills_fixed = [""]
+skills_random = ["athletics", "insight", "intimidation", "medicine", "persuasion", "religion"]
+traits = []
+weapons_loadout_pool = "soldier"
+
+    [paladin.spell_casting_profile]
+    casting_stat = 'wis'
+    ready_style = 'prepared'
+    hd_per_casting_level = 2
+
+            [[paladin.spell_casting_profile.spell_lists]]
+            fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
+
+            [[paladin.spell_casting_profile.spell_lists]]
+            req_classes = ['paladin']
+
+
+
+[priest]
+armors_loadout_pool = "mage"
+categories = ["divine"]
+cr_calc = "caster"
+hd_size = 6
+num_random_skills = 2
+priority_attributes = ["wis", "cha"]
+saves = ["wis"]
+skills_fixed = ["religion"]
+skills_random = ["arcana", "persuasion", "medicine", "insight"]
+traits = []
+weapons_loadout_pool = "mage"
+
+    [priest.features]
+
+
+[sneaker]
+armors_loadout_pool = "light_med"
+categories = ["rogue"]
+cr_calc = "mixed"
+hd_size = 8
+num_random_skills = 2
+priority_attributes = ["dex", "int"]
+saves = ["dex", "int"]
+skills_fixed = ["acrobatics", "stealth"]
+skills_random = ["insight", "investigation", "deception"]
+traits = ["medium_armor_master", "expertise_single"]
+weapons_loadout_pool = "rogue"
+
+    [sneaker.features]
+    multiattack = "single"
+
+[soldier]
+armors_loadout_pool = "soldier"
+categories = ["warrior"]
+cr_calc = "attack"
+hd_size = 8
+num_random_skills = 2
+priority_attributes = ["str", "con"]
+saves = ["con"]
+skills_fixed = ["athletics"]
+skills_random = ["acrobatics", "stealth", "survival", "intimidation"]
+traits = []
+weapons_loadout_pool = "soldier"
+
+    [soldier.features]
+    multiattack = "fighter"
+
+[warlock]
+armors_loadout_pool = "mage"
+categories = ["eldritch"]
+cr_calc = "attack"
+hd_size = 8
+num_random_skills = 3
+priority_attributes = ["cha", "con"]
+saves = ["cha", "wis"]
+skills_fixed = [""]
+skills_random = ["arcana", "deception", "history", "intimidation", "investigation", "nature", "religion"]
+traits = []
+weapons_loadout_pool = "mage"
+
+    [warlock.features]
+
+[weirdo]
+armors_loadout_pool = "minion"
+categories = ["rogue"]
+cr_calc = "mixed"
+hd_size = 8
+num_random_skills = 1
+priority_attributes = ["cha", "con"]
+saves = ["cha", "str"]
+skills_fixed = ["acrobatics", "athletics"]
+skills_random = ["insight", "investigation", "deception"]
+traits = ["toughy"]
+weapons_loadout_pool = "minion"
+
+    [weirdo.features]
+    multiattack = "single"
+

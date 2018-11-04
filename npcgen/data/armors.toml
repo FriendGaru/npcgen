@@ -1,0 +1,80 @@
+[breastplate]
+armor_type = "medium"
+base_ac = 14
+
+[chain_mail]
+armor_type = "heavy"
+base_ac = 16
+min_str = 13
+
+[chain_shirt]
+armor_type = "medium"
+base_ac = 13
+
+[half_plate]
+armor_type = "medium"
+base_ac = 15
+
+[hide]
+armor_type = "medium"
+base_ac = 12
+
+[leather]
+armor_type = "light"
+base_ac = 11
+
+[mage_armor]
+armor_type = "none"
+base_ac = 14
+display_name = "Mage Armor"
+tags = ["extra"]
+
+[natural_armor]
+armor_type = "none"
+base_ac = 13
+display_name = "Natural Armor"
+tags = ["preferred"]
+
+[padded]
+armor_type = "light"
+base_ac = 11
+
+[plate]
+armor_type = "heavy"
+base_ac = 18
+min_str = 15
+
+[ring_mail]
+armor_type = "heavy"
+base_ac = 14
+display_name = "Ring mail"
+
+[scale_mail]
+armor_type = "medium"
+base_ac = 14
+
+[splint]
+armor_type = "heavy"
+base_ac = 17
+min_str = 15
+
+[studded_leather]
+armor_type = "light"
+base_ac = 12
+
+[unarmored]
+armor_type = "none"
+base_ac = 10
+tags = ["preferred"]
+
+[unarmored_defense_barbarian]
+armor_type = "none"
+base_ac = 14
+display_name = "Unarmored"
+tags = ["preferred"]
+
+[unarmored_defense_monk]
+armor_type = "none"
+base_ac = 14
+display_name = "Unarmored"
+tags = ["preferred"]

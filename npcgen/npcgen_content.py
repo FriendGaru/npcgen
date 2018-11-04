@@ -1,6 +1,7 @@
 import collections
 import random
 import csv
+import toml
 from enum import Enum
 from .npcgen_constants import *
 import pkg_resources as pkg
@@ -23,12 +24,7 @@ def debug_print(message, required_verbosity=2):
 
 DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
-ARMORS_FILE = \
-    pkg.resource_filename(__name__, 'data/armors.csv')
-WEAPONS_FILE = \
-    pkg.resource_filename(__name__, 'data/weapons.csv')
-TRAITS_FILE = \
-    pkg.resource_filename(__name__, 'data/traits.csv')
+
 SPELLS_FILE = \
     pkg.resource_filename(__name__, 'data/spells.csv')
 SPELLLISTS_FILE = \
@@ -39,10 +35,20 @@ ARMORS_LOADOUT_POOLS_FILE = \
     pkg.resource_filename(__name__, 'data/loadoutpools_armors.csv')
 WEAPONS_LOADOUT_POOLS_FILE = \
     pkg.resource_filename(__name__, 'data/loadoutpools_weapons.csv')
-RACE_TEMPLATES_FILE = \
-    pkg.resource_filename(__name__, 'data/racetemplates.csv')
 CLASS_TEMPLATES_FILE = \
     pkg.resource_filename(__name__, 'data/classtemplates.csv')
+
+TRAITS_TOML = \
+    pkg.resource_filename(__name__, 'data/traits.toml')
+ARMORS_TOML = \
+    pkg.resource_filename(__name__, 'data/armors.toml')
+WEAPONS_TOML = \
+    pkg.resource_filename(__name__, 'data/weapons.toml')
+
+RACE_TEMPLATES_TOML = \
+    pkg.resource_filename(__name__, 'data/races.toml')
+CLASS_TEMPLATES_TOML = \
+    pkg.resource_filename(__name__, 'data/classes.toml')
 
 
 # I format my csv tag entries like 'tag_name:tag_val1;tag_val2,second_tag_name'
@@ -59,6 +65,17 @@ def csv_tag_reader(item_line, tag_delimiter=';', tag_value_separator=':', tag_va
             tag_name, tag_val_list = tag_raw, []
         tags_dict[tag_name] = tag_val_list
     return tags_dict
+
+
+# Checks to see if the origin dictionary has a key and if it does sets the corresponding attribute of the
+# destination object to that value
+# A helper function for building templates from toml dicts
+def set_obj_attr_from_dict(destination_object, origin_dict: Dict, key, attribute_name=None):
+    if key in origin_dict:
+        if attribute_name:
+            setattr(destination_object, attribute_name, origin_dict[key])
+        else:
+            setattr(destination_object, key, origin_dict[key])
 
 
 class ContentType(Enum):
@@ -85,49 +102,49 @@ RANDOMIZABLE_CLASS_CATEGORIES = (
 
 class ContentSource:
     def __init__(self,
-                 weapons_file_loc=WEAPONS_FILE,
-                 armors_file_loc=ARMORS_FILE,
+                 weapons_toml_loc=WEAPONS_TOML,
+                 armors_toml_loc=ARMORS_TOML,
                  spells_file_loc=SPELLS_FILE,
-                 spell_lists_file_loc=SPELLLISTS_FILE,
-                 spellcaster_profiles_file_loc=SPELLCASTER_PROFILES_FILE,
+                 # spell_lists_file_loc=SPELLLISTS_FILE,
+                 # spellcaster_profiles_file_loc=SPELLCASTER_PROFILES_FILE,
                  armors_loadout_pools_file_loc=ARMORS_LOADOUT_POOLS_FILE,
                  weapons_loadout_pools_file_loc=WEAPONS_LOADOUT_POOLS_FILE,
-                 traits_file_loc=TRAITS_FILE,
-                 race_templates_file_loc=RACE_TEMPLATES_FILE,
-                 class_templates_file_loc=CLASS_TEMPLATES_FILE,
+                 traits_toml_loc=TRAITS_TOML,
+                 races_toml_loc=RACE_TEMPLATES_TOML,
+                 classes_toml_loc=CLASS_TEMPLATES_TOML,
                  ):
 
-        self.race_templates = collections.OrderedDict()
-        self.race_categories = collections.OrderedDict()
-        self.load_race_templates_from_csv(race_templates_file_loc)
-
-        self.class_templates = collections.OrderedDict()
-        self.class_categories = collections.OrderedDict()
-        self.load_class_templates_from_csv(class_templates_file_loc)
-
         self.weapon_templates = {}
-        self.load_weapons_from_csv(weapons_file_loc)
+        self.load_weapons_from_toml(weapons_toml_loc)
 
         self.weapon_loadout_pools = {}
         self.load_weapons_loadout_pools_from_csv(weapons_loadout_pools_file_loc)
 
         self.armor_templates = {}
-        self.load_armors_from_csv(armors_file_loc)
+        self.load_armors_from_toml(armors_toml_loc)
 
         self.armor_loadout_pools = {}
         self.load_armors_loadout_pools_from_csv(armors_loadout_pools_file_loc)
 
         self.spells = {}
         self.load_spells_from_csv(spells_file_loc)
-
-        self.spell_lists = {}
-        self.load_spell_lists_from_csv(spell_lists_file_loc)
-
-        self.spellcaster_profiles = {}
-        self.load_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
+        #
+        # self.spell_lists = {}
+        # self.load_spell_lists_from_csv(spell_lists_file_loc)
+        #
+        # self.spellcaster_profiles = {}
+        # self.load_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
 
         self.trait_templates = {}
-        self.load_traits_from_csv(traits_file_loc)
+        self.load_traits_from_toml(traits_toml_loc)
+
+        self.race_templates = collections.OrderedDict()
+        self.race_categories = collections.OrderedDict()
+        self.load_races_from_toml(races_toml_loc)
+
+        self.class_templates = collections.OrderedDict()
+        self.class_categories = collections.OrderedDict()
+        self.load_classes_from_toml(classes_toml_loc)
 
         self.content_type_map = {
             ContentType.ARMOR: self.armor_templates,
@@ -137,8 +154,8 @@ class ContentSource:
             ContentType.RACE: self.race_templates,
             ContentType.CLASS: self.class_templates,
             ContentType.SPELL: self.spells,
-            ContentType.SPELL_LIST: self.spell_lists,
-            ContentType.SPELLCASTER_PROFILE: self.spellcaster_profiles,
+            # ContentType.SPELL_LIST: self.spell_lists,
+            # ContentType.SPELLCASTER_PROFILE: self.spellcaster_profiles,
             ContentType.TRAIT: self.trait_templates,
         }
         
@@ -154,90 +171,76 @@ class ContentSource:
         else:
             self.class_categories[category] = [class_name, ]
 
-    def load_armors_from_csv(self, armors_file_loc):
-        with open(armors_file_loc, newline='', encoding="utf-8") as armors_file:
-            armors_file_reader = csv.DictReader(armors_file)
-            for line in armors_file_reader:
+    def load_armors_from_toml(self, armors_toml_loc):
+        toml_dict = toml.load(armors_toml_loc)
+        for armor_name, armor_dict in toml_dict.items():
+            new_armor_template = ArmorTemplate()
 
-                # Ignore blank lines or comments using hashtags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
+            new_armor_template.int_name = armor_name
 
-                new_armor = ArmorTemplate()
-                new_armor.int_name = line['internal_name']
-                if line['display_name']:
-                    new_armor.display_name = line['display_name']
-                else:
-                    new_armor.display_name = new_armor.int_name.capitalize()
-                new_armor.base_ac = int(line['base_ac'])
-                new_armor.armor_type = line['armor_type']
-                if line['min_str']:
-                    new_armor.min_str = int(line['min_str'])
-                if line['stealth_disadvantage'] == 'TRUE':
-                    new_armor.stealth_disadvantage = True
-                new_armor.tags = set(line['tags'].replace(" ", "").split(','))
-                self.armor_templates[new_armor.int_name] = new_armor
+            if 'display_name' in armor_dict:
+                new_armor_template.display_name = armor_dict['display_name']
+            else:
+                new_armor_template.display_name = armor_name.replace('_', ' ').capitalize()
 
-    def load_weapons_from_csv(self, weapons_file_loc):
-        with open(weapons_file_loc, newline='', encoding="utf-8") as weaponsFile:
-            weapons_file_reader = csv.DictReader(weaponsFile)
-            for line in weapons_file_reader:
+            new_armor_template.armor_type = armor_dict['armor_type']
+            new_armor_template.base_ac = int(armor_dict['base_ac'])
 
-                # Ignore blank lines or comments using hastags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
+            if 'stealth_disadvantage' in armor_dict:
+                new_armor_template.stealth_disadvantage = armor_dict['stealth_disadvantage']
 
-                new_weapon = WeaponTemplate()
-                new_weapon.int_name = line['internal_name']
-                if line['display_name']:
-                    new_weapon.display_name = line['display_name']
-                else:
-                    new_weapon.display_name = line['internal_name'].capitalize()
-                new_weapon.dmg_dice_num = int(line['dmg_dice_num'])
-                new_weapon.dmg_dice_size = int(line['dmg_dice_size'])
-                new_weapon.damage_type = line['damage_type']
-                new_weapon.attack_type = line['attack_type']
-                if line['short_range']:
-                    new_weapon.range_short = int(line['short_range'])
-                if line['long_range']:
-                    new_weapon.range_long = int(line['long_range'])
-                new_weapon.tags = set(line['tags'].replace(" ", "").split(','))
-                self.weapon_templates[new_weapon.int_name] = new_weapon
-                debug_print("Weapon Added: " + str(new_weapon), 3)
+            if 'tags' in armor_dict:
+                new_armor_template.tags = armor_dict['tags']
 
-    def load_traits_from_csv(self, traits_file_loc):
-        with open(traits_file_loc, newline='', encoding="utf-8") as traitsFile:
-            traits_file_reader = csv.DictReader(traitsFile)
-            for line in traits_file_reader:
+            self.armor_templates[armor_name] = new_armor_template
 
-                # Ignore blank lines or comments using hastags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
-                try:
-                    new_trait_factory = TraitTemplate()
-                    new_trait_factory.int_name = line['internal_name']
-                    if line['display_name']:
-                        new_trait_factory.display_name = line['display_name']
-                    else:
-                        new_trait_factory.display_name = line['internal_name'].replace('_', ' ').title()
+    def load_weapons_from_toml(self, weapons_toml_loc):
+        toml_dict = toml.load(weapons_toml_loc)
+        for weapon_name, weapon_dict in toml_dict.items():
+            new_weapon_template = WeaponTemplate()
 
-                    if line['subtitle']:
-                        new_trait_factory.recharge = line['subtitle']
+            new_weapon_template.int_name = weapon_name
 
-                    new_trait_factory.trait_type = line['trait_type']
+            if 'display_name' in weapon_dict:
+                new_weapon_template.display_name = weapon_dict['display_name']
+            else:
+                new_weapon_template.display_name = weapon_name.replace("_", " ").title()
 
-                    if line['visibility']:
-                        new_trait_factory.visibility = int(line['visibility'])
-                    else:
-                        new_trait_factory.visibility = 0
+            dmg_dice_num, dmg_dice_size = weapon_dict['damage'].split('d')
+            new_weapon_template.dmg_dice_num = int(dmg_dice_num)
+            new_weapon_template.dmg_dice_size = int(dmg_dice_size)
 
-                    new_trait_factory.text = line['text'].replace('\\n', '\n\t')
+            new_weapon_template.damage_type = weapon_dict['damage_type']
 
-                    new_trait_factory.tags = csv_tag_reader(line['tags'])
+            if 'range' in weapon_dict:
+                range_short, range_long = weapon_dict['range'].split('/')
+                new_weapon_template.range_short = int(range_short)
+                new_weapon_template.range_long = int(range_long)
 
-                    self.trait_templates[new_trait_factory.int_name] = new_trait_factory
-                except (ValueError, TypeError):
-                    print("Error procession trait {}".format(line['internal_name']))
+            if 'tags' in weapon_dict:
+                new_weapon_template.tags = weapon_dict['tags']
+
+            self.weapon_templates[weapon_name] = new_weapon_template
+
+    def load_traits_from_toml(self, traits_toml_loc):
+        toml_dict = toml.load(traits_toml_loc)
+        for trait_name, trait_dict in toml_dict.items():
+            new_trait_template = TraitTemplate()
+
+            new_trait_template.int_name = trait_name
+
+            if 'display_name' in trait_dict:
+                new_trait_template.display_name = trait_dict['display_name']
+            else:
+                new_trait_template.display_name = trait_dict['internal_name'].replace('_', ' ').title()
+
+            set_obj_attr_from_dict(new_trait_template, trait_dict, 'subtitle')
+            set_obj_attr_from_dict(new_trait_template, trait_dict, 'text')
+            set_obj_attr_from_dict(new_trait_template, trait_dict, 'trait_type')
+            set_obj_attr_from_dict(new_trait_template, trait_dict, 'visibility')
+            set_obj_attr_from_dict(new_trait_template, trait_dict, 'tags')
+
+            self.trait_templates[new_trait_template.int_name] = new_trait_template
 
     def load_armors_loadout_pools_from_csv(self, loadout_pools_file_loc):
         with open(loadout_pools_file_loc, newline="", encoding="utf-8") as loadoutPoolsFile:
@@ -331,290 +334,272 @@ class ContentSource:
                 new_spell.classes = set(line['classes'].replace(" ", "").split(','))
                 self.spells[new_spell.name] = new_spell
 
-    def load_spell_lists_from_csv(self, spell_lists_file_loc):
-        with open(spell_lists_file_loc, newline='', encoding="utf-8") as spellListsFile:
-            spell_lists_file_reader = csv.DictReader(spellListsFile)
-            for line in spell_lists_file_reader:
+    # def load_spell_lists_from_csv(self, spell_lists_file_loc):
+    #     with open(spell_lists_file_loc, newline='', encoding="utf-8") as spellListsFile:
+    #         spell_lists_file_reader = csv.DictReader(spellListsFile)
+    #         for line in spell_lists_file_reader:
+    #
+    #             # Ignore blank lines or comments using hastags
+    #             if line['name'] == '' or '#' in line['name']:
+    #                 continue
+    #
+    #             new_spell_list = SpellList()
+    #             new_spell_list.name = line['name']
+    #
+    #             # Check for if it's an autolist
+    #             # If all these fields are blank, it's not an autolist
+    #             if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
+    #                     or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
+    #                 req_classes = None
+    #                 if line['req_classes']:
+    #                     req_classes = line['req_classes'].replace(" ", "").split(",")
+    #                 req_schools = None
+    #                 if line['req_schools']:
+    #                     req_schools = set(line['req_schools'].replace(" ", "").split(","))
+    #                 req_levels = None
+    #                 if line['req_levels']:
+    #                     req_levels = line['req_levels'].replace(" ", "").split(",")
+    #                 req_sources = None
+    #                 if line['req_sources']:
+    #                     req_sources = line['req_sources'].replace(" ", "").split(",")
+    #
+    #                 for spell_name, spell in self.spells.items():
+    #                     if req_classes and spell.classes.isdisjoint(req_classes):
+    #                         continue
+    #                     if req_schools and spell.school not in req_schools:
+    #                         continue
+    #                     if req_levels and spell.level not in req_levels:
+    #                         continue
+    #                     if req_sources and spell.source not in req_sources:
+    #                         continue
+    #                     new_spell_list.add_spell(spell)
+    #
+    #             if line['fixed_include']:
+    #                 fixed_include_spells = line['fixed_include'].split(',')
+    #                 for spell_name in fixed_include_spells:
+    #                     spell_name = spell_name.strip()
+    #                     if spell_name not in self.spells:
+    #                         debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+    #                                     .format(spell_name, new_spell_list.name), 0)
+    #                     else:
+    #                         new_spell_list.add_spell(self.spells[spell_name])
+    #
+    #             if line['fixed_exclude']:
+    #                 fixed_exclude_spells = line['fixed_exclude'].split(',')
+    #                 for spell_name in fixed_exclude_spells:
+    #                     spell_name = spell_name.strip()
+    #                     if spell_name not in self.spells:
+    #                         debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+    #                                     .format(spell_name, new_spell_list.name), 0)
+    #                     else:
+    #                         new_spell_list.remove_spell(spell_name)
+    #
+    #             if line['spelllists_include']:
+    #                 spell_lists_to_include = line['spelllists_include'].replace(" ", "").split(',')
+    #                 for spellListToInclude in spell_lists_to_include:
+    #                     for spell_name, spell in spellListToInclude.spells.items():
+    #                         new_spell_list.add_spell(spell)
+    #
+    #             if line['spelllists_exclude']:
+    #                 spell_lists_to_exclude = line['spelllists_exclude'].replace(" ", "").split(',')
+    #                 for spellListToExclude in spell_lists_to_exclude:
+    #                     spell_list = self.spell_lists[spellListToExclude]
+    #                     for spell_name, spell in spell_list.spells.items():
+    #                         new_spell_list.remove_spell(spell)
+    #
+    #             self.spell_lists[new_spell_list.name] = new_spell_list
 
-                # Ignore blank lines or comments using hastags
-                if line['name'] == '' or '#' in line['name']:
-                    continue
+    # def load_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
+    #     with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
+    #         spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
+    #         for line in spellcaster_profiles_file_reader:
+    #
+    #             try:
+    #
+    #                 # Ignore blank lines or comments using hastags
+    #                 if line['internal_name'] == '' or '#' in line['internal_name']:
+    #                     continue
+    #
+    #                 new_spellcaster_profile = SpellCasterProfile()
+    #                 new_spellcaster_profile.int_name = line['internal_name']
+    #                 new_spellcaster_profile.casting_stat = line['casting_stat']
+    #                 new_spellcaster_profile.ready_style = line['ready_style']
+    #
+    #                 if line["hd_per_casting_level"]:
+    #                     new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
+    #                 else:
+    #                     new_spellcaster_profile.hd_per_casting_level = 1
+    #
+    #                 if line['cantrips_per_level']:
+    #                     new_spellcaster_profile.cantrips_per_level = line['cantrips_per_level']
+    #                 else:
+    #                     new_spellcaster_profile.cantrips_per_level = None
+    #
+    #                 if line['fixed_spells_known_by_level']:
+    #                     new_spellcaster_profile.fixed_spells_known_by_level = line['fixed_spells_known_by_level']
+    #                 else:
+    #                     new_spellcaster_profile.fixed_spells_known_by_level = None
+    #
+    #                 if line['spells_known_modifier']:
+    #                     new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
+    #                 else:
+    #                     new_spellcaster_profile.spells_known_modifier = 0
+    #
+    #                 if line['free_spell_lists']:
+    #                     new_spellcaster_profile.free_spell_lists = line['free_spell_lists'].replace(" ", "").split(',')
+    #                 else:
+    #                     new_spellcaster_profile.free_spell_lists = []
+    #
+    #                 new_spell_lists_dict = {}
+    #                 for rawEntry in line['spell_lists'].replace(" ", "").split(','):
+    #                     if ':' in rawEntry:
+    #                         spell_list_name, weight = rawEntry.split(':')
+    #                         new_spell_lists_dict[spell_list_name] = weight
+    #                     else:
+    #                         new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_LIST_WEIGHT
+    #                 new_spellcaster_profile.spell_lists = new_spell_lists_dict
+    #
+    #                 new_spellcaster_profile.tags = csv_tag_reader(line['tags'])
+    #
+    #                 # For now, only standard slots progression
+    #                 # In the future, may add support for nonstandard slot progressions, like warlock
+    #                 new_spellcaster_profile.spell_slots_table = None
+    #
+    #                 self.spellcaster_profiles[new_spellcaster_profile.int_name] = new_spellcaster_profile
+    #
+    #             except (ValueError, TypeError):
+    #                 debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
 
-                new_spell_list = SpellList()
-                new_spell_list.name = line['name']
+    def load_races_from_toml(self, races_toml_loc):
+        toml_dict = toml.load(races_toml_loc)
+        for race_name, race_dict in toml_dict.items():
+            new_race_template = RaceTemplate()
+            new_race_template.int_name = race_name
 
-                # Check for if it's an autolist
-                # If all these fields are blank, it's not an autolist
-                if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
-                        or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
-                    req_classes = None
-                    if line['req_classes']:
-                        req_classes = line['req_classes'].replace(" ", "").split(",")
-                    req_schools = None
-                    if line['req_schools']:
-                        req_schools = set(line['req_schools'].replace(" ", "").split(","))
-                    req_levels = None
-                    if line['req_levels']:
-                        req_levels = line['req_levels'].replace(" ", "").split(",")
-                    req_sources = None
-                    if line['req_sources']:
-                        req_sources = line['req_sources'].replace(" ", "").split(",")
+            if 'display_name' in race_dict:
+                new_race_template.display_name = race_dict['display_name']
+            else:
+                new_race_template.display_name = race_name.replace('_', ' ').title()
 
-                    for spell_name, spell in self.spells.items():
-                        if req_classes and spell.classes.isdisjoint(req_classes):
-                            continue
-                        if req_schools and spell.school not in req_schools:
-                            continue
-                        if req_levels and spell.level not in req_levels:
-                            continue
-                        if req_sources and spell.source not in req_sources:
-                            continue
-                        new_spell_list.add_spell(spell)
+            set_obj_attr_from_dict(new_race_template, race_dict, 'categories')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'creature_type')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'size')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'attribute_bonuses')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'speeds')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'senses')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'languages')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'traits')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'features')
+            set_obj_attr_from_dict(new_race_template, race_dict, 'subraces_label')
 
-                if line['fixed_include']:
-                    fixed_include_spells = line['fixed_include'].split(',')
-                    for spell_name in fixed_include_spells:
-                        spell_name = spell_name.strip()
-                        if spell_name not in self.spells:
-                            debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                        .format(spell_name, new_spell_list.name), 0)
-                        else:
-                            new_spell_list.add_spell(self.spells[spell_name])
+            if 'subraces' in race_dict:
+                subraces_dict = collections.OrderedDict()
+                for subrace_name, subrace_dict in race_dict['subraces'].items():
+                    new_subrace_template = SubraceTemplate()
+                    new_subrace_template.int_name = subrace_name
 
-                if line['fixed_exclude']:
-                    fixed_exclude_spells = line['fixed_exclude'].split(',')
-                    for spell_name in fixed_exclude_spells:
-                        spell_name = spell_name.strip()
-                        if spell_name not in self.spells:
-                            debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-                                        .format(spell_name, new_spell_list.name), 0)
-                        else:
-                            new_spell_list.remove_spell(spell_name)
-
-                if line['spelllists_include']:
-                    spell_lists_to_include = line['spelllists_include'].replace(" ", "").split(',')
-                    for spellListToInclude in spell_lists_to_include:
-                        for spell_name, spell in spellListToInclude.spells.items():
-                            new_spell_list.add_spell(spell)
-
-                if line['spelllists_exclude']:
-                    spell_lists_to_exclude = line['spelllists_exclude'].replace(" ", "").split(',')
-                    for spellListToExclude in spell_lists_to_exclude:
-                        spell_list = self.spell_lists[spellListToExclude]
-                        for spell_name, spell in spell_list.spells.items():
-                            new_spell_list.remove_spell(spell)
-
-                self.spell_lists[new_spell_list.name] = new_spell_list
-
-    def load_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
-        with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
-            spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
-            for line in spellcaster_profiles_file_reader:
-
-                try:
-
-                    # Ignore blank lines or comments using hastags
-                    if line['internal_name'] == '' or '#' in line['internal_name']:
-                        continue
-
-                    new_spellcaster_profile = SpellCasterProfile()
-                    new_spellcaster_profile.int_name = line['internal_name']
-                    new_spellcaster_profile.casting_stat = line['casting_stat']
-                    new_spellcaster_profile.ready_style = line['ready_style']
-
-                    if line["hd_per_casting_level"]:
-                        new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
+                    if 'display_name' in subrace_dict:
+                        new_subrace_template.display_name = subrace_dict['display_name']
                     else:
-                        new_spellcaster_profile.hd_per_casting_level = 1
+                        display_name = subrace_name.title() + ' ' + new_race_template.display_name
+                        new_subrace_template.display_name = display_name
 
-                    if line['cantrips_per_level']:
-                        new_spellcaster_profile.cantrips_per_level = line['cantrips_per_level']
-                    else:
-                        new_spellcaster_profile.cantrips_per_level = None
+                    set_obj_attr_from_dict(new_subrace_template, subrace_dict, 'size')
+                    set_obj_attr_from_dict(new_subrace_template, subrace_dict, 'attribute_bonuses')
+                    set_obj_attr_from_dict(new_subrace_template, subrace_dict, 'speeds')
+                    set_obj_attr_from_dict(new_subrace_template, subrace_dict, 'senses')
+                    set_obj_attr_from_dict(new_subrace_template, subrace_dict, 'languages')
+                    set_obj_attr_from_dict(new_subrace_template, subrace_dict, 'traits')
+                    set_obj_attr_from_dict(new_subrace_template, subrace_dict, 'features')
 
-                    if line['fixed_spells_known_by_level']:
-                        new_spellcaster_profile.fixed_spells_known_by_level = line['fixed_spells_known_by_level']
-                    else:
-                        new_spellcaster_profile.fixed_spells_known_by_level = None
+                    subraces_dict[subrace_name] = new_subrace_template
+                new_race_template.subraces = subraces_dict
 
-                    if line['spells_known_modifier']:
-                        new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
-                    else:
-                        new_spellcaster_profile.spells_known_modifier = 0
+            self.race_templates[race_name] = new_race_template
 
-                    if line['free_spell_lists']:
-                        new_spellcaster_profile.free_spell_lists = line['free_spell_lists'].replace(" ", "").split(',')
-                    else:
-                        new_spellcaster_profile.free_spell_lists = []
+            for category in new_race_template.categories:
+                self.add_race_to_category(race_name, category)
 
-                    new_spell_lists_dict = {}
-                    for rawEntry in line['spell_lists'].replace(" ", "").split(','):
-                        if ':' in rawEntry:
-                            spell_list_name, weight = rawEntry.split(':')
-                            new_spell_lists_dict[spell_list_name] = weight
-                        else:
-                            new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_LIST_WEIGHT
-                    new_spellcaster_profile.spell_lists = new_spell_lists_dict
+    def load_classes_from_toml(self, classes_toml_loc):
+        toml_dict = toml.load(classes_toml_loc)
+        for class_name, class_dict in toml_dict.items():
+            new_class_template = ClassTemplate()
+            new_class_template.int_name = class_name
+            if 'display_name' in class_dict:
+                new_class_template.display_name = class_dict['display_name']
+            else:
+                new_class_template.display_name = class_name.replace('_', ' ').title()
 
-                    new_spellcaster_profile.tags = csv_tag_reader(line['tags'])
+            set_obj_attr_from_dict(new_class_template, class_dict, 'categories')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'priority_attributes')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'hd_size')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'skills_fixed')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'skills_random')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'num_random_skills')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'weapons_loadout_pool')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'armors_loadout_pool')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'cr_calc')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'traits')
+            set_obj_attr_from_dict(new_class_template, class_dict, 'features')
 
-                    # For now, only standard slots progression
-                    # In the future, may add support for nonstandard slot progressions, like warlock
-                    new_spellcaster_profile.spell_slots_table = None
+            if 'spell_casting_profile' in class_dict:
+                casting_dict = class_dict['spell_casting_profile']
+                new_spell_casting_profile = SpellCasterProfile()
+                new_spell_casting_profile.casting_stat = casting_dict['casting_stat']
+                new_spell_casting_profile.ready_style = casting_dict['ready_style']
+                set_obj_attr_from_dict(new_spell_casting_profile, casting_dict, 'tags')
+                set_obj_attr_from_dict(new_spell_casting_profile, casting_dict, 'hd_per_casting_level')
+                if 'cantrips_per_level' in casting_dict:
+                    new_spell_casting_profile.cantrips_per_level = casting_dict['cantrips_per_level']
+                for spell_list_dict in casting_dict['spell_lists']:
+                    new_spell_list = self.build_spell_list(**spell_list_dict)
+                    new_spell_casting_profile.spell_lists[new_spell_list] = new_spell_list.weight
+                new_class_template.spell_casting_profile = new_spell_casting_profile
+                
+            if 'subclass_primary_label' in class_dict:
+                new_class_template.subclass_primary_label = class_dict['subclass_primary_label']
+            elif 'subclasses_primary' in class_dict:
+                new_class_template.subclass_primary_label = 'Subclass'
+                
+            if 'subclasses_primary' in class_dict:
+                for subclass_name, subclass_dict in class_dict['subclasses_primary'].items():
+                    new_subclass_template = SubclassTemplate()
+                    new_subclass_template.int_name = subclass_name
 
-                    self.spellcaster_profiles[new_spellcaster_profile.int_name] = new_spellcaster_profile
+                    # Basically, if NOTHING is given for display name stuff,
+                    # just make the internal name a prefix for the class
+                    if 'display_name' not in subclass_dict and 'display_name_prefix' not in subclass_dict \
+                            and 'display_name_suffix' not in subclass_dict:
+                        new_subclass_template.display_name_prefix = subclass_name.replace('_', ' ').title()
 
-                except (ValueError, TypeError):
-                    debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'display_name')
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'display_name_prefix')
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'display_name_suffix')
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'traits')
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'features')
 
-    def load_race_templates_from_csv(self, race_templates_file_loc):
-        with open(race_templates_file_loc, newline='', encoding="utf-8") as race_templates_file:
-            race_templates_file_reader = csv.DictReader(race_templates_file)
+                    new_class_template.subclasses_primary[subclass_name] = new_subclass_template
+            
+            if 'subclass_secondary_label' in class_dict:
+                new_class_template.subclass_secondary_label = class_dict['subclass_secondary_label']
+            elif 'subclasses_secondary' in class_dict:
+                new_class_template.subclass_secondary_label = 'Secondary Subclass'
+                
+            if 'subclasses_secondary' in class_dict:
+                for subclass_name, subclass_dict in class_dict['subclasses_secondary'].items():
+                    new_subclass_template = SubclassTemplate()
+                    new_subclass_template.int_name = subclass_name
 
-            for line in race_templates_file_reader:
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'display_name')
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'traits')
+                    set_obj_attr_from_dict(new_subclass_template, subclass_dict, 'features')
 
-                # Ignore blank lines or comments using hashtags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
+                    new_class_template.subclasses_secondary[subclass_name] = new_subclass_template
 
-                try:
-                    new_race_template = RaceTemplate()
-                    new_race_template.int_name = line["internal_name"]
-                    if line["display_name"]:
-                        new_race_template.display_name = line['display_name']
-                    else:
-                        # The main race name is always the start of the internal name
-                        # So, for most entries a bit of finagling is called for
-                        name_parts = line['internal_name'].split('_')
-                        name_parts.append(name_parts.pop(0))
-                        name = ' '.join(name_parts)
-                        name = name.title()
-                        new_race_template.display_name = name
-                        
-                    new_race_template.categories = line['categories'].replace(' ', '').split(',')
+            self.class_templates[class_name] = new_class_template
+            for category in new_class_template.categories:
+                self.add_class_to_category(class_name, category)
 
-                    new_attribute_bonuses_dict = {}
-                    if line['attribute_bonuses']:
-                        for raw_attribute_bonus in line['attribute_bonuses'].replace(' ', '').split(','):
-                            attribute, bonus = raw_attribute_bonus.split(':')
-                            bonus = int(bonus)
-                            new_attribute_bonuses_dict[attribute] = bonus
-                    new_race_template.attribute_bonuses = new_attribute_bonuses_dict
-
-                    new_race_template.languages = line['languages'].replace(" ", "").split(',')
-
-                    if line['creature_type']:
-                        new_race_template.creature_type = line['creature_type']
-                    else:
-                        new_race_template.creature_type = DEFAULT_CREATURE_TYPE
-
-                    if line['size']:
-                        new_race_template.size = line['size']
-                    else:
-                        new_race_template.size = DEFAULT_SIZE
-
-                    if line['speeds']:
-                        for entry in line['speeds'].replace(' ', '').split(','):
-                            speed, val = entry.split(':')
-                            new_race_template.speeds[speed] = int(val)
-
-                    if line['traits']:
-                        new_race_template.traits = line['traits'].replace(" ", "").split(',')
-
-                    if line['languages']:
-                        new_race_template.languages = line['languages'].replace(" ", "").split(',')
-
-                    new_race_template.features = csv_tag_reader(line['features'])
-                    
-                    if line['arg_one_label']:
-                        new_race_template.arg_one_label = line['arg_one_label']
-                        new_race_template.arg_one_options = line['arg_one_options'].replace(' ', '').split(',')
-                    else:
-                        new_race_template.arg_one_label = None
-                        new_race_template.arg_one_options = None
-                    
-                    if line['arg_two_label']:
-                        new_race_template.arg_two_label = line['arg_two_label']
-                        new_race_template.arg_two_options = line['arg_two_options'].replace(' ', '').split(',')
-                    else:
-                        new_race_template.arg_two_label = None
-                        new_race_template.arg_two_options = None
-
-                    self.race_templates[new_race_template.int_name] = new_race_template
-                    for category in new_race_template.categories:
-                        self.add_race_to_category(new_race_template.int_name, category)
-
-                except ValueError:
-                    print("Error processing race template {}".format(line['internal_name']))
-
-    def load_class_templates_from_csv(self, class_templates_file_loc):
-        with open(class_templates_file_loc, newline='', encoding="utf-8") as class_templates_file:
-            class_templates_file_reader = csv.DictReader(class_templates_file)
-
-            for line in class_templates_file_reader:
-
-                # Ignore blank lines or comments using hashtags
-                if line['internal_name'] == '' or '#' in line['internal_name']:
-                    continue
-
-                try:
-                    new_class_template = ClassTemplate()
-                    new_class_template.int_name = line['internal_name']
-
-                    if line['display_name']:
-                        new_class_template.display_name = line['display_name']
-                    else:
-                        new_class_template.display_name = line['internal_name'].replace('_', ' ').capitalize()
-
-                    new_class_template.categories = line['categories'].replace(' ', '').split(',')
-
-                    new_class_template.priority_attributes = line['priority_attributes'].replace(" ", "").split(',')
-                    new_class_template.hd_size = int(line['hd_size'])
-
-                    new_class_template.saves = line['saves'].replace(" ", "").split(',')
-                    new_class_template.skills_fixed = line['skills_fixed'].replace(" ", "").split(',')
-                    new_class_template.skills_random = line['skills_random'].replace(" ", "").split(',')
-                    if line['num_random_skills']:
-                        new_class_template.num_random_skills = int(line['num_random_skills'])
-                    else:
-                        new_class_template.num_random_skills = 0
-
-                    if line['weapons_loadout']:
-                        new_class_template.weapons_loadout_pool = line['weapons_loadout']
-
-                    if line['armors_loadout']:
-                        new_class_template.armors_loadout_pool = line['armors_loadout']
-
-                    if line['traits']:
-                        new_class_template.traits = line['traits'].replace(" ", "").split(',')
-
-                    if line['cr_calc']:
-                        new_class_template.cr_calc_type = line['cr_calc']
-                    else:
-                        new_class_template.cr_calc_type = 'attack'
-
-                    new_class_template.features = csv_tag_reader(line['features'])
-
-                    if line['arg_one_label']:
-                        new_class_template.arg_one_label = line['arg_one_label']
-                        new_class_template.arg_one_options = line['arg_one_options'].replace(' ', '').split(',')
-                    else:
-                        new_class_template.arg_one_label = None
-                        new_class_template.arg_one_options = None
-
-                    if line['arg_two_label']:
-                        new_class_template.arg_two_label = line['arg_two_label']
-                        new_class_template.arg_two_options = line['arg_two_options'].replace(' ', '').split(',')
-                    else:
-                        new_class_template.arg_two_label = None
-                        new_class_template.arg_two_options = None
-
-                    self.class_templates[new_class_template.int_name] = new_class_template
-                    for category in new_class_template.categories:
-                        self.add_class_to_category(new_class_template.int_name, category)
-
-                except ValueError:
-                    print("Error processing class template {}.".format(line['internal_name']))
 
     def is_valid_content(self, content_type: 'ContentType', content_name: str):
         content_dict = self.content_type_map[content_type]
@@ -660,7 +645,48 @@ class ContentSource:
 
     def get_race_choices(self):
         return tuple(self.race_templates.keys())
-    
+
+    def build_spell_list(self, req_classes=None, req_schools=None, req_levels=None, req_sources=None,
+                         fixed_include=None, fixed_exclude=None,
+                         weight=None):
+
+        new_spell_list = SpellList()
+
+        if req_classes or req_schools or req_levels or req_sources:
+            for spell_name, spell in self.spells.items():
+                if req_classes and spell.classes.isdisjoint(set(req_classes)):
+                    continue
+                if req_schools and spell.school not in req_schools:
+                    continue
+                if req_levels and spell.level not in req_levels:
+                    continue
+                if req_sources and spell.source not in req_sources:
+                    continue
+                new_spell_list.add_spell(spell)
+
+        if fixed_include:
+            for spell_name in fixed_include:
+                spell_name = spell_name.strip()
+                if spell_name not in self.spells:
+                    debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                .format(spell_name, new_spell_list.name), 0)
+                else:
+                    new_spell_list.add_spell(self.spells[spell_name])
+
+        if fixed_exclude:
+            for spell_name in fixed_exclude:
+                spell_name = spell_name.strip()
+                if spell_name not in self.spells:
+                    debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
+                                .format(spell_name, new_spell_list.name), 0)
+                else:
+                    new_spell_list.remove_spell(spell_name)
+
+        if weight:
+            new_spell_list.weight = weight
+
+        return new_spell_list
+
     def valid_user_race_choices(self):
         valid_user_race_choices = ['random_race', ]
         for category_name in self.race_categories:
@@ -706,8 +732,7 @@ class ContentSource:
                 temp = self.get_race_template(race_option)
                 assert isinstance(temp, RaceTemplate)
                 option_entry = RaceClassOptionEntry(race_option, temp.display_name,
-                                                    temp.arg_one_label, temp.arg_one_options,
-                                                    temp.arg_two_label, temp.arg_two_options,)
+                                                    temp.subraces_label, list(temp.subraces.keys()),)
                 options_inst.add_race_option(race_category, option_entry)
                 
         for class_category in self.class_categories.keys():
@@ -715,10 +740,10 @@ class ContentSource:
                 temp = self.get_class_template(class_option)
                 assert isinstance(temp, ClassTemplate)
                 option_entry = RaceClassOptionEntry(class_option, temp.display_name,
-                                                    arg_one_label=temp.arg_one_label,
-                                                    arg_one_options=temp.arg_one_options,
-                                                    arg_two_label=temp.arg_two_label,
-                                                    arg_two_options=temp.arg_two_options)
+                                                    arg_one_label=temp.subclass_primary_label,
+                                                    arg_one_options=list(temp.subclasses_primary.keys()),
+                                                    arg_two_label=temp.subclass_secondary_label,
+                                                    arg_two_options=list(temp.subclasses_secondary.keys()))
                 options_inst.add_class_option(class_category, option_entry)
 
         for roll_option, roll_tup in ROLL_METHODS.items():
@@ -787,7 +812,7 @@ class CharacterBuildOptions:
                 roll_options_list.append(option)
         return roll_options_list
 
-    def add_roll_option(self, category, option: 'RacerollOptionEntry'):
+    def add_roll_option(self, category, option: 'OptionMenuEntry'):
         category = category.title()
         if category in self.roll_options:
             self.roll_options[category].append(option)
@@ -902,17 +927,28 @@ class RaceTemplate:
         self.size = DEFAULT_SIZE
 
         self.speeds = {}
-        self.senses = {}
 
         self.languages = []
 
         self.traits = []
         self.features = collections.OrderedDict()
 
-        self.arg_one_label = None
-        self.arg_one_options = None
-        self.arg_two_label = None
-        self.arg_two_options = None
+        self.subraces_label = 'Subrace'
+        self.subraces = {}
+
+
+class SubraceTemplate:
+    def __init__(self):
+        self.int_name = ''
+        self.display_name = None
+
+        self.size = None
+
+        self.attribute_bonuses = None
+        self.speeds = None
+        self.languages = None
+        self.traits = None
+        self.features = None
 
 
 class ClassTemplate:
@@ -944,10 +980,26 @@ class ClassTemplate:
 
         self.cr_calc_type = ''
 
-        self.arg_one_label = None
-        self.arg_one_options = None
-        self.arg_two_label = None
-        self.arg_two_options = None
+        self.subclasses_primary = {}
+        self.subclasses_secondary = {}
+
+        self.subclass_primary_label = None
+        self.subclass_secondary_label = None
+
+
+
+class SubclassTemplate:
+    def __init__(self):
+        self.int_name = ''
+
+        # Display name overrides the base class
+        self.display_name = None
+
+        # Prefixes and suffixes get added, primary classes going first
+        self.display_name_prefix = None
+        self.display_name_suffix = None
+        self.traits = []
+        self.features = {}
 
 
 class Spell:
@@ -967,7 +1019,8 @@ class Spell:
 
 class SpellList:
     def __init__(self):
-        self.name = None
+        self.weight = DEFAULT_SPELL_LIST_WEIGHT
+        self.name = ''
         self.spells = {}
 
     def __str__(self):
@@ -1007,7 +1060,7 @@ class SpellCasterProfile:
     def __init__(self):
         self.int_name = ''
         self.hd_per_casting_level = 1
-        self.cantrips_per_level = None
+        self.cantrips_per_level = 'none'
         self.spells_known_modifier = 0
         # spell_lists = {spell_list : weight}
         self.spell_lists = {}
@@ -1018,7 +1071,7 @@ class SpellCasterProfile:
         # For now, only the standard slots table is supported
         # spell_slots_table[caster_level][spell_level]
         self.spell_slots_table = None
-        self.tags = {}
+        self.tags = []
 
     def __repr__(self):
         return '<SpellCaster Profile: {}>'.format(self.int_name)
@@ -1031,10 +1084,10 @@ class SpellCasterProfile:
         return out_dict
 
     def get_tags(self):
-        out_dict = {}
-        for k, v in self.tags.items():
-            out_dict[k] = v
-        return out_dict
+        out_tags = []
+        for tag in self.tags:
+            out_tags.append(tag)
+        return out_tags
 
     def get_free_spell_lists(self):
         return self.spell_lists[:]
@@ -1064,7 +1117,7 @@ class WeaponTemplate:
         self.attack_type = ''
         self.range_short = 0
         self.range_long = 0
-        self.tags = set()
+        self.tags = []
         self.num_targets = 1
 
     def __repr__(self):

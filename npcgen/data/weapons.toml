@@ -1,0 +1,202 @@
+[battleaxe]
+damage = "1d8"
+damage_type = "slashing"
+tags = ["martial", "versatile"]
+
+[blowgun]
+damage = "1d1"
+damage_type = "piercing"
+range = "25/100"
+tags = ["martial", "ammunition", "loading"]
+
+[club]
+damage = "1d4"
+damage_type = "bludgeoning"
+tags = ["simple", "light"]
+
+[crossbow_hand]
+damage = "1d6"
+damage_type = "piercing"
+display_name = "Crossbow, Hand"
+range = "30/120"
+tags = ["martial", "ammunition", "light", "loading"]
+
+[crossbow_heavy]
+damage = "1d10"
+damage_type = "piercing"
+display_name = "Crossbow, Heavy"
+range = "100/400"
+tags = ["martial", "ammunition", "heavy", "loading", "2h"]
+
+[crossbow_light]
+damage = "1d8"
+damage_type = "piercing"
+display_name = "Crossbow, Light"
+range = "80/320"
+tags = ["simple", "ammunition", "loading", "2h"]
+
+[dagger]
+damage = "1d4"
+damage_type = "piercing"
+range = "20/60"
+tags = ["simple", "finesse", "light", "thrown"]
+
+[dart]
+damage = "1d4"
+damage_type = "piercing"
+range = "20/60"
+tags = ["simple", "finesse", "thrown"]
+
+[flail]
+damage = "1d8"
+damage_type = "bludgeoning"
+tags = ["martial", ""]
+
+[glaive]
+damage = "1d10"
+damage_type = "slashing"
+tags = ["martial", "heavy", "reach", "2h"]
+
+[greatclub]
+damage = "1d8"
+damage_type = "bludgeoning"
+tags = ["simple", "2h"]
+
+[greatsword]
+damage = "2d6"
+damage_type = "slashing"
+tags = ["martial", "heavy", "2h"]
+
+[halberd]
+damage = "1d10"
+damage_type = "slashing"
+tags = ["martial", "heavy", "reach", "2h"]
+
+[handaxe]
+damage = "1d6"
+damage_type = "slashing"
+range = "20/60"
+tags = ["simple", "light", "thrown"]
+
+[improved_unarmed]
+damage = "1d4"
+damage_type = "bludgeoning"
+tags = ["simple", "light"]
+
+[lance]
+damage = "1d12"
+damage_type = "piercing"
+tags = ["martial", "reach", "lance"]
+
+[longbow]
+damage = "1d8"
+damage_type = "piercing"
+range = "150/600"
+tags = ["martial", "ammunition", "heavy", "2h"]
+
+[longsword]
+damage = "1d8"
+damage_type = "slashing"
+tags = ["martial", "versatile"]
+
+[maul]
+damage = "2d6"
+damage_type = "bludgeoning"
+tags = ["martial", "heavy", "2h"]
+
+[monk_unarmed]
+damage = "1d4"
+damage_type = "bludgeoning"
+display_name = "Unarmed (Martial Arts)"
+tags = ["simple", "finesse", "monk"]
+
+[morningstar]
+damage = "1d8"
+damage_type = "piercing"
+tags = ["martial"]
+
+[net]
+damage = "0d0"
+damage_type = ""
+range = "5/15"
+tags = ["martial", "thrown", "net"]
+
+[pike]
+damage = "1d10"
+damage_type = "piercing"
+tags = ["martial", "heavy", "reach", "2h"]
+
+[quarterstaff]
+damage = "1d6"
+damage_type = "bludgeoning"
+tags = ["simple", "versatile"]
+
+[rapier]
+damage = "1d8"
+damage_type = "piercing"
+tags = ["martial", "finesse"]
+
+[scimitar]
+damage = "1d6"
+damage_type = "slashing"
+tags = ["martial", "finesse", "light"]
+
+[shortbow]
+damage = "1d6"
+damage_type = "piercing"
+range = "80/320"
+tags = ["simple", "ammunition", "2h"]
+
+[shortsword]
+damage = "1d6"
+damage_type = "slashing"
+tags = ["martial", "finesse", "light", "monk"]
+
+[sickle]
+damage = "1d4"
+damage_type = "slashing"
+tags = ["simple", "light"]
+
+[sling]
+damage = "1d4"
+damage_type = "bludgeoning"
+range = "30/120"
+tags = ["simple", "ammunition"]
+
+[spear]
+damage = "1d6"
+damage_type = "piercing"
+range = "20/60"
+tags = ["simple", "thrown", "versatile"]
+
+[talons]
+damage = "1d4"
+damage_type = "slashing"
+tags = ["simple", "light"]
+
+[trident]
+damage = "1d6"
+damage_type = "piercing"
+range = "20/60"
+tags = ["martial", "thrown", "versatile"]
+
+[unarmed]
+damage = "1d1"
+damage_type = "bludgeoning"
+tags = ["simple", "monk"]
+
+[war_pick]
+damage = "1d8"
+damage_type = "piercing"
+display_name = "War Pick"
+tags = ["martial"]
+
+[warhammer]
+damage = "1d8"
+damage_type = "bludgeoning"
+tags = ["martial", "versatile"]
+
+[whip]
+damage = "1d4"
+damage_type = "slashing"
+tags = ["martial", "finesse", "reach"]

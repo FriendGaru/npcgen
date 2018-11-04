@@ -140,25 +140,68 @@ class NPCGenerator:
 
     # Applies everything EXCEPT features/traits
     @staticmethod
-    def apply_race_template(character: 'Character', race_template: 'RaceTemplate'):
+    def apply_race_template(character: 'Character', race_template: 'RaceTemplate', subrace_template=None):
 
-        character.race_name = race_template.display_name
+        if subrace_template:
+            assert isinstance(subrace_template, SubraceTemplate)
+
+        if subrace_template and subrace_template.display_name:
+            character.race_name = subrace_template.display_name
+        else:
+            character.race_name = race_template.display_name
+
         character.attribute_bonuses = race_template.attribute_bonuses
-        for k, v in race_template.base_stats.items():
-            character.set_stat(k, v)
+        if subrace_template and subrace_template.attribute_bonuses:
+            for k, v in subrace_template.attribute_bonuses.items():
+                character.attribute_bonuses[k] = v
+
         character.creature_type = race_template.creature_type
+
         character.size = race_template.size
+        if subrace_template and subrace_template.size:
+            character.size = subrace_template.size
+
         for k, v in race_template.speeds.items():
             character.set_stat('speed_' + k, v)
-        for k, v in race_template.senses.items():
-            character.set_stat('sense_' + k, v)
+        if subrace_template and subrace_template.speeds:
+            for k, v in subrace_template.speeds.items():
+                character.set_stat('speed_' + k, v)
+
         for language in race_template.languages:
             character.add_language(language)
+        if subrace_template and subrace_template.languages:
+            for language in subrace_template.languages:
+                character.add_language(language)
 
     # Applies everything EXCEPT features/traits
-    def apply_class_template(self, character: 'Character', class_template: 'ClassTemplate', seed):
+    def apply_class_template(self, character: 'Character', class_template: 'ClassTemplate', seed,
+                             subclass_primary_template = None, subclass_secondary_template = None):
 
-        character.class_name = class_template.display_name
+        if subclass_primary_template:
+            assert isinstance(subclass_primary_template, SubclassTemplate)
+        if subclass_secondary_template:
+            assert isinstance(subclass_secondary_template, SubclassTemplate)
+
+        class_name = class_template.display_name
+        if subclass_secondary_template and subclass_secondary_template.display_name:
+            class_name = subclass_secondary_template.display_name
+        if subclass_primary_template and subclass_primary_template.display_name:
+            class_name = subclass_primary_template.display_name
+
+        if subclass_secondary_template:
+            if subclass_secondary_template.display_name_prefix:
+                class_name = subclass_secondary_template.display_name_prefix + ' ' + class_name
+            if subclass_secondary_template.display_name_suffix:
+                class_name = class_name + ' ' + subclass_secondary_template.display_name_suffix
+                
+        if subclass_primary_template:
+            if subclass_primary_template.display_name_prefix:
+                class_name = subclass_primary_template.display_name_prefix + ' ' + class_name
+            if subclass_primary_template.display_name_suffix:
+                class_name = class_name + ' ' + subclass_primary_template.display_name_suffix
+                
+        character.class_name = class_name
+
         character.priority_attributes = class_template.priority_attributes
 
         rnd_instance = random.Random(seed + 'skills')
@@ -201,6 +244,12 @@ class NPCGenerator:
             if loadout.weapons:
                 for weapon in loadout.weapons:
                     character.give_weapon(weapon)
+
+        if class_template.spell_casting_profile:
+            spell_casting_feature = build_character_feature(
+                character, 'spellcasting', class_template.spell_casting_profile)
+            spell_casting_feature.give_to_owner()
+            spell_casting_feature.give_sub_features_to_owner()
 
     def get_options(self, options_type):
         """
@@ -259,12 +308,16 @@ class NPCGenerator:
                 and request_dict['race_choice'] in self.content_source.valid_user_race_choices():
             clean_dict['race_choice'] = request_dict['race_choice']
             race_template = self.content_source.get_race_template(request_dict['race_choice'])
-            if 'race_arg_one' in request_dict.keys() \
-                    and race_template.arg_one_options and request_dict['race_arg_one'] in race_template.arg_one_options:
-                clean_dict['race_arg_one'] = request_dict['race_arg_one']
-            if 'race_arg_two' in request_dict.keys() \
-                    and race_template.arg_two_options and request_dict['race_arg_two'] in race_template.arg_two_options:
-                clean_dict['race_arg_two'] = request_dict['race_arg_two']
+            if 'subrace_choice' in request_dict.keys():
+                if race_template.subraces:
+                    if request_dict['subrace_choice'] == 'random':
+                        clean_dict['subrace_choice'] = 'random'
+                    elif request_dict['subrace_choice'] in race_template.subraces.keys():
+                        clean_dict['subrace_choice'] = request_dict['subrace_choice']
+                    else:
+                        is_valid = False
+                else:
+                    is_valid = False
         else:
             is_valid = False
             clean_dict['race_choice'] = self.get_random_option('race')
@@ -273,12 +326,26 @@ class NPCGenerator:
                 and request_dict['class_choice'] in self.content_source.valid_user_class_choices():
             clean_dict['class_choice'] = request_dict['class_choice']
             class_template = self.content_source.get_class_template(request_dict['class_choice'])
-            if 'class_arg_one' in request_dict.keys() \
-                    and class_template.arg_one_options and request_dict['class_arg_one'] in class_template.arg_one_options:
-                clean_dict['class_arg_one'] = request_dict['class_arg_one']
-            if 'class_arg_two' in request_dict.keys() \
-                    and class_template.arg_two_options and request_dict['class_arg_two'] in class_template.arg_two_options:
-                clean_dict['class_arg_two'] = request_dict['class_arg_two']
+            if 'subclass_primary_choice' in request_dict.keys():
+                if class_template.subclasses_primary:
+                    if request_dict['subclass_primary_choice'] == 'random':
+                        clean_dict['subclass_primary_choice'] = 'random'
+                    elif request_dict['subclass_primary_choice'] in class_template.subclasses_primary.keys():
+                        clean_dict['subclass_primary_choice'] = request_dict['subclass_primary_choice']
+                    else:
+                        is_valid = False
+                else:
+                    is_valid = False
+            if 'subclass_secondary_choice' in request_dict.keys():
+                if class_template.subclasses_secondary:
+                    if request_dict['subclass_secondary_choice'] == 'random':
+                        clean_dict['subclass_secondary_choice'] = 'random'
+                    elif request_dict['subclass_secondary_choice'] in class_template.subclasses_secondary.keys():
+                        clean_dict['subclass_secondary_choice'] = request_dict['subclass_secondary_choice']
+                    else:
+                        is_valid = False
+                else:
+                    is_valid = False
         else:
             is_valid = False
             clean_dict['class_choice'] = self.get_random_option('class')
@@ -335,7 +402,12 @@ class NPCGenerator:
 
                       seed=None,
                       race_choice=DEFAULT_RACE,
+                      subrace_choice=None,
+
                       class_choice=DEFAULT_CLASS,
+                      subclass_primary_choice=None,
+                      subclass_secondary_choice=None,
+
                       hit_dice_num=DEFAULT_HIT_DICE_NUM,
                       attribute_roll_method=DEFAULT_ROLL_METHOD,
 
@@ -347,20 +419,15 @@ class NPCGenerator:
                       hit_dice_size=None,
                       bonus_hd=0,
                       no_asi=False,
-
-                      class_arg_one=None,
-                      class_arg_two=None,
-                      race_arg_one=None,
-                      race_arg_two=None,
                       ):
 
         if not seed:
             seed = random_string(10)
 
-        debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={} race-args= {} {} class-args= {} {}'
+        debug_print('Starting build: {} {} {}d{} (+{}hd) seed={} roll={} subrace= {} subclass= {} {}'
                     .format(race_choice, class_choice, hit_dice_num, hit_dice_size, bonus_hd,
                             seed, attribute_roll_method,
-                            race_arg_one, race_arg_two, class_arg_one, class_arg_two), 1)
+                            str(subrace_choice), str(subclass_primary_choice), str(subclass_secondary_choice)), 1)
 
         # This is for the super random option, which is anything at all
         if race_choice == 'random_race':
@@ -393,60 +460,74 @@ class NPCGenerator:
         new_character.set_stat('hit_dice_num', hit_dice_num)
         new_character.set_stat('hit_dice_extra', bonus_hd)
 
+        # Figure out subrace template stuff then apply the templates
         race_template = self.content_source.get_race_template(race_choice)
         assert isinstance(race_template, RaceTemplate)
-        self.apply_race_template(new_character, race_template)
+        subrace_template = None
+        if subrace_choice and subrace_choice in race_template.subraces.keys():
+            subrace_template = race_template.subraces[subrace_choice]
+        elif race_template.subraces:
+            subrace_template = random.Random(seed + 'subracechoice').choice(list(race_template.subraces.values()))
+        self.apply_race_template(new_character, race_template, subrace_template)
 
         class_template = self.content_source.get_class_template(class_choice)
         assert isinstance(class_template, ClassTemplate)
-        self.apply_class_template(new_character, class_template, seed=seed)
-        
-        # If the race/class template can accept override options, we need to check them
-        # If we didn't get any override or got a bad one, replace it with the default
-        if race_template.arg_one_options:
-            if not race_arg_one or race_arg_one not in race_template.arg_one_options:
-                race_arg_one = race_template.arg_one_options[0]
-        if race_template.arg_two_options:
-            if not race_arg_two or race_arg_two not in race_template.arg_two_options:
-                race_arg_two = race_template.arg_two_options[0]
-        if class_template.arg_one_options:
-            if not class_arg_one or class_arg_one not in class_template.arg_one_options:
-                class_arg_one = class_template.arg_one_options[0]
-        if class_template.arg_two_options:
-            if not class_arg_two or class_arg_two not in class_template.arg_two_options:
-                class_arg_two = class_template.arg_two_options[0]
+
+        # Figure out subclass templates then apply them
+        subclass_primary_template = None
+        if subclass_primary_choice and subclass_primary_choice in class_template.subclasses_primary.keys():
+            subclass_primary_template = class_template.subclasses_primary[subclass_primary_choice]
+        elif class_template.subclasses_primary:
+            subclass_primary_template = random.Random(seed + 'subclassprimarychoice')\
+                .choice(list(class_template.subclasses_primary.values()))
+
+        subclass_secondary_template = None
+        if subclass_secondary_choice and subclass_secondary_choice in class_template.subclasses_secondary.keys():
+            subclass_secondary_template = class_template.subclasses_secondary[subclass_secondary_choice]
+        elif class_template.subclasses_secondary:
+            subclass_secondary_template = random.Random(seed + 'subclasssecondarychoice')\
+                .choice(list(class_template.subclasses_secondary.values()))
+
+        self.apply_class_template(new_character, class_template, seed=seed, 
+                                  subclass_primary_template=subclass_primary_template,
+                                  subclass_secondary_template=subclass_secondary_template,)
 
         # Get all the traits and features from the templates, have the factories instantiate them,
         # then give them to the new character
-        for trait_name in itertools.chain(race_template.traits, class_template.traits):
+        all_traits = itertools.chain(race_template.traits, class_template.traits)
+        if subrace_template and subrace_template.traits:
+            all_traits = itertools.chain(all_traits, subrace_template.traits)
+        if subclass_primary_template and subclass_primary_template.traits:
+            all_traits = itertools.chain(all_traits, subclass_primary_template.traits)
+        if subclass_secondary_template and subclass_secondary_template.traits:
+            all_traits = itertools.chain(all_traits, subclass_secondary_template.traits)
+
+        for trait_name in all_traits:
             debug_print('Trait: {}'.format(trait_name))
             trait_feature = self.build_trait(new_character, trait_name)
             trait_feature.give_to_owner()
-            
-        for feature_name, feature_args in race_template.features.items():
-            debug_print('RaceFeature: {} args: {} overrides- arg1:{} arg2:{}'
-                        .format(feature_name, str(feature_args), race_arg_one, race_arg_two), 3)
-            feature_args = list(feature_args)
-            if feature_args and feature_args[0]:
-                if race_arg_one:
-                    feature_args[0] = feature_args[0].replace('@ARG1', race_arg_one)
-                if feature_args and feature_args[0]:
-                    if race_arg_two:
-                        feature_args[0] = feature_args[0].replace('@ARG2', race_arg_two)
-            feature_instance = build_character_feature(new_character, feature_name, feature_args)
-            feature_instance.give_to_owner()
-            feature_instance.give_sub_features_to_owner()
-            
-        for feature_name, feature_args in class_template.features.items():
-            debug_print('classFeature: {} args: {} overrides- arg1:{} arg2:{}'
-                        .format(feature_name, str(feature_args), class_arg_one, class_arg_two), 3)
-            feature_args = list(feature_args)
-            if feature_args and feature_args[0]:
-                if class_arg_one:
-                    feature_args[0] = feature_args[0].replace('@ARG1', class_arg_one)
-                if feature_args and feature_args[0]:
-                    if class_arg_two:
-                        feature_args[0] = feature_args[0].replace('@ARG2', class_arg_two)
+
+        # Now time for features
+        all_features = {}
+        if race_template.features:
+            for k, v in race_template.features.items():
+                all_features[k] = v
+        if class_template.features:
+            for k, v in class_template.features.items():
+                all_features[k] = v
+        if subrace_template and subrace_template.features:
+            for k, v in subrace_template.features.items():
+                all_features[k] = v
+        if subclass_primary_template and subclass_primary_template.features:
+            for k, v in subclass_primary_template.features.items():
+                all_features[k] = v
+        if subclass_secondary_template and subclass_secondary_template.features:
+            for k, v in subclass_secondary_template.features.items():
+                all_features[k] = v
+
+        for feature_name, feature_args in all_features.items():
+            debug_print('Feature: {} args: {}'
+                        .format(feature_name, str(feature_args)), 3)
             feature_instance = build_character_feature(new_character, feature_name, feature_args)
             feature_instance.give_to_owner()
             feature_instance.give_sub_features_to_owner()
@@ -1378,7 +1459,7 @@ class StatBlock:
         if self.languages:
             disp += 'Languages: ' + self.languages + '\n'
         else:
-            disp += 'Languages: --' + self.languages + '\n'
+            disp += 'Languages: --' + '\n'
         if self.cr:
             disp += 'Challenge: ' + self.cr + '\n'
         for trait in self.passive_traits:
@@ -1406,9 +1487,9 @@ class StatBlock:
         return self.__dict__
 
 
-def build_character_feature(character: 'Character', feature_string, args_tup=()):
+def build_character_feature(character: 'Character', feature_string, feature_arg=None):
     feature_class = FEATURE_CLASS_REFERENCE[feature_string]
-    feature_instance = feature_class(character, args_tup=args_tup)
+    feature_instance = feature_class(character, feature_arg=feature_arg)
     return feature_instance
 
 
@@ -1437,8 +1518,8 @@ class CharacterFeature:
     def __repr__(self):
         return '<Character Feature: {}>'.format(self.int_name)
 
-    def add_sub_feature(self, sub_feature_string, args_tup=()):
-        sub_feature = build_character_feature(self.owner, sub_feature_string, args_tup=args_tup)
+    def add_sub_feature(self, sub_feature_string, feature_arg=None):
+        sub_feature = build_character_feature(self.owner, sub_feature_string, feature_arg=feature_arg)
         self.sub_features.append(sub_feature)
 
     def add_sub_trait(self, trait_name):
