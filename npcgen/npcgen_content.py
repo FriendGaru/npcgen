@@ -700,6 +700,7 @@ class ContentSource:
 
         # HD sizes
         options_dict['hd_size_options'] = collections.OrderedDict()
+        options_dict['hd_size_options']['default'] = {'display': 'Default'}
         for hd_size in VALID_HD_SIZES:
             hd_size_str = str(hd_size)
             options_dict['hd_size_options'][hd_size_str] = {'display': 'd' + hd_size_str}
