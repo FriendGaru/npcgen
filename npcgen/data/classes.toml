@@ -1,6 +1,6 @@
 [arcanist]
 armors_loadout_pool = "mage"
-categories = ["arcanist"]
+categories = ["Arcane"]
 cr_calc = "caster"
 hd_size = 6
 num_random_skills = 2
@@ -75,7 +75,7 @@ weapons_loadout_pool = "mage"
 
 [archer]
 armors_loadout_pool = "light_med"
-categories = ["warrior"]
+categories = ["Warrior"]
 cr_calc = "attack"
 hd_size = 8
 num_random_skills = 2
@@ -91,7 +91,7 @@ weapons_loadout_pool = "archer"
 
 [bandit_captain]
 armors_loadout_pool = "light_med"
-categories = ["warrior"]
+categories = ["Warrior"]
 cr_calc = "attack"
 hd_size = 10
 num_random_skills = 1
@@ -107,7 +107,7 @@ weapons_loadout_pool = "dex_fighter"
 
 [brute]
 armors_loadout_pool = "light_med"
-categories = ["warrior"]
+categories = ["Warrior"]
 cr_calc = "attack"
 hd_size = 10
 num_random_skills = 1
@@ -122,7 +122,7 @@ weapons_loadout_pool = "brute"
     multiattack = "fighter"
 
 [cleric]
-categories = ["divine"]
+categories = ["Divine"]
 hd_size = 8
 priority_attributes = ["wis", "cha"]
 saves = ["wis", "cha"]
@@ -218,7 +218,7 @@ subclass_primary_label = "Domain"
 
 [druid]
 armors_loadout_pool = "mage"
-categories = ["divine"]
+categories = ["Divine"]
 cr_calc = "caster"
 hd_size = 6
 num_random_skills = 2
@@ -243,7 +243,7 @@ weapons_loadout_pool = "mage"
 
 [monk]
 armors_loadout_pool = "monk"
-categories = ["warrior"]
+categories = ["Warrior"]
 cr_calc = "attack"
 hd_size = 8
 num_random_skills = 1
@@ -261,7 +261,7 @@ weapons_loadout_pool = "monk"
 
 [paladin]
 armors_loadout_pool = "med_heavy"
-categories = ["divine"]
+categories = ["Divine"]
 cr_calc = "attack"
 hd_size = 10
 num_random_skills = 2
@@ -287,7 +287,7 @@ subclass_primary_label = "Oath"
 
 [priest]
 armors_loadout_pool = "mage"
-categories = ["divine"]
+categories = ["Divine"]
 cr_calc = "caster"
 hd_size = 6
 num_random_skills = 2
@@ -303,7 +303,7 @@ weapons_loadout_pool = "mage"
 
 [sneaker]
 armors_loadout_pool = "light_med"
-categories = ["rogue"]
+categories = ["Rogue"]
 cr_calc = "mixed"
 hd_size = 8
 num_random_skills = 2
@@ -319,7 +319,7 @@ weapons_loadout_pool = "rogue"
 
 [soldier]
 armors_loadout_pool = "soldier"
-categories = ["warrior"]
+categories = ["Warrior"]
 cr_calc = "attack"
 hd_size = 8
 num_random_skills = 2
@@ -335,7 +335,7 @@ weapons_loadout_pool = "soldier"
 
 [warlock]
 armors_loadout_pool = "mage"
-categories = ["eldritch"]
+categories = ["Eldritch"]
 cr_calc = "attack"
 hd_size = 8
 num_random_skills = 3
@@ -350,7 +350,7 @@ weapons_loadout_pool = "mage"
 
 [weirdo]
 armors_loadout_pool = "minion"
-categories = ["rogue"]
+categories = ["Rogue"]
 cr_calc = "mixed"
 hd_size = 8
 num_random_skills = 1

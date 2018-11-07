@@ -210,14 +210,14 @@ traits = ["extra_language"]
 
 
 [humanoid]
-categories = ["generic"]
+categories = ["Generic"]
 languages = ["common"]
 size = "medium"
 traits = []
 
 
 [lizardfolk]
-categories = ["monstrous"]
+categories = ["Monstrous"]
 languages = ["common", "draconic"]
 size = "medium"
 speeds = {swim = 30}
