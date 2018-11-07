@@ -690,7 +690,7 @@ class ContentSource:
                         {'display': display}
 
         # Roll methods
-        options_dict['roll_methods'] = collections.OrderedDict()
+        options_dict['roll_method_options'] = collections.OrderedDict()
         categories_list = []
         for roll_option_name, option_tup in ROLL_METHODS.items():
             options_dict['roll_methods'][roll_option_name] = {'display': option_tup[0], 'categories': [option_tup[3], ]}
@@ -699,7 +699,7 @@ class ContentSource:
         options_dict['roll_method_categories'] = categories_list
 
         # HD sizes
-        options_dict['hd_sizes'] = collections.OrderedDict()
+        options_dict['hd_sizes_options'] = collections.OrderedDict()
         for hd_size in VALID_HD_SIZES:
             hd_size_str = str(hd_size)
             options_dict['hd_sizes'][hd_size_str] = {'display': 'd' + hd_size_str}
@@ -708,7 +708,7 @@ class ContentSource:
         options_dict['hd_num_options'] = collections.OrderedDict()
         for hd_num in range(1, 21):
             hd_num_str = str(hd_num)
-            options_dict['hd_num_options'][hd_num_str] = {'display': hd_size_str}
+            options_dict['hd_num_options'][hd_num_str] = {'display': hd_num_str}
 
         return options_dict
 
