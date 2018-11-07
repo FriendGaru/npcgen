@@ -39,61 +39,51 @@ subrace_label = "Draconic Lineage"
 attribute_bonuses = {con = 1, str = 2}
 
     [dragonborn.subraces.black]
-    display_name = "Black Dragonborn"
 
         [dragonborn.subraces.black.features]
         dragonborn_feature = "black"
         
     [dragonborn.subraces.blue]
-    display_name = "Blue Dragonborn"
 
         [dragonborn.subraces.blue.features]
         dragonborn_feature = "blue"
 
     [dragonborn.subraces.brass]
-    display_name = "Brass Dragonborn"
 
         [dragonborn.subraces.brass.features]
         dragonborn_feature = "brass"
     
     [dragonborn.subraces.bronze]
-    display_name = "Bronze Dragonborn"
 
         [dragonborn.subraces.bronze.features]
         dragonborn_feature = "bronze"
         
     [dragonborn.subraces.copper]
-    display_name = "Copper Dragonborn"
 
         [dragonborn.subraces.copper.features]
         dragonborn_feature = "copper"
         
     [dragonborn.subraces.gold]
-    display_name = "Gold Dragonborn"
 
         [dragonborn.subraces.gold.features]
         dragonborn_feature = "gold"
         
     [dragonborn.subraces.green]
-    display_name = "Green Dragonborn"
 
         [dragonborn.subraces.green.features]
         dragonborn_feature = "green"
         
     [dragonborn.subraces.red]
-    display_name = "Red Dragonborn"
 
         [dragonborn.subraces.red.features]
         dragonborn_feature = "red"
         
     [dragonborn.subraces.silver]
-    display_name = "Silver Dragonborn"
 
         [dragonborn.subraces.silver.features]
         dragonborn_feature = "silver"
         
     [dragonborn.subraces.white]
-    display_name = "White Dragonborn"
 
         [dragonborn.subraces.white.features]
         dragonborn_feature = "white"

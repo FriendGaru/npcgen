@@ -271,6 +271,7 @@ skills_fixed = [""]
 skills_random = ["athletics", "insight", "intimidation", "medicine", "persuasion", "religion"]
 traits = []
 weapons_loadout_pool = "soldier"
+subclass_primary_label = "Oath"
 
     [paladin.spell_casting_profile]
     casting_stat = 'wis'
@@ -282,7 +283,6 @@ weapons_loadout_pool = "soldier"
 
             [[paladin.spell_casting_profile.spell_lists]]
             req_classes = ['paladin']
-
 
 
 [priest]

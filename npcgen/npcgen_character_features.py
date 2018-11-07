@@ -634,7 +634,6 @@ class FeatureDragonborn(CharacterFeature):
             self.lineage_type = feature_arg
 
     def first_pass(self):
-        self.owner.add_race_prefix(self.lineage_type)
         self.owner.add_damage_resistance(FEATURE_DRAGONBORN_CHART[self.lineage_type][0])
 
     def build_cr_factors_and_stat_block_entries(self):

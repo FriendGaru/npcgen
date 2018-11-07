@@ -2,6 +2,7 @@ import collections
 import random
 import csv
 import toml
+import json
 from enum import Enum
 from .npcgen_constants import *
 import pkg_resources as pkg
@@ -105,8 +106,6 @@ class ContentSource:
                  weapons_toml_loc=WEAPONS_TOML,
                  armors_toml_loc=ARMORS_TOML,
                  spells_file_loc=SPELLS_FILE,
-                 # spell_lists_file_loc=SPELLLISTS_FILE,
-                 # spellcaster_profiles_file_loc=SPELLCASTER_PROFILES_FILE,
                  armors_loadout_pools_file_loc=ARMORS_LOADOUT_POOLS_FILE,
                  weapons_loadout_pools_file_loc=WEAPONS_LOADOUT_POOLS_FILE,
                  traits_toml_loc=TRAITS_TOML,
@@ -128,12 +127,6 @@ class ContentSource:
 
         self.spells = {}
         self.load_spells_from_csv(spells_file_loc)
-        #
-        # self.spell_lists = {}
-        # self.load_spell_lists_from_csv(spell_lists_file_loc)
-        #
-        # self.spellcaster_profiles = {}
-        # self.load_spellcaster_profiles_from_csv(spellcaster_profiles_file_loc)
 
         self.trait_templates = {}
         self.load_traits_from_toml(traits_toml_loc)
@@ -146,6 +139,8 @@ class ContentSource:
         self.class_categories = collections.OrderedDict()
         self.load_classes_from_toml(classes_toml_loc)
 
+        self.build_options_dict = self.get_build_options_dict()
+
         self.content_type_map = {
             ContentType.ARMOR: self.armor_templates,
             ContentType.WEAPON: self.weapon_templates,
@@ -154,10 +149,10 @@ class ContentSource:
             ContentType.RACE: self.race_templates,
             ContentType.CLASS: self.class_templates,
             ContentType.SPELL: self.spells,
-            # ContentType.SPELL_LIST: self.spell_lists,
-            # ContentType.SPELLCASTER_PROFILE: self.spellcaster_profiles,
             ContentType.TRAIT: self.trait_templates,
         }
+
+        self.build_options_dict = self.get_build_options_dict()
         
     def add_race_to_category(self, race_name, category):
         if category in self.race_categories:
@@ -334,142 +329,6 @@ class ContentSource:
                 new_spell.classes = set(line['classes'].replace(" ", "").split(','))
                 self.spells[new_spell.name] = new_spell
 
-    # def load_spell_lists_from_csv(self, spell_lists_file_loc):
-    #     with open(spell_lists_file_loc, newline='', encoding="utf-8") as spellListsFile:
-    #         spell_lists_file_reader = csv.DictReader(spellListsFile)
-    #         for line in spell_lists_file_reader:
-    #
-    #             # Ignore blank lines or comments using hastags
-    #             if line['name'] == '' or '#' in line['name']:
-    #                 continue
-    #
-    #             new_spell_list = SpellList()
-    #             new_spell_list.name = line['name']
-    #
-    #             # Check for if it's an autolist
-    #             # If all these fields are blank, it's not an autolist
-    #             if len(line['req_classes']) > 0 or len(line['req_schools']) > 0 \
-    #                     or len(line['req_levels']) > 0 or len(line['req_sources']) > 0:
-    #                 req_classes = None
-    #                 if line['req_classes']:
-    #                     req_classes = line['req_classes'].replace(" ", "").split(",")
-    #                 req_schools = None
-    #                 if line['req_schools']:
-    #                     req_schools = set(line['req_schools'].replace(" ", "").split(","))
-    #                 req_levels = None
-    #                 if line['req_levels']:
-    #                     req_levels = line['req_levels'].replace(" ", "").split(",")
-    #                 req_sources = None
-    #                 if line['req_sources']:
-    #                     req_sources = line['req_sources'].replace(" ", "").split(",")
-    #
-    #                 for spell_name, spell in self.spells.items():
-    #                     if req_classes and spell.classes.isdisjoint(req_classes):
-    #                         continue
-    #                     if req_schools and spell.school not in req_schools:
-    #                         continue
-    #                     if req_levels and spell.level not in req_levels:
-    #                         continue
-    #                     if req_sources and spell.source not in req_sources:
-    #                         continue
-    #                     new_spell_list.add_spell(spell)
-    #
-    #             if line['fixed_include']:
-    #                 fixed_include_spells = line['fixed_include'].split(',')
-    #                 for spell_name in fixed_include_spells:
-    #                     spell_name = spell_name.strip()
-    #                     if spell_name not in self.spells:
-    #                         debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-    #                                     .format(spell_name, new_spell_list.name), 0)
-    #                     else:
-    #                         new_spell_list.add_spell(self.spells[spell_name])
-    #
-    #             if line['fixed_exclude']:
-    #                 fixed_exclude_spells = line['fixed_exclude'].split(',')
-    #                 for spell_name in fixed_exclude_spells:
-    #                     spell_name = spell_name.strip()
-    #                     if spell_name not in self.spells:
-    #                         debug_print("Error! spell: '{}' from spelllist '{}' not in master spelllist!"
-    #                                     .format(spell_name, new_spell_list.name), 0)
-    #                     else:
-    #                         new_spell_list.remove_spell(spell_name)
-    #
-    #             if line['spelllists_include']:
-    #                 spell_lists_to_include = line['spelllists_include'].replace(" ", "").split(',')
-    #                 for spellListToInclude in spell_lists_to_include:
-    #                     for spell_name, spell in spellListToInclude.spells.items():
-    #                         new_spell_list.add_spell(spell)
-    #
-    #             if line['spelllists_exclude']:
-    #                 spell_lists_to_exclude = line['spelllists_exclude'].replace(" ", "").split(',')
-    #                 for spellListToExclude in spell_lists_to_exclude:
-    #                     spell_list = self.spell_lists[spellListToExclude]
-    #                     for spell_name, spell in spell_list.spells.items():
-    #                         new_spell_list.remove_spell(spell)
-    #
-    #             self.spell_lists[new_spell_list.name] = new_spell_list
-
-    # def load_spellcaster_profiles_from_csv(self, spellcaster_profiles_file_loc):
-    #     with open(spellcaster_profiles_file_loc, newline="", encoding="utf-8") as spellcaster_profiles_file:
-    #         spellcaster_profiles_file_reader = csv.DictReader(spellcaster_profiles_file)
-    #         for line in spellcaster_profiles_file_reader:
-    #
-    #             try:
-    #
-    #                 # Ignore blank lines or comments using hastags
-    #                 if line['internal_name'] == '' or '#' in line['internal_name']:
-    #                     continue
-    #
-    #                 new_spellcaster_profile = SpellCasterProfile()
-    #                 new_spellcaster_profile.int_name = line['internal_name']
-    #                 new_spellcaster_profile.casting_stat = line['casting_stat']
-    #                 new_spellcaster_profile.ready_style = line['ready_style']
-    #
-    #                 if line["hd_per_casting_level"]:
-    #                     new_spellcaster_profile.hd_per_casting_level = int(line['hd_per_casting_level'])
-    #                 else:
-    #                     new_spellcaster_profile.hd_per_casting_level = 1
-    #
-    #                 if line['cantrips_per_level']:
-    #                     new_spellcaster_profile.cantrips_per_level = line['cantrips_per_level']
-    #                 else:
-    #                     new_spellcaster_profile.cantrips_per_level = None
-    #
-    #                 if line['fixed_spells_known_by_level']:
-    #                     new_spellcaster_profile.fixed_spells_known_by_level = line['fixed_spells_known_by_level']
-    #                 else:
-    #                     new_spellcaster_profile.fixed_spells_known_by_level = None
-    #
-    #                 if line['spells_known_modifier']:
-    #                     new_spellcaster_profile.spells_known_modifier = int(line['spells_known_modifier'])
-    #                 else:
-    #                     new_spellcaster_profile.spells_known_modifier = 0
-    #
-    #                 if line['free_spell_lists']:
-    #                     new_spellcaster_profile.free_spell_lists = line['free_spell_lists'].replace(" ", "").split(',')
-    #                 else:
-    #                     new_spellcaster_profile.free_spell_lists = []
-    #
-    #                 new_spell_lists_dict = {}
-    #                 for rawEntry in line['spell_lists'].replace(" ", "").split(','):
-    #                     if ':' in rawEntry:
-    #                         spell_list_name, weight = rawEntry.split(':')
-    #                         new_spell_lists_dict[spell_list_name] = weight
-    #                     else:
-    #                         new_spell_lists_dict[rawEntry] = DEFAULT_SPELL_LIST_WEIGHT
-    #                 new_spellcaster_profile.spell_lists = new_spell_lists_dict
-    #
-    #                 new_spellcaster_profile.tags = csv_tag_reader(line['tags'])
-    #
-    #                 # For now, only standard slots progression
-    #                 # In the future, may add support for nonstandard slot progressions, like warlock
-    #                 new_spellcaster_profile.spell_slots_table = None
-    #
-    #                 self.spellcaster_profiles[new_spellcaster_profile.int_name] = new_spellcaster_profile
-    #
-    #             except (ValueError, TypeError):
-    #                 debug_print("Failed to build spellcaster profile: {}".format(line['internal_name']), 0)
-
     def load_races_from_toml(self, races_toml_loc):
         toml_dict = toml.load(races_toml_loc)
         for race_name, race_dict in toml_dict.items():
@@ -490,9 +349,9 @@ class ContentSource:
             set_obj_attr_from_dict(new_race_template, race_dict, 'languages')
             set_obj_attr_from_dict(new_race_template, race_dict, 'traits')
             set_obj_attr_from_dict(new_race_template, race_dict, 'features')
-            set_obj_attr_from_dict(new_race_template, race_dict, 'subraces_label')
-            if 'subraces_label' not in race_dict and 'subraces' in race_dict:
-                new_race_template.subraces_label = 'Subrace'
+            set_obj_attr_from_dict(new_race_template, race_dict, 'subrace_label')
+            if 'subrace_label' not in race_dict and 'subraces' in race_dict:
+                new_race_template.subrace_label = 'Subrace'
 
             if 'subraces' in race_dict:
                 subraces_dict = collections.OrderedDict()
@@ -601,7 +460,6 @@ class ContentSource:
             self.class_templates[class_name] = new_class_template
             for category in new_class_template.categories:
                 self.add_class_to_category(class_name, category)
-
 
     def is_valid_content(self, content_type: 'ContentType', content_name: str):
         content_dict = self.content_type_map[content_type]
@@ -724,195 +582,117 @@ class ContentSource:
             options.append((k, v.display_name))
         return options
 
-    def get_character_build_options(self):
-        options_inst = CharacterBuildOptions()
-        options_inst.add_race_option('RACES', RaceClassOptionEntry('random_race', 'Random Race'))
-        options_inst.add_class_option('CLASSES', RaceClassOptionEntry('random_class', 'Random Class'))
+    # def get_character_build_options(self):
+    #     options_inst = CharacterBuildOptions()
+    #     options_inst.add_race_option('RACES', RaceClassOptionEntry('random_race', 'Random Race'))
+    #     options_inst.add_class_option('CLASSES', RaceClassOptionEntry('random_class', 'Random Class'))
+    #
+    #     for race_category in self.race_categories.keys():
+    #         for race_option in self.race_categories[race_category]:
+    #             temp = self.get_race_template(race_option)
+    #             assert isinstance(temp, RaceTemplate)
+    #             option_entry = RaceClassOptionEntry(race_option, temp.display_name,
+    #                                                 temp.subrace_label, list(temp.subraces.keys()), )
+    #             options_inst.add_race_option(race_category, option_entry)
+    #
+    #     for class_category in self.class_categories.keys():
+    #         for class_option in self.class_categories[class_category]:
+    #             temp = self.get_class_template(class_option)
+    #             assert isinstance(temp, ClassTemplate)
+    #             option_entry = RaceClassOptionEntry(class_option, temp.display_name,
+    #                                                 arg_one_label=temp.subclass_primary_label,
+    #                                                 arg_one_options=list(temp.subclasses_primary.keys()),
+    #                                                 arg_two_label=temp.subclass_secondary_label,
+    #                                                 arg_two_options=list(temp.subclasses_secondary.keys()))
+    #             options_inst.add_class_option(class_category, option_entry)
+    #
+    #     for roll_option, roll_tup in ROLL_METHODS.items():
+    #         category = roll_tup[3]
+    #         display = roll_tup[0]
+    #         roll_entry = OptionMenuEntry(roll_option, display)
+    #         options_inst.add_roll_option(category, roll_entry)
+    #
+    #     for i in range(1, 21):
+    #         entry = OptionMenuEntry(str(i), str(i))
+    #         options_inst.hd_options.append(entry)
+    #
+    #     options_inst.hd_size_options.append(OptionMenuEntry('default', 'Default'))
+    #     for size in VALID_HD_SIZES:
+    #         entry = OptionMenuEntry(str(size), 'd' + str(size))
+    #         options_inst.hd_size_options.append(entry)
+    #
+    #     return options_inst
 
-        for race_category in self.race_categories.keys():
-            for race_option in self.race_categories[race_category]:
-                temp = self.get_race_template(race_option)
-                assert isinstance(temp, RaceTemplate)
-                option_entry = RaceClassOptionEntry(race_option, temp.display_name,
-                                                    temp.subraces_label, list(temp.subraces.keys()),)
-                options_inst.add_race_option(race_category, option_entry)
-                
-        for class_category in self.class_categories.keys():
-            for class_option in self.class_categories[class_category]:
-                temp = self.get_class_template(class_option)
-                assert isinstance(temp, ClassTemplate)
-                option_entry = RaceClassOptionEntry(class_option, temp.display_name,
-                                                    arg_one_label=temp.subclass_primary_label,
-                                                    arg_one_options=list(temp.subclasses_primary.keys()),
-                                                    arg_two_label=temp.subclass_secondary_label,
-                                                    arg_two_options=list(temp.subclasses_secondary.keys()))
-                options_inst.add_class_option(class_category, option_entry)
+    # This builds a dictionary with all the info needed for building menus, etc. for selecting build options
+    # Should be jsonifiable for javascript
+    def get_build_options_dict(self):
+        options_dict = collections.OrderedDict()
 
-        for roll_option, roll_tup in ROLL_METHODS.items():
-            category = roll_tup[3]
-            display = roll_tup[0]
-            roll_entry = OptionMenuEntry(roll_option, display)
-            options_inst.add_roll_option(category, roll_entry)
+        # Race stuff
+        # Options is for all the individual options
+        options_dict['race_options'] = collections.OrderedDict()
+        # Categories is sorted by categories, for building menus
+        options_dict['race_categories'] = list(self.race_categories.keys())
+        options_dict['race_options']['random_race'] = {'display': 'Random Race', 'categories': ['Races', ]}
+        for category, races_list in self.race_categories.items():
+            options_dict['race_options']['random_' + category] = \
+                {'display': 'Random ' + category, 'categories': [category, ]}
+        for race_template in self.race_templates.values():
+            assert isinstance(race_template, RaceTemplate)
+            options_dict['race_options'][race_template.int_name] = \
+                {'display': race_template.display_name, 'categories': race_template.categories}
+            if race_template.subraces:
+                options_dict['race_options'][race_template.int_name]['subrace_label'] = race_template.subrace_label
+                options_dict['race_options'][race_template.int_name]['subraces'] = collections.OrderedDict()
+                for subrace_template in race_template.subraces.values():
+                    assert isinstance(subrace_template, SubraceTemplate)
+                    if subrace_template.display_name:
+                        display = subrace_template.display_name
+                    else:
+                        display = subrace_template.int_name.title()
+                    options_dict['race_options'][race_template.int_name]['subraces'][subrace_template.int_name] = \
+                        {'display': display}
+                    
+        # Class stuff
+        options_dict['class_options'] = collections.OrderedDict()
+        options_dict['class_options']['random_class'] = {'display': 'Random Class', 'categories': ['Classes', ]}
+        for category, classes_list in self.class_categories.items():
+            options_dict['class_options']['random_' + category] = \
+                {'display': 'Random ' + category, 'categories': [category, ]}
+        for class_template in self.class_templates.values():
+            assert isinstance(class_template, ClassTemplate)
+            options_dict['class_options'][class_template.int_name] = \
+                {'display': class_template.display_name, 'categories': class_template.categories}
+            if class_template.subclasses_primary:
+                options_dict['class_options'][class_template.int_name]['subclass_primary_label'] = \
+                    class_template.subclass_primary_label
+                options_dict['class_options'][class_template.int_name]['subclasses_primary'] = collections.OrderedDict()
+                for subclass_template in class_template.subclasses_primary.values():
+                    assert isinstance(subclass_template, SubclassTemplate)
+                    if subclass_template.display_name:
+                        display = subclass_template.display_name
+                    else:
+                        display = subclass_template.int_name.title()
+                    options_dict['class_options'][class_template.int_name]['subclasses_primary'][subclass_template.int_name] = \
+                        {'display': display}
+            if class_template.subclasses_secondary:
+                options_dict['class_options'][class_template.int_name]['subclass_secondary_label'] = \
+                    class_template.subclass_secondary_label
+                options_dict['class_options'][class_template.int_name]['subclasses_secondary'] = collections.OrderedDict()
+                for subclass_template in class_template.subclasses_secondary.values():
+                    assert isinstance(subclass_template, SubclassTemplate)
+                    if subclass_template.display_name:
+                        display = subclass_template.display_name
+                    else:
+                        display = subclass_template.int_name.title()
+                    options_dict['class_options'][class_template.int_name]['subclasses_secondary'][subclass_template.int_name] = \
+                        {'display': display}
 
-        for i in range(1, 21):
-            entry = OptionMenuEntry(str(i), str(i))
-            options_inst.hd_options.append(entry)
-
-        options_inst.hd_size_options.append(OptionMenuEntry('default', 'Default'))
-        for size in VALID_HD_SIZES:
-            entry = OptionMenuEntry(str(size), 'd' + str(size))
-            options_inst.hd_size_options.append(entry)
-
-        return options_inst
-
-
-# This is the object that will ultimately be handed to the renderer that presents options to the user
-# The keys of the ordered dicts are intended to be categories with the values as lists of entries to go into them
-# For now, just race and class, will add rolld/hd after, and MUCH later support for optional parameters will go here
-class CharacterBuildOptions:
-    def __init__(self):
-        self.race_options = collections.OrderedDict()
-        self.class_options = collections.OrderedDict()
-
-        self.roll_options = collections.OrderedDict()
-
-        self.hd_options = []
-        self.hd_size_options = []
-        
-    def every_race_option(self):
-        race_options_list = []
-        for category in self.race_options:
-            for option in self.race_options[category]:
-                race_options_list.append(option)
-        return race_options_list
-
-    def add_race_option(self, category, option: 'RaceClassOptionEntry'):
-        category = category.title()
-        if category in self.race_options:
-            self.race_options[category].append(option)
-        else:
-            self.race_options[category] = [option, ]
-            
-    def every_class_option(self):
-        class_options_list = []
-        for category in self.class_options:
-            for option in self.class_options[category]:
-                class_options_list.append(option)
-        return class_options_list
-
-    def add_class_option(self, category, option: 'RaceClassOptionEntry'):
-        category = category.title()
-        if category in self.class_options:
-            self.class_options[category].append(option)
-        else:
-            self.class_options[category] = [option, ]
-            
-    def every_roll_option(self):
-        roll_options_list = []
-        for category in self.roll_options:
-            for option in self.roll_options[category]:
-                roll_options_list.append(option)
-        return roll_options_list
-
-    def add_roll_option(self, category, option: 'OptionMenuEntry'):
-        category = category.title()
-        if category in self.roll_options:
-            self.roll_options[category].append(option)
-        else:
-            self.roll_options[category] = [option, ]
-
-    def __str__(self):
-        outstring = "Races:{} Classes:{}".format(','.join(self.race_options), ','.join(self.class_options))
-        return outstring
-
-    def jsonify(self):
-        out = "{"
-        out += '"race_options" : {'
-        for race_option in self.every_race_option():
-            out += '"{}":{},'.format(race_option.int_name, race_option.jsonify())
-        out = out[:-1]
-        out += '},"class_options" : {'
-        for class_option in self.every_class_option():
-            out += '"{}":{},'.format(class_option.int_name, class_option.jsonify())
-        out = out[:-1]
-        out += '},"roll_options" : {'
-        for roll_option in self.every_roll_option():
-            out += '"{}":"{}",'.format(roll_option.int_name, roll_option.display)
-        out = out[:-1]
-        out += '}}'
-        return out
-
-
-class OptionMenuEntry:
-    def __init__(self, int_name, display):
-        self.int_name = int_name
-        self.display = display
-
-    def __repr__(self):
-        return "<MenuEntry:{},{}>".format(self.int_name, self.display)
-
-    def __str__(self):
-        outstring = "[{},{},".format(self.int_name, self.display)
-        outstring += ']'
-        return outstring
-
-    def jsonify(self):
-        out = '{'
-        out += '"int_name":"{}",'.format(self.int_name)
-        out += '"display":"{}"'.format(self.display)
-        out += '}'
-        return out
-
-
-class RaceClassOptionEntry(OptionMenuEntry):
-    def __init__(self, int_name, display, arg_one_label=None, arg_one_options=None,
-                 arg_two_label=None, arg_two_options=None):
-        super().__init__(int_name, display)
-        self.arg_one_label = arg_one_label
-        self.arg_one_options = arg_one_options
-        self.arg_one_option_displays = []
-        if self.arg_one_label:
-            for option in self.arg_one_options:
-                self.arg_one_option_displays.append(option.title())
-
-        self.arg_two_label = arg_two_label
-        self.arg_two_options = arg_two_options
-        self.arg_two_option_displays = []
-        if self.arg_two_label:
-            for option in self.arg_two_options:
-                self.arg_one_option_displays.append(option.title())
-
-    def __repr__(self):
-        return "<RaceClassOptionEntry:{},{}>".format(self.int_name, self.display)
-
-    def __str__(self):
-        outstring = "[{},{},".format(self.int_name, self.display)
-        if self.arg_one_label:
-            outstring += self.arg_one_label + ',' + str(self.arg_one_options) + ','
-        if self.arg_two_label:
-            outstring += self.arg_two_label + ',' + str(self.arg_two_options) + ','
-        outstring += ']'
-        return outstring
-
-    def jsonify(self):
-        out = '{'
-        out += '"int_name":"{}",'.format(self.int_name)
-        out += '"display":"{}",'.format(self.display)
-        if self.arg_one_label:
-            out += '"arg_one_label":"{}",'.format(self.arg_one_label)
-            out += '"arg_one_options":['
-            for option in self.arg_one_options:
-                out += '"{}",'.format(option)
-            out = out[:-1] + '],'  # Json doesn't like dangling commas
-        if self.arg_two_label:
-            out += '"arg_two_label":"{}",'.format(self.arg_two_label)
-            out += '"arg_two_options":['
-            for option in self.arg_two_options:
-                out = '"{}",'.format(option)
-            out += out[:-1] + '],'  # Json doesn't like dangling commas
-        out = out[:-1]  # Get rid of last comment or JSON breaks
-        out += '}'
-        return out
+        # Roll methods
+        options_dict['roll_options'] = collections.OrderedDict()
+        for roll_option_name, option_tup in ROLL_METHODS.items():
+            options_dict['roll_options'][roll_option_name] = {'display': option_tup[0], 'categories': [option_tup[3], ]}
+        return options_dict
 
 
 class RaceTemplate:
@@ -935,7 +715,7 @@ class RaceTemplate:
         self.traits = []
         self.features = collections.OrderedDict()
 
-        self.subraces_label = None
+        self.subrace_label = None
         self.subraces = {}
 
 
@@ -987,7 +767,6 @@ class ClassTemplate:
 
         self.subclass_primary_label = None
         self.subclass_secondary_label = None
-
 
 
 class SubclassTemplate:
