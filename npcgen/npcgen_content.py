@@ -693,16 +693,16 @@ class ContentSource:
         options_dict['roll_method_options'] = collections.OrderedDict()
         categories_list = []
         for roll_option_name, option_tup in ROLL_METHODS.items():
-            options_dict['roll_methods'][roll_option_name] = {'display': option_tup[0], 'categories': [option_tup[3], ]}
+            options_dict['roll_method_options'][roll_option_name] = {'display': option_tup[0], 'categories': [option_tup[3], ]}
             if option_tup[3] not in categories_list:
                 categories_list.append(option_tup[3])
         options_dict['roll_method_categories'] = categories_list
 
         # HD sizes
-        options_dict['hd_sizes_options'] = collections.OrderedDict()
+        options_dict['hd_size_options'] = collections.OrderedDict()
         for hd_size in VALID_HD_SIZES:
             hd_size_str = str(hd_size)
-            options_dict['hd_sizes'][hd_size_str] = {'display': 'd' + hd_size_str}
+            options_dict['hd_size_options'][hd_size_str] = {'display': 'd' + hd_size_str}
 
         # HD num
         options_dict['hd_num_options'] = collections.OrderedDict()
