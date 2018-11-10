@@ -28,16 +28,13 @@ DATA_PATH = pkg.resource_filename('npcgen', 'data/')
 
 SPELLS_FILE = \
     pkg.resource_filename(__name__, 'data/spells.csv')
-SPELLLISTS_FILE = \
-    pkg.resource_filename(__name__, 'data/spelllists.csv')
+
 SPELLCASTER_PROFILES_FILE = \
     pkg.resource_filename(__name__, 'data/spellcasterprofiles.csv')
 ARMORS_LOADOUT_POOLS_FILE = \
     pkg.resource_filename(__name__, 'data/loadoutpools_armors.csv')
 WEAPONS_LOADOUT_POOLS_FILE = \
     pkg.resource_filename(__name__, 'data/loadoutpools_weapons.csv')
-CLASS_TEMPLATES_FILE = \
-    pkg.resource_filename(__name__, 'data/classtemplates.csv')
 
 TRAITS_TOML = \
     pkg.resource_filename(__name__, 'data/traits.toml')
@@ -402,20 +399,6 @@ class ContentSource:
             set_obj_attr_from_dict(new_class_template, class_dict, 'cr_calc')
             set_obj_attr_from_dict(new_class_template, class_dict, 'traits')
             set_obj_attr_from_dict(new_class_template, class_dict, 'features')
-
-            if 'spell_casting_profile' in class_dict:
-                casting_dict = class_dict['spell_casting_profile']
-                new_spell_casting_profile = SpellCasterProfile()
-                new_spell_casting_profile.casting_stat = casting_dict['casting_stat']
-                new_spell_casting_profile.ready_style = casting_dict['ready_style']
-                set_obj_attr_from_dict(new_spell_casting_profile, casting_dict, 'tags')
-                set_obj_attr_from_dict(new_spell_casting_profile, casting_dict, 'hd_per_casting_level')
-                if 'cantrips_per_level' in casting_dict:
-                    new_spell_casting_profile.cantrips_per_level = casting_dict['cantrips_per_level']
-                for spell_list_dict in casting_dict['spell_lists']:
-                    new_spell_list = self.build_spell_list(**spell_list_dict)
-                    new_spell_casting_profile.spell_lists[new_spell_list] = new_spell_list.weight
-                new_class_template.spell_casting_profile = new_spell_casting_profile
                 
             if 'subclass_primary_label' in class_dict:
                 new_class_template.subclass_primary_label = class_dict['subclass_primary_label']
@@ -581,47 +564,6 @@ class ContentSource:
         for k, v in self.class_templates:
             options.append((k, v.display_name))
         return options
-
-    # def get_character_build_options(self):
-    #     options_inst = CharacterBuildOptions()
-    #     options_inst.add_race_option('RACES', RaceClassOptionEntry('random_race', 'Random Race'))
-    #     options_inst.add_class_option('CLASSES', RaceClassOptionEntry('random_class', 'Random Class'))
-    #
-    #     for race_category in self.race_categories.keys():
-    #         for race_option in self.race_categories[race_category]:
-    #             temp = self.get_race_template(race_option)
-    #             assert isinstance(temp, RaceTemplate)
-    #             option_entry = RaceClassOptionEntry(race_option, temp.display_name,
-    #                                                 temp.subrace_label, list(temp.subraces.keys()), )
-    #             options_inst.add_race_option(race_category, option_entry)
-    #
-    #     for class_category in self.class_categories.keys():
-    #         for class_option in self.class_categories[class_category]:
-    #             temp = self.get_class_template(class_option)
-    #             assert isinstance(temp, ClassTemplate)
-    #             option_entry = RaceClassOptionEntry(class_option, temp.display_name,
-    #                                                 arg_one_label=temp.subclass_primary_label,
-    #                                                 arg_one_options=list(temp.subclasses_primary.keys()),
-    #                                                 arg_two_label=temp.subclass_secondary_label,
-    #                                                 arg_two_options=list(temp.subclasses_secondary.keys()))
-    #             options_inst.add_class_option(class_category, option_entry)
-    #
-    #     for roll_option, roll_tup in ROLL_METHODS.items():
-    #         category = roll_tup[3]
-    #         display = roll_tup[0]
-    #         roll_entry = OptionMenuEntry(roll_option, display)
-    #         options_inst.add_roll_option(category, roll_entry)
-    #
-    #     for i in range(1, 21):
-    #         entry = OptionMenuEntry(str(i), str(i))
-    #         options_inst.hd_options.append(entry)
-    #
-    #     options_inst.hd_size_options.append(OptionMenuEntry('default', 'Default'))
-    #     for size in VALID_HD_SIZES:
-    #         entry = OptionMenuEntry(str(size), 'd' + str(size))
-    #         options_inst.hd_size_options.append(entry)
-    #
-    #     return options_inst
 
     # This builds a dictionary with all the info needed for building menus, etc. for selecting build options
     # Should be jsonifiable for javascript
@@ -854,43 +796,6 @@ class SpellList:
             if spell.level == level:
                 count += 1
         return count
-
-
-class SpellCasterProfile:
-    def __init__(self):
-        self.int_name = ''
-        self.hd_per_casting_level = 1
-        self.cantrips_per_level = 'none'
-        self.spells_known_modifier = 0
-        # spell_lists = {spell_list : weight}
-        self.spell_lists = {}
-        self.free_spell_lists = []
-        self.ready_style = ''
-        self.casting_stat = ''
-        self.fixed_spells_known_by_level = None
-        # For now, only the standard slots table is supported
-        # spell_slots_table[caster_level][spell_level]
-        self.spell_slots_table = None
-        self.tags = []
-
-    def __repr__(self):
-        return '<SpellCaster Profile: {}>'.format(self.int_name)
-
-    # Give copies so the original profile doesn't get messed up
-    def get_spell_lists(self):
-        out_dict = {}
-        for k, v in self.spell_lists:
-            out_dict[k] = v
-        return out_dict
-
-    def get_tags(self):
-        out_tags = []
-        for tag in self.tags:
-            out_tags.append(tag)
-        return out_tags
-
-    def get_free_spell_lists(self):
-        return self.spell_lists[:]
 
 
 class ArmorTemplate:

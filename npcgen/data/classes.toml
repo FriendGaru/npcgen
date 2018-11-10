@@ -11,17 +11,17 @@ skills_random = ["religion", "insight", "nature", "history"]
 traits = []
 weapons_loadout_pool = "mage"
 
-    [arcanist.spell_casting_profile]
+    [arcanist.features.spell_casting]
     casting_stat = 'int'
     ready_style = 'prepared'
-    cantrips_per_level = 'cleric_wizard'
+    cantrips_progression = 'cleric_wizard'
     tags = ['spellbook']
 
-        [[arcanist.spell_casting_profile.spell_lists]]
+        [[arcanist.features.spell_casting.spell_lists]]
         weight = 2
         fixed_include = ["mage armor","shield"]
 
-        [[arcanist.spell_casting_profile.spell_lists]]
+        [[arcanist.features.spell_casting.spell_lists]]
         req_classes = ['wizard']
 
     [arcanist.subclasses_primary.abjurer]
@@ -87,7 +87,7 @@ traits = []
 weapons_loadout_pool = "archer"
 
     [archer.features]
-    multiattack = "fighter"
+    multiattack = {multiattack_type = "fighter"}
 
 [bandit_captain]
 armors_loadout_pool = "light_med"
@@ -103,7 +103,7 @@ traits = ["parry"]
 weapons_loadout_pool = "dex_fighter"
 
     [bandit_captain.features]
-    multiattack = "fighter"
+    multiattack = {multiattack_type = "fighter"}
 
 [brute]
 armors_loadout_pool = "light_med"
@@ -119,7 +119,7 @@ traits = ["parry"]
 weapons_loadout_pool = "brute"
 
     [brute.features]
-    multiattack = "fighter"
+    multiattack = {multiattack_type = "fighter"}
 
 [cleric]
 categories = ["Divine"]
@@ -135,85 +135,74 @@ weapons_loadout_pool = "mage"
 armors_loadout_pool = "mage"
 subclass_primary_label = "Domain"
 
-    [cleric.spell_casting_profile]
+    [cleric.features.spell_casting]
     casting_stat = 'wis'
     ready_style = 'prepared'
-    cantrips_per_level = 'cleric_wizard'
+    cantrips_progression = 'cleric_wizard'
 
-        [[cleric.spell_casting_profile.spell_lists]]
+        [[cleric.features.spell_casting.spell_lists]]
         weight = 3
         fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
 
-        [[cleric.spell_casting_profile.spell_lists]]
+        [[cleric.features.spell_casting.spell_lists]]
         req_classes = ['cleric']
 
     [cleric.subclasses_primary.arcana]
 
         [cleric.subclasses_primary.arcana.features]
-        add_free_spells = ["detect magic","magic missile","magic weapon","nystul's magic aura",
-        "dispel magic","magic circle","arcane eye","leomund's secret chest","planar binding","teleportation circle"]
+        add_free_spells = {spells = ["detect magic","magic missile","magic weapon","nystul's magic aura","dispel magic","magic circle","arcane eye","leomund's secret chest","planar binding","teleportation circle"]}
 
     [cleric.subclasses_primary.forge]
 
         [cleric.subclasses_primary.forge.features]
-            add_free_spells = ["identify","searing smite","heat metal","magic weapon","elemental weapon",
-            "protection from energy","fabricate","wall of fire","animate objects","creation"]
-
+            add_free_spells = {spells = ["identify","searing smite","heat metal","magic weapon","elemental weapon","protection from energy","fabricate","wall of fire","animate objects","creation"]}
 
     [cleric.subclasses_primary.grave]
 
         [cleric.subclasses_primary.grave.features]
-            add_free_spells = ["bane","false life","gentle repose","ray of enfeeblement","revivify",
-            "vampiric touch","blight","death ward","antilife shell","raise dead"]
+            add_free_spells = {spells = ["bane","false life","gentle repose","ray of enfeeblement","revivify","vampiric touch","blight","death ward","antilife shell","raise dead"]}
 
 
     [cleric.subclasses_primary.knowledge]
 
         [cleric.subclasses_primary.knowledge.features]
-        add_free_spells = ["command","identify","augury","suggestion","nondetection","speak with dead",
-        "arcane eye","confusion","legend lore","scrying"]
+        add_free_spells = {spells = ["command","identify","augury","suggestion","nondetection","speak with dead","arcane eye","confusion","legend lore","scrying"]}
 
 
     [cleric.subclasses_primary.life]
 
         [cleric.subclasses_primary.life.features]
-            add_free_spells = ["bless","cure wounds","lesser restoration","spiritual weapon","beacon of hope",
-            "revivify","death ward","guardian of faith","mass cure wounds","raise dead"]
+            add_free_spells = {spells = ["bless","cure wounds","lesser restoration","spiritual weapon","beacon of hope","revivify","death ward","guardian of faith","mass cure wounds","raise dead"]}
 
 
     [cleric.subclasses_primary.light]
 
         [cleric.subclasses_primary.light.features]
-            add_free_spells = ["burning hands","faerie fire","flaming sphere","scorching ray","daylight",
-            "fireball","guardian of faith","wall of fire","flame strike","scrying"]
+            add_free_spells = {spells = ["burning hands","faerie fire","flaming sphere","scorching ray","daylight","fireball","guardian of faith","wall of fire","flame strike","scrying"]}
 
 
     [cleric.subclasses_primary.nature]
 
         [cleric.subclasses_primary.nature.features]
-            add_free_spells = ["animal friendship","speak with animals","barkskin","spike growth","plant growth",
-            "wind wall","dominate beast","grasping vine","insect plague","tree stride"]
+            add_free_spells = {spells = ["animal friendship","speak with animals","barkskin","spike growth","plant growth","wind wall","dominate beast","grasping vine","insect plague","tree stride"]}
 
 
     [cleric.subclasses_primary.tempest]
 
         [cleric.subclasses_primary.tempest.features]
-            add_free_spells = ["fog cloud","thunderwave","gust of wind","shatter","call lightning","sleet storm",
-            "control water","ice storm","destructive wave","insect plague"]
+            add_free_spells = {spells = ["fog cloud","thunderwave","gust of wind","shatter","call lightning","sleet storm","control water","ice storm","destructive wave","insect plague"]}
 
 
     [cleric.subclasses_primary.trickery]
 
         [cleric.subclasses_primary.trickery.features]
-            add_free_spells = ["charm person","disguise self","mirror image","pass without trace","blink",
-            "dispel magic","dimension door","polymorph","dominate person","modify memory"]
+            add_free_spells = {spells = ["charm person","disguise self","mirror image","pass without trace","blink","dispel magic","dimension door","polymorph","dominate person","modify memory"]}
 
 
     [cleric.subclasses_primary.war]
 
         [cleric.subclasses_primary.war.features]
-            add_free_spells = ["divine favor","shield of faith","magic weapon","spiritual weapon",
-            "crusader's mantle","spirit guardians","freedom of movement","stoneskin","flame strike","hold monster"]
+            add_free_spells = {spells = ["divine favor","shield of faith","magic weapon","spiritual weapon","crusader's mantle","spirit guardians","freedom of movement","stoneskin","flame strike","hold monster"]}
 
 
 [druid]
@@ -229,16 +218,16 @@ skills_random = ["survival", "arcana", "medicine"]
 traits = []
 weapons_loadout_pool = "mage"
 
-    [druid.spell_casting_profile]
+    [druid.features.spell_casting]
     casting_stat = 'wis'
     ready_style = 'prepared'
-    cantrips_per_level = 'bard_druid'
+    cantrips_progression = 'bard_druid'
 
-        [[druid.spell_casting_profile.spell_lists]]
+        [[druid.features.spell_casting.spell_lists]]
         weight = 3
         fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
 
-        [[druid.spell_casting_profile.spell_lists]]
+        [[druid.features.spell_casting.spell_lists]]
         req_classes = ['druid']
 
 [monk]
@@ -255,8 +244,8 @@ traits = ["monk_defense"]
 weapons_loadout_pool = "monk"
 
     [monk.features]
-    martial_arts = true
-    multiattack = "fighter"
+    martial_arts = {}
+    multiattack = {multiattack_type = "fighter"}
 
 
 [paladin]
@@ -273,15 +262,15 @@ traits = []
 weapons_loadout_pool = "soldier"
 subclass_primary_label = "Oath"
 
-    [paladin.spell_casting_profile]
+    [paladin.features.spell_casting]
     casting_stat = 'wis'
     ready_style = 'prepared'
     hd_per_casting_level = 2
 
-            [[paladin.spell_casting_profile.spell_lists]]
+            [[paladin.features.spell_casting.spell_lists]]
             fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
 
-            [[paladin.spell_casting_profile.spell_lists]]
+            [[paladin.features.spell_casting.spell_lists]]
             req_classes = ['paladin']
 
 
@@ -315,7 +304,7 @@ traits = ["medium_armor_master", "expertise_single"]
 weapons_loadout_pool = "rogue"
 
     [sneaker.features]
-    multiattack = "single"
+    multiattack = {multiattack_type = "single"}
 
 [soldier]
 armors_loadout_pool = "soldier"
@@ -331,7 +320,7 @@ traits = []
 weapons_loadout_pool = "soldier"
 
     [soldier.features]
-    multiattack = "fighter"
+    multiattack = {multiattack_type = "fighter"}
 
 [warlock]
 armors_loadout_pool = "mage"
@@ -362,5 +351,5 @@ traits = ["toughy"]
 weapons_loadout_pool = "minion"
 
     [weirdo.features]
-    multiattack = "single"
+    multiattack = {multiattack_type = "single"}
 

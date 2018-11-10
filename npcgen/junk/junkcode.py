@@ -583,3 +583,83 @@ class RaceClassOptionEntry(OptionMenuEntry):
         out = out[:-1]  # Get rid of last comment or JSON breaks
         out += '}'
         return out
+
+    def get_character_build_options(self):
+        options_inst = CharacterBuildOptions()
+        options_inst.add_race_option('RACES', RaceClassOptionEntry('random_race', 'Random Race'))
+        options_inst.add_class_option('CLASSES', RaceClassOptionEntry('random_class', 'Random Class'))
+
+        for race_category in self.race_categories.keys():
+            for race_option in self.race_categories[race_category]:
+                temp = self.get_race_template(race_option)
+                assert isinstance(temp, RaceTemplate)
+                option_entry = RaceClassOptionEntry(race_option, temp.display_name,
+                                                    temp.subrace_label, list(temp.subraces.keys()), )
+                options_inst.add_race_option(race_category, option_entry)
+
+        for class_category in self.class_categories.keys():
+            for class_option in self.class_categories[class_category]:
+                temp = self.get_class_template(class_option)
+                assert isinstance(temp, ClassTemplate)
+                option_entry = RaceClassOptionEntry(class_option, temp.display_name,
+                                                    arg_one_label=temp.subclass_primary_label,
+                                                    arg_one_options=list(temp.subclasses_primary.keys()),
+                                                    arg_two_label=temp.subclass_secondary_label,
+                                                    arg_two_options=list(temp.subclasses_secondary.keys()))
+                options_inst.add_class_option(class_category, option_entry)
+
+        for roll_option, roll_tup in ROLL_METHODS.items():
+            category = roll_tup[3]
+            display = roll_tup[0]
+            roll_entry = OptionMenuEntry(roll_option, display)
+            options_inst.add_roll_option(category, roll_entry)
+
+        for i in range(1, 21):
+            entry = OptionMenuEntry(str(i), str(i))
+            options_inst.hd_options.append(entry)
+
+        options_inst.hd_size_options.append(OptionMenuEntry('default', 'Default'))
+        for size in VALID_HD_SIZES:
+            entry = OptionMenuEntry(str(size), 'd' + str(size))
+            options_inst.hd_size_options.append(entry)
+
+        return options_inst
+
+    class SpellCasterProfile:
+        def __init__(self):
+            self.int_name = ''
+            self.hd_per_casting_level = 1
+            self.cantrips_per_level = 'none'
+            self.spells_known_modifier = 0
+            # spell_lists = {spell_list : weight}
+            self.spell_lists = {}
+            self.free_spell_lists = []
+            self.ready_style = ''
+            self.casting_stat = ''
+            self.fixed_spells_known_by_level = None
+            # For now, only the standard slots table is supported
+            # spell_slots_table[caster_level][spell_level]
+            self.spell_slots_table = None
+            self.tags = []
+
+        def __repr__(self):
+            return '<SpellCaster Profile: {}>'.format(self.int_name)
+
+        # Give copies so the original profile doesn't get messed up
+        def get_spell_lists(self):
+            out_dict = {}
+            for k, v in self.spell_lists:
+                out_dict[k] = v
+            return out_dict
+
+        def get_tags(self):
+            out_tags = []
+            for tag in self.tags:
+                out_tags.append(tag)
+            return out_tags
+
+        def get_free_spell_lists(self):
+            return self.spell_lists[:]
+
+SPELLLISTS_FILE = \
+    pkg.resource_filename(__name__, 'data/spelllists.csv')

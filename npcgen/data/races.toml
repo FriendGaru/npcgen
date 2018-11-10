@@ -41,52 +41,52 @@ attribute_bonuses = {con = 1, str = 2}
     [dragonborn.subraces.black]
 
         [dragonborn.subraces.black.features]
-        dragonborn_feature = "black"
+        dragonborn_feature = {lineage = "black"}
         
     [dragonborn.subraces.blue]
 
         [dragonborn.subraces.blue.features]
-        dragonborn_feature = "blue"
+        dragonborn_feature = {lineage = "blue"}
 
     [dragonborn.subraces.brass]
 
         [dragonborn.subraces.brass.features]
-        dragonborn_feature = "brass"
+        dragonborn_feature = {lineage = "brass"}
     
     [dragonborn.subraces.bronze]
 
         [dragonborn.subraces.bronze.features]
-        dragonborn_feature = "bronze"
+        dragonborn_feature = {lineage ="bronze"}
         
     [dragonborn.subraces.copper]
 
         [dragonborn.subraces.copper.features]
-        dragonborn_feature = "copper"
+        dragonborn_feature = {lineage = "copper"}
         
     [dragonborn.subraces.gold]
 
         [dragonborn.subraces.gold.features]
-        dragonborn_feature = "gold"
+        dragonborn_feature = {lineage = "gold"}
         
     [dragonborn.subraces.green]
 
         [dragonborn.subraces.green.features]
-        dragonborn_feature = "green"
+        dragonborn_feature = {lineage = "green"}
         
     [dragonborn.subraces.red]
 
         [dragonborn.subraces.red.features]
-        dragonborn_feature = "red"
+        dragonborn_feature = {lineage = "red"}
         
     [dragonborn.subraces.silver]
 
         [dragonborn.subraces.silver.features]
-        dragonborn_feature = "silver"
+        dragonborn_feature = {lineage = "silver"}
         
     [dragonborn.subraces.white]
 
         [dragonborn.subraces.white.features]
-        dragonborn_feature = "white"
+        dragonborn_feature = {lineage = "white"}
 
 [dwarf]
 categories = ["PC"]
@@ -157,7 +157,7 @@ attribute_bonuses = {int = 2}
     [gnome.subraces.rock]
     traits = ["darkvision", "artificers_lore"]
     attribute_bonuses = {con = 1}
-    features = {tinker = true }
+    features = {tinker = {} }
 
 
 [half-elf]

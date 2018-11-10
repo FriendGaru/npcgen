@@ -139,6 +139,14 @@ class NPCGenerator:
         trait_feature_instance = FeatureTrait(character, trait_template)
         return trait_feature_instance
 
+    @staticmethod
+    def give_feature(character: 'Character', feature_string, feature_args_dict):
+        debug_print('Feature: {} args: {}'
+                    .format(feature_string, str(feature_args_dict)), 3)
+        feature = build_character_feature(character, feature_string, feature_args_dict)
+        feature.give_to_owner()
+        feature.give_sub_features_to_owner()
+
     # Applies everything EXCEPT features/traits
     @staticmethod
     def apply_race_template(character: 'Character', race_template: 'RaceTemplate', subrace_template=None):
@@ -509,29 +517,21 @@ class NPCGenerator:
             trait_feature.give_to_owner()
 
         # Now time for features
-        all_features = {}
         if race_template.features:
             for k, v in race_template.features.items():
-                all_features[k] = v
+                self.give_feature(new_character, k, v)
         if class_template.features:
             for k, v in class_template.features.items():
-                all_features[k] = v
+                self.give_feature(new_character, k, v)
         if subrace_template and subrace_template.features:
             for k, v in subrace_template.features.items():
-                all_features[k] = v
+                self.give_feature(new_character, k, v)
         if subclass_primary_template and subclass_primary_template.features:
             for k, v in subclass_primary_template.features.items():
-                all_features[k] = v
+                self.give_feature(new_character, k, v)
         if subclass_secondary_template and subclass_secondary_template.features:
             for k, v in subclass_secondary_template.features.items():
-                all_features[k] = v
-
-        for feature_name, feature_args in all_features.items():
-            debug_print('Feature: {} args: {}'
-                        .format(feature_name, str(feature_args)), 3)
-            feature_instance = build_character_feature(new_character, feature_name, feature_args)
-            feature_instance.give_to_owner()
-            feature_instance.give_sub_features_to_owner()
+                self.give_feature(new_character, k, v)
 
         # Do the pre-attribute rolling first pass of features
         debug_print('Begin features first_pass', 2)
@@ -1488,9 +1488,14 @@ class StatBlock:
         return self.__dict__
 
 
-def build_character_feature(character: 'Character', feature_string, feature_arg=None):
+def build_character_feature(character: 'Character', feature_string, feature_arg_dict=None):
+    # For the rare case you want to give a feature multiple times in the same template, you can append '__something'
+    # to the end of it. The part after '__' will get dropped when looking up the feature
+    feature_string = feature_string.split('__')[0]
     feature_class = FEATURE_CLASS_REFERENCE[feature_string]
-    feature_instance = feature_class(character, feature_arg=feature_arg)
+    if not feature_arg_dict:
+        feature_arg_dict = {}
+    feature_instance = feature_class(character, feature_arg_dict)
     return feature_instance
 
 
@@ -1519,8 +1524,10 @@ class CharacterFeature:
     def __repr__(self):
         return '<Character Feature: {}>'.format(self.int_name)
 
-    def add_sub_feature(self, sub_feature_string, feature_arg=None):
-        sub_feature = build_character_feature(self.owner, sub_feature_string, feature_arg=feature_arg)
+    def add_sub_feature(self, sub_feature_string, feature_args_dict=None):
+        if not feature_args_dict:
+            feature_args_dict = {}
+        sub_feature = build_character_feature(self.owner, sub_feature_string, feature_arg_dict=feature_args_dict)
         self.sub_features.append(sub_feature)
 
     def add_sub_trait(self, trait_name):
