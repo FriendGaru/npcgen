@@ -450,6 +450,7 @@ class ContentSource:
 
     def get_content(self, content_type: 'ContentType', content_name: str):
         content_dict = self.content_type_map[content_type]
+        content_name = content_name.lower()
 
         if content_name in content_dict:
             return content_dict[content_name]
@@ -760,8 +761,8 @@ class Spell:
 
 
 class SpellList:
-    def __init__(self):
-        self.weight = DEFAULT_SPELL_LIST_WEIGHT
+    def __init__(self, weight=DEFAULT_SPELL_LIST_WEIGHT):
+        self.weight = weight
         self.name = ''
         self.spells = {}
 

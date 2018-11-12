@@ -16,59 +16,49 @@ weapons_loadout_pool = "mage"
     ready_style = 'prepared'
     cantrips_progression = 'cleric_wizard'
     tags = ['spellbook']
-
         [[arcanist.features.spell_casting.spell_lists]]
         weight = 2
         fixed_include = ["mage armor","shield"]
-
         [[arcanist.features.spell_casting.spell_lists]]
         req_classes = ['wizard']
 
     [arcanist.subclasses_primary.abjurer]
     display_name = "Abjurer"
-
         [arcanist.subclasses_primary.abjurer.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['abjuration']}
 
     [arcanist.subclasses_primary.conjurer]
     display_name = "Conjurer"
-
         [arcanist.subclasses_primary.conjurer.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['conjuration']}
 
     [arcanist.subclasses_primary.diviner]
     display_name = "Diviner"
-
         [arcanist.subclasses_primary.diviner.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['divination']}
 
     [arcanist.subclasses_primary.enchanter]
     display_name = "Enchanter"
-
         [arcanist.subclasses_primary.enchanter.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['enchantment']}
 
     [arcanist.subclasses_primary.evoker]
     display_name = "Evoker"
-
         [arcanist.subclasses_primary.evoker.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['evocation']}
 
     [arcanist.subclasses_primary.illusionist]
     display_name = "Illusionist"
-
         [arcanist.subclasses_primary.illusionist.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['illusion']}
 
     [arcanist.subclasses_primary.necromancer]
     display_name = "Necromancer"
-
         [arcanist.subclasses_primary.necromancer.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['necromancy']}
 
     [arcanist.subclasses_primary.transmuter]
     display_name = "Transmuter"
-
         [arcanist.subclasses_primary.transmuter.features]
             add_spell_list_by_dict = {weight = 2, req_classes = ['wizard'], req_schools = ['transmutation']}
 
@@ -139,68 +129,49 @@ subclass_primary_label = "Domain"
     casting_stat = 'wis'
     ready_style = 'prepared'
     cantrips_progression = 'cleric_wizard'
-
         [[cleric.features.spell_casting.spell_lists]]
         weight = 3
         fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
-
         [[cleric.features.spell_casting.spell_lists]]
         req_classes = ['cleric']
 
     [cleric.subclasses_primary.arcana]
-
         [cleric.subclasses_primary.arcana.features]
         add_free_spells = {spells = ["detect magic","magic missile","magic weapon","nystul's magic aura","dispel magic","magic circle","arcane eye","leomund's secret chest","planar binding","teleportation circle"]}
 
     [cleric.subclasses_primary.forge]
-
         [cleric.subclasses_primary.forge.features]
             add_free_spells = {spells = ["identify","searing smite","heat metal","magic weapon","elemental weapon","protection from energy","fabricate","wall of fire","animate objects","creation"]}
 
     [cleric.subclasses_primary.grave]
-
         [cleric.subclasses_primary.grave.features]
             add_free_spells = {spells = ["bane","false life","gentle repose","ray of enfeeblement","revivify","vampiric touch","blight","death ward","antilife shell","raise dead"]}
 
-
     [cleric.subclasses_primary.knowledge]
-
         [cleric.subclasses_primary.knowledge.features]
         add_free_spells = {spells = ["command","identify","augury","suggestion","nondetection","speak with dead","arcane eye","confusion","legend lore","scrying"]}
 
-
     [cleric.subclasses_primary.life]
-
         [cleric.subclasses_primary.life.features]
             add_free_spells = {spells = ["bless","cure wounds","lesser restoration","spiritual weapon","beacon of hope","revivify","death ward","guardian of faith","mass cure wounds","raise dead"]}
 
-
     [cleric.subclasses_primary.light]
-
         [cleric.subclasses_primary.light.features]
             add_free_spells = {spells = ["burning hands","faerie fire","flaming sphere","scorching ray","daylight","fireball","guardian of faith","wall of fire","flame strike","scrying"]}
 
-
     [cleric.subclasses_primary.nature]
-
         [cleric.subclasses_primary.nature.features]
             add_free_spells = {spells = ["animal friendship","speak with animals","barkskin","spike growth","plant growth","wind wall","dominate beast","grasping vine","insect plague","tree stride"]}
 
-
     [cleric.subclasses_primary.tempest]
-
         [cleric.subclasses_primary.tempest.features]
             add_free_spells = {spells = ["fog cloud","thunderwave","gust of wind","shatter","call lightning","sleet storm","control water","ice storm","destructive wave","insect plague"]}
 
-
     [cleric.subclasses_primary.trickery]
-
         [cleric.subclasses_primary.trickery.features]
             add_free_spells = {spells = ["charm person","disguise self","mirror image","pass without trace","blink","dispel magic","dimension door","polymorph","dominate person","modify memory"]}
 
-
     [cleric.subclasses_primary.war]
-
         [cleric.subclasses_primary.war.features]
             add_free_spells = {spells = ["divine favor","shield of faith","magic weapon","spiritual weapon","crusader's mantle","spirit guardians","freedom of movement","stoneskin","flame strike","hold monster"]}
 
@@ -222,11 +193,9 @@ weapons_loadout_pool = "mage"
     casting_stat = 'wis'
     ready_style = 'prepared'
     cantrips_progression = 'bard_druid'
-
         [[druid.features.spell_casting.spell_lists]]
         weight = 3
         fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
-
         [[druid.features.spell_casting.spell_lists]]
         req_classes = ['druid']
 
@@ -263,16 +232,68 @@ weapons_loadout_pool = "soldier"
 subclass_primary_label = "Oath"
 
     [paladin.features.spell_casting]
-    casting_stat = 'wis'
+    casting_stat = 'cha'
     ready_style = 'prepared'
     hd_per_casting_level = 2
-
             [[paladin.features.spell_casting.spell_lists]]
             fixed_include = ['cure wounds','healing word','mass cure wounds','heal']
-
             [[paladin.features.spell_casting.spell_lists]]
             req_classes = ['paladin']
 
+    [paladin.subclasses_primary.ancients]
+    display_name_suffix = "of the Ancients"
+        [paladin.subclasses_primary.ancients.features.add_free_spells_by_hd]
+        3 = 	["ensnaring strike", "speak with animals"]
+        5 =	    ["moonbeam", "misty step"]
+        9 =	    ["plant growth", "protection from energy"]
+        13 =	["ice storm", "stoneskin"]
+        17 =	["commune with nature", "tree stride"]
+
+    [paladin.subclasses_primary.conquest]
+    display_name_suffix = "of Conquest"
+        [paladin.subclasses_primary.conquest.features.add_free_spells_by_hd]
+        3 = 	["armor of Agathys", "command"]
+        5 =	    ["hold person", "spiritual weapon"]
+        9 =	    ["bestow curse", "fear"]
+        13 =	["dominate beast", "stoneskin"]
+        17 =	["cloudkill", "dominate person"]
+
+
+    [paladin.subclasses_primary.crown]
+    display_name_suffix = "of the Crown"
+        [paladin.subclasses_primary.crown.features.add_free_spells_by_hd]
+        3 = 	["command", "compelled duel"]
+        5 =	    ["warding bond", "zone of truth"]
+        9 =	    ["aura of vitality", "spirit guardians"]
+        13 =	["banishment", "guardian of faith"]
+        17 =	["circle of power", "geas"]
+
+    [paladin.subclasses_primary.devotion]
+    display_name_suffix = "of Devotion"
+        [paladin.subclasses_primary.devotion.features.add_free_spells_by_hd]
+        3 = 	["protection from evil and good", "sanctuary"]
+        5 =	    ["lesser restoration", "zone of truth"]
+        9 =	    ["beacon of hope", "dispel magic"]
+        13 =	["freedom of movement", "guardian of faith"]
+        17 =	["commune", "flame strike"]
+
+    [paladin.subclasses_primary.redemption]
+    display_name_suffix = "of Redemption"
+        [paladin.subclasses_primary.redemption.features.add_free_spells_by_hd]
+        3 = 	["sanctuary", "sleep"]
+        5 =	    ["calm emotions", "hold person"]
+        9 =	    ["counterspell", "hypnotic pattern"]
+        13 =	["Otiluke's resilient sphere", "stoneskin"]
+        17 =	["hold monster", "wall of force"]
+
+    [paladin.subclasses_primary.vengeance]
+    display_name_suffix = "of Vengeance"
+        [paladin.subclasses_primary.vengeance.features.add_free_spells_by_hd]
+        3 = 	["bane", "hunter's mark"]
+        5 =	    ["hold person", "misty step"]
+        9 =	    ["haste", "protection from energy"]
+        13 =	["banishment", "dimension door"]
+        17 =	["hold monster", "scrying"]
 
 [priest]
 armors_loadout_pool = "mage"

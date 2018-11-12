@@ -136,7 +136,7 @@ class NPCGenerator:
 
     def build_trait(self, character: 'Character', trait_name):
         trait_template = self.content_source.get_trait_template(trait_name)
-        trait_feature_instance = FeatureTrait(character, trait_template)
+        trait_feature_instance = FeatureTrait(character, {'trait_template': trait_template})
         return trait_feature_instance
 
     @staticmethod
@@ -535,7 +535,7 @@ class NPCGenerator:
 
         # Do the pre-attribute rolling first pass of features
         debug_print('Begin features first_pass', 2)
-        for feature in new_character.character_features.values():
+        for feature in new_character.character_features:
             assert isinstance(feature, CharacterFeature)
             feature.first_pass()
 
@@ -575,11 +575,11 @@ class NPCGenerator:
 
         # Second and third passes for CharacterFeatures
         debug_print('Begin features second_pass', 2)
-        for feature in new_character.character_features.values():
+        for feature in new_character.character_features:
             assert isinstance(feature, CharacterFeature)
             feature.second_pass()
         debug_print('Begin features third_pass', 2)
-        for feature in new_character.character_features.values():
+        for feature in new_character.character_features:
             assert isinstance(feature, CharacterFeature)
             feature.third_pass()
 
@@ -595,13 +595,13 @@ class NPCGenerator:
 
         # Fourth pass
         debug_print('Begin features fourth_pass', 2)
-        for feature in new_character.character_features.values():
+        for feature in new_character.character_features:
             assert isinstance(feature, CharacterFeature)
             feature.fourth_pass()
 
         # cr factor and stat block build time
         debug_print('Begin features cr/statblock build pass', 2)
-        for feature in new_character.character_features.values():
+        for feature in new_character.character_features:
             assert isinstance(feature, CharacterFeature)
             feature.build_cr_factors_and_stat_block_entries()
 
@@ -659,7 +659,7 @@ class Character:
         self.has_shield = False
 
         # Using an ordered dict to maintain consistency in how traits are displayed
-        self.character_features = collections.OrderedDict()
+        self.character_features = []
 
         self.damage_vulnerabilities = []
         self.damage_resistances = []
@@ -947,7 +947,7 @@ class Character:
             for weapon_cr_factor in weapon.get_cr_factors():
                 cr_factors_all.append(weapon_cr_factor)
         # From features
-        for character_feature in self.character_features.values():
+        for character_feature in self.character_features:
             for feature_cr_factor in character_feature.get_cr_factors():
                 cr_factors_all.append(feature_cr_factor)
 
@@ -1016,12 +1016,6 @@ class Character:
             off_ability_rating_shift = int(float(effective_best_ability_dc - expected_dc) / 2)
             offensive_ability_rating = starting_offensive_ability_rating + off_ability_rating_shift
 
-        # if offensive_attack_rating >= 0 and offensive_ability_rating >= 0:
-        #     combined_attack_rating = offensive_attack_rating + offensive_ability_rating
-        #     offensive_rating = combined_attack_rating // 2 + combined_attack_rating % 2
-        # else:
-        #     offensive_rating = max(offensive_attack_rating, offensive_ability_rating)
-
         # Take the better of attack and ability ratings
         # If the difference between the two is within 2, add one more to the rating because that means it well rounded
         offensive_rating = max(offensive_attack_rating, offensive_ability_rating)
@@ -1056,8 +1050,11 @@ class Character:
         senses_string += 'passive Perception {}'.format(passive_perception)
         return senses_string
 
-    def add_character_feature(self, character_feature: 'CharacterFeature'):
-        self.character_features[character_feature.int_name] = character_feature
+    def add_feature(self, character_feature: 'CharacterFeature'):
+        self.character_features.append(character_feature)
+
+    def get_features(self):
+        return self.character_features
 
     def add_language(self, language):
         if language not in self.languages:
@@ -1185,7 +1182,7 @@ class Character:
 
     def get_all_stat_block_entries(self):
         all_entries = []
-        for feature in self.character_features.values():
+        for feature in self.character_features:
             assert isinstance(feature, CharacterFeature)
             feature_entries = feature.get_stat_block_entries()
             for stat_block_entry in feature_entries:
@@ -1505,13 +1502,13 @@ def build_character_feature(character: 'Character', feature_string, feature_arg_
 # Character features can access the reference to its owner's seed for randomization
 # THey can also use the owners reference to NPCGenerator if they needs to access the generator's data
 class CharacterFeature:
-    # Randomization and initialization stuff that is not dependent on character stats should happen duing the features's
-    # __init__ method.
+    # Feature implementations should override __init__ to declare attributes
+    # Sub features should also be declared in the __init__ function, otherwise they won't be given to the character
+    # Instead they should override initialize()
     # At this point, the only reliable piece of info about the character is how many hd it will have
     # If a character feature has associated subfeatures, they MUST be generated during __init__
     # This ensures that sub features will get the chance to do everything they want to do
-    def __init__(self, owner: 'Character'):
-        self.int_name = 'dummy'
+    def __init__(self, owner: 'Character', args_dict=None):
         self.owner = owner
         self.content_source = self.owner.content_source
         assert isinstance(self.content_source, ContentSource), \
@@ -1522,7 +1519,7 @@ class CharacterFeature:
         self.sub_features = []
 
     def __repr__(self):
-        return '<Character Feature: {}>'.format(self.int_name)
+        return '<Character Feature: {}>'.format(self.__class__.__name__)
 
     def add_sub_feature(self, sub_feature_string, feature_args_dict=None):
         if not feature_args_dict:
@@ -1542,11 +1539,12 @@ class CharacterFeature:
     # This could definitely be moved into the __init__ function, but I figured making it explicit would be more
     # easily understood
     def give_to_owner(self):
-        self.owner.add_character_feature(self)
+        self.owner.add_feature(self)
 
     def give_sub_features_to_owner(self):
         for sub_feature in self.sub_features:
             sub_feature.give_to_owner()
+
 
     # first_pass() is called just after race/class templates have been applied,
     # before attributes are rolled or ASI applied
@@ -1618,8 +1616,9 @@ class CharacterFeature:
 # FeatureTraits MUST be built from a TraitTemplate and cannot take any additional arguments
 # Other than that, they can be treated like a regular CharacterFeature after instantiation
 class FeatureTrait(CharacterFeature):
-    def __init__(self, owner, trait_template: 'TraitTemplate'):
+    def __init__(self, owner, args_dict):
         super().__init__(owner)
+        trait_template = args_dict.get('trait_template')
         self.int_name = trait_template.int_name
         self.title = trait_template.display_name
         self.subtitle = trait_template.subtitle

@@ -6,13 +6,12 @@ from .npcgen_main import CharacterFeature, Character, StatBlockEntry, increment_
 
 
 class FeatureMultiattack(CharacterFeature):
-    def __init__(self, owner, feature_args_dict):
+    def __init__(self, owner, args_dict):
         super().__init__(owner)
-        self.int_name = 'multiattack'
 
-        self.multiattack_type = feature_args_dict.get('multiattack_type', 'single')
+        self.multiattack_type = args_dict.get('multiattack_type', 'single')
         self.attacks = 1
-        char_hd = owner.get_hd()
+        char_hd = self.owner.get_hd()
         if self.multiattack_type == 'fighter':
             self.attacks = increment_from_hd(1, (5, 11, 20), char_hd)
         elif self.multiattack_type == 'single':
@@ -108,33 +107,32 @@ WARLOCK_SLOT_LEVEL = (
 # Spellcasting is super messy and confusing. Not the least because of all the VERY similar sounding terms used.
 # For our spellcasting feature to be robust, it needs to be able to take into account quite a lot of things.
 class FeatureSpellcasting(CharacterFeature):
-    def __init__(self, owner, feature_args_dict):
+    def __init__(self, owner, args_dict):
         super().__init__(owner)
-        self.int_name = 'spellcasting'
-        assert isinstance(feature_args_dict, dict)
+        assert isinstance(args_dict, dict)
 
         # Characters generally either have spells 'prepared' or 'known'
-        self.ready_style = feature_args_dict.get('ready_style', 'prepared')
+        self.ready_style = args_dict.get('ready_style', 'prepared')
         # Which stat is used for casting
-        self.casting_stat = feature_args_dict.get('casting_stat', 'int')
-        self.hd_per_casting_level = int(feature_args_dict.get('hd_per_casting_level', 1))
-        self.cantrips_progression = CASTER_CANTRIPS_KNOWN[feature_args_dict.get('cantrips_progression', 'none')]
-        self.fixed_spells_known_by_level = feature_args_dict.get('fixed_spells_known_by_level', None)
+        self.casting_stat = args_dict.get('casting_stat', 'int')
+        self.hd_per_casting_level = int(args_dict.get('hd_per_casting_level', 1))
+        self.cantrips_progression = CASTER_CANTRIPS_KNOWN[args_dict.get('cantrips_progression', 'none')]
+        self.fixed_spells_known_by_level = args_dict.get('fixed_spells_known_by_level', None)
         # Currently no support for alternative spell slots tables
         self.spell_slots_table = SPELL_SLOTS_TABLE
-        self.spells_known_modifier = int(feature_args_dict.get('spells_known_modifier', 0))
+        self.spells_known_modifier = int(args_dict.get('spells_known_modifier', 0))
 
         # These values are alterable, so we need COPIES from the profile
         self.spell_lists = []
-        for spell_list_dict in feature_args_dict.get('spell_lists', []):
+        for spell_list_dict in args_dict.get('spell_lists', []):
             self.build_and_add_spell_list(spell_list_dict)
-        self.tags = feature_args_dict.get('tags', [])[:]
+        self.tags = args_dict.get('tags', [])[:]
 
         self.bonus_cantrips = 0
 
         # We need a set of free spells so we know to discard those picks when it comes time to choose spells
         self.free_spells = set()
-        for spell_list in feature_args_dict.get('free_spell_lists', []):
+        for spell_list in args_dict.get('free_spell_lists', []):
             self.add_free_spell_list(spell_list)
 
         # A list of lists, index corresponds to the list of spells know for each level, 0 for cantrips
@@ -297,7 +295,7 @@ class FeatureSpellcasting(CharacterFeature):
     # Thus characters are biased toward making more low level picks and picks of levels they have fewer of
     # Note that any free spells the character gets will NOT be reflected in these picks
     def select_readied_spells(self):
-        rnd_instance = random.Random(self.seed + self.int_name + 'spellpicking')
+        rnd_instance = random.Random(self.seed + 'spellpicking')
         char_hd = self.owner.get_hd()
         caster_level = self.get_caster_level()
 
@@ -310,6 +308,8 @@ class FeatureSpellcasting(CharacterFeature):
         else:
             spells_readied_remaining = caster_level + self.owner.get_stat(
                 self.casting_stat + '_mod') + self.spells_known_modifier
+        if spells_readied_remaining < 1:
+            spells_readied_remaining = 1
 
         max_spell_level = self.get_max_spell_level()
 
@@ -357,7 +357,7 @@ class FeatureSpellcasting(CharacterFeature):
     # Every level they get chance to get an extra spell pick, for variety's sake,
     # bonus_spell_chance is percentage cvahnce of getting that extra spell
     def set_spellbook(self, starting_spells=4, spells_per_level=2, bonus_spell_chance=10):
-        rnd_instance = random.Random(self.seed + self.int_name + 'spellbook')
+        rnd_instance = random.Random(self.seed + 'spellbook')
         spellbook = []
         total_spells = [-1, starting_spells, 0, 0, 0, 0, 0, 0, 0, 0, ]
         for character_level in range(0, self.owner.get_hd()):
@@ -406,10 +406,10 @@ class FeatureSpellcasting(CharacterFeature):
                .format(NUM_TO_ORDINAL[caster_level],
                        ATTRIBUTES_ABBREVIATION_TO_FULL_WORD[self.casting_stat],
                        self.owner.get_stat(self.casting_stat + '_dc'),
-                       num_plusser(self.owner.get_stat(self.casting_stat + '_attack')), self.ready_style) + '\n'
+                       num_plusser(self.owner.get_stat(self.casting_stat + '_attack')), self.ready_style)
         # Cantrips
         if len(self.spells_readied[0]) > 0:
-            text += 'Cantrips (at-will): ' + ', '.join(self.spells_readied[0])
+            text += '\nCantrips (at-will): ' + ', '.join(self.spells_readied[0])
         for i in range(1, 10):
             if len(self.spells_readied[i]) > 0 and self.spell_slots_table[caster_level][i] > 0:
                 # Pluralize 'slot' or not
@@ -581,10 +581,9 @@ FEATURE_TINKER_OPTIONS = {
 
 
 class FeatureTinker(CharacterFeature):
-    def __init__(self, owner, feature_args_dict=None):
+    def __init__(self, owner, args_dict=None):
         super().__init__(owner)
-        self.int_name = 'tinker'
-        rnd_instance = random.Random(self.seed + self.int_name + 'init')
+        rnd_instance = random.Random(self.seed + 'init')
         self.choice = rnd_instance.choice(list(FEATURE_TINKER_OPTIONS.keys()))
 
     def first_pass(self):
@@ -618,10 +617,9 @@ FEATURE_DRAGONBORN_CHART = {
 
 
 class FeatureDragonborn(CharacterFeature):
-    def __init__(self, owner, feature_args_dict):
+    def __init__(self, owner, args_dict):
         super().__init__(owner)
-        self.int_name = 'dragonborn_feature'
-        lineage = feature_args_dict['lineage']
+        lineage = args_dict['lineage']
         if lineage == 'random':
             self.lineage_type = random.Random(self.seed + 'dragonbornrandom')\
                 .choice(sorted(list(FEATURE_DRAGONBORN_CHART.keys())))
@@ -654,7 +652,7 @@ MARTIAL_ARTS_DAMAGE = (
 # to allow dex to be used for attacks
 # I think it would only matter for sneak attack, which I'm not going to implement precisely anyways
 class FeatureMartialArts(CharacterFeature):
-    def __init__(self, owner, feature_args_dict=None):
+    def __init__(self, owner, args_dict=None):
         super().__init__(owner)
         self.upgrade_damage_die = MARTIAL_ARTS_DAMAGE[self.owner.get_hd()]
 
@@ -703,7 +701,6 @@ class FeatureClericDomain(CharacterFeature):
             self.domain_name = random.Random(self.seed + 'clericdomain').choice(CLERIC_DOMAINS)
         else:
             self.domain_name = domain_arg
-        self.int_name = 'domain_' + self.domain_name
         # This works because domain spell lists follow this naming convention
         # If that convention were broken, would need to re do this
         self.domain_spell_list = 'domain_' + self.domain_name
@@ -735,7 +732,6 @@ class FeaturePaladinOath(CharacterFeature):
             self.oath_name = random.Random(self.seed + 'paladinoath').choice(PALADIN_OATHS)
         else:
             self.oath_name = oath_arg
-        self.int_name = 'oath_' + self.oath_name
         # This works because oath spell lists follow this naming convention
         # If that convention were broken, would need to re do this
         self.oath_spell_list = 'oath_' + self.oath_name
@@ -759,45 +755,46 @@ class FeaturePaladinOath(CharacterFeature):
             "Yay oath."))
 
 
-# Takes a list of spells
+# Takes a list of spells and gives them to the character's spellcasting feature
 class FeatureAddFreeSpells(CharacterFeature):
-    def __init__(self, owner, feature_args_dict):
+    def __init__(self, owner, args_dict):
         super().__init__(owner)
-        self.free_spells = feature_args_dict['spells']
+        self.free_spells = args_dict['spells']
 
     def first_pass(self):
-        for feature in self.owner.character_features.values():
+        for feature in self.owner.character_features:
             if isinstance(feature, FeatureSpellcasting):
                 feature.add_free_spells(self.free_spells)
-
-
-# Takes a dictionary {min_hd : [spells, ...], ...}
-# Gives those free spells if the character's hd is high enough
-class FeatureAddFreeSpellsByLevel(CharacterFeature):
-    def __init__(self, owner, feature_args_dict):
-        super().__init__(owner)
-        self.free_spells_dict = feature_args_dict['spells']
-
-    def first_pass(self):
-        char_hd = self.owner.get_hd()
-        for feature in self.owner.character_features.values():
-            if isinstance(feature, FeatureSpellcasting):
-                for k, v in self.free_spells_dict:
-                    if char_hd >= k:
-                        feature.add_free_spells(v)
 
 
 # Takes a dict which can be given to the content source's build_spell_list() method
 # Add's that spell list to the Character
 class FeatureAddSpellListByDict(CharacterFeature):
-    def __init__(self, owner, feature_args_dict):
+    def __init__(self, owner, args_dict):
         super().__init__(owner)
-        self.spell_list_dict = feature_args_dict
+        self.spell_list_dict = args_dict
 
     def first_pass(self):
-        for feature in self.owner.character_features.values():
+        for feature in self.owner.character_features:
             if isinstance(feature, FeatureSpellcasting):
                 feature.build_and_add_spell_list(self.spell_list_dict)
+
+
+# Takes a dictionary of {minHD : [spell, spell, ...], minHD2: [spell, spell, ...], ...}
+# Gives character spells for each minHD they meet
+class FeatureAddFreeSpellsByHD(CharacterFeature):
+    def __init__(self, owner, args_dict):
+        super().__init__(owner)
+        self.free_spells = []
+        for k, v in args_dict.items():
+            if owner.get_hd() >= int(k):
+                self.free_spells.extend(v)
+
+    def first_pass(self):
+        for feature in self.owner.get_features():
+            if isinstance(feature, FeatureSpellcasting):
+                feature.add_free_spells(self.free_spells)
+
 
 
 FEATURE_CLASS_REFERENCE = {
@@ -809,6 +806,6 @@ FEATURE_CLASS_REFERENCE = {
     'cleric_domain': FeatureClericDomain,
     'paladin_oath': FeaturePaladinOath,
     'add_free_spells': FeatureAddFreeSpells,
-    'add_free_spells_by_level': FeatureAddFreeSpellsByLevel,
+    'add_free_spells_by_hd': FeatureAddFreeSpellsByHD,
     'add_spell_list_by_dict': FeatureAddSpellListByDict,
 }
