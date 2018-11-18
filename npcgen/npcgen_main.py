@@ -313,51 +313,60 @@ class NPCGenerator:
         is_valid = True
         clean_dict = {}
 
-        if 'race_choice' in request_dict.keys() \
-                and request_dict['race_choice'] in self.content_source.valid_user_race_choices():
-            clean_dict['race_choice'] = request_dict['race_choice']
-            race_template = self.content_source.get_race_template(request_dict['race_choice'])
-            if 'subrace_choice' in request_dict.keys():
-                if race_template.subraces:
-                    if request_dict['subrace_choice'] == 'random':
-                        clean_dict['subrace_choice'] = 'random'
-                    elif request_dict['subrace_choice'] in race_template.subraces.keys():
-                        clean_dict['subrace_choice'] = request_dict['subrace_choice']
-                    else:
-                        is_valid = False
-                else:
-                    is_valid = False
-        else:
+        try:
+            assert 'race_choice' in request_dict.keys()
+            race_choice = request_dict['race_choice']
+            assert (race_choice in self.content_source.race_templates.keys()) \
+                   or (race_choice.replace('random_', '') in self.content_source.race_categories.keys()) \
+                   or (race_choice == 'random_race')
+            # Made it, yay!
+            clean_dict['race_choice'] = race_choice
+        except (AssertionError, KeyError, AttributeError):
             is_valid = False
             clean_dict['race_choice'] = self.get_random_option('race')
 
-        if 'class_choice' in request_dict.keys() \
-                and request_dict['class_choice'] in self.content_source.valid_user_class_choices():
-            clean_dict['class_choice'] = request_dict['class_choice']
-            class_template = self.content_source.get_class_template(request_dict['class_choice'])
-            if 'subclass_primary_choice' in request_dict.keys():
-                if class_template.subclasses_primary:
-                    if request_dict['subclass_primary_choice'] == 'random':
-                        clean_dict['subclass_primary_choice'] = 'random'
-                    elif request_dict['subclass_primary_choice'] in class_template.subclasses_primary.keys():
-                        clean_dict['subclass_primary_choice'] = request_dict['subclass_primary_choice']
-                    else:
-                        is_valid = False
-                else:
-                    is_valid = False
-            if 'subclass_secondary_choice' in request_dict.keys():
-                if class_template.subclasses_secondary:
-                    if request_dict['subclass_secondary_choice'] == 'random':
-                        clean_dict['subclass_secondary_choice'] = 'random'
-                    elif request_dict['subclass_secondary_choice'] in class_template.subclasses_secondary.keys():
-                        clean_dict['subclass_secondary_choice'] = request_dict['subclass_secondary_choice']
-                    else:
-                        is_valid = False
-                else:
-                    is_valid = False
-        else:
+        if 'subrace_choice' in request_dict.keys():
+            try:
+                race_choice = request_dict['race_choice']
+                race_template = self.content_source.get_race_template(race_choice)
+                subrace_choice = request_dict['subrace_choice']
+                assert (subrace_choice == 'random_subrace') or subrace_choice in race_template.subraces.keys()
+                clean_dict['subrace_choice'] = subrace_choice
+            except (AssertionError, KeyError, AttributeError):
+                is_valid = False
+
+        try:
+            assert 'class_choice' in request_dict.keys()
+            class_choice = request_dict['class_choice']
+            assert (class_choice in self.content_source.class_templates.keys()) \
+                   or (class_choice.replace('random_', '') in self.content_source.class_categories.keys()) \
+                   or (class_choice == 'random_class')
+            # Made it, yay!
+            clean_dict['class_choice'] = class_choice
+        except (AssertionError, KeyError, AttributeError):
             is_valid = False
             clean_dict['class_choice'] = self.get_random_option('class')
+
+        if 'subclass_primary_choice' in request_dict.keys():
+            try:
+                class_choice = request_dict['class_choice']
+                class_template = self.content_source.get_class_template(class_choice)
+                subclass_choice = request_dict['subclass_primary_choice']
+                assert (subclass_choice == 'random_subclass_primary') \
+                       or subclass_choice in class_template.subclasses_primary.keys()
+                clean_dict['subclass_primary_choice'] = subclass_choice
+            except (AssertionError, KeyError, AttributeError):
+                is_valid = False
+        if 'subclass_secondary_choice' in request_dict.keys():
+            try:
+                class_choice = request_dict['class_choice']
+                class_template = self.content_source.get_class_template(class_choice)
+                subclass_choice = request_dict['subclass_secondary_choice']
+                assert (subclass_choice == 'random_subclass_secondary') \
+                       or subclass_choice in class_template.subclasses_secondary.keys()
+                clean_dict['subclass_secondary_choice'] = subclass_choice
+            except (AssertionError, KeyError, AttributeError):
+                is_valid = False
 
         if 'hit_dice_num' in request_dict.keys():
             try:

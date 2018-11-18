@@ -663,3 +663,49 @@ class RaceClassOptionEntry(OptionMenuEntry):
 
 SPELLLISTS_FILE = \
     pkg.resource_filename(__name__, 'data/spelllists.csv')
+
+if 'race_choice' in request_dict.keys() \
+        and request_dict['race_choice'] in self.content_source.valid_user_race_choices():
+    clean_dict['race_choice'] = request_dict['race_choice']
+    race_template = self.content_source.get_race_template(request_dict['race_choice'])
+    if 'subrace_choice' in request_dict.keys():
+        if race_template.subraces:
+            if request_dict['subrace_choice'] == 'random':
+                clean_dict['subrace_choice'] = 'random'
+            elif request_dict['subrace_choice'] in race_template.subraces.keys():
+                clean_dict['subrace_choice'] = request_dict['subrace_choice']
+            else:
+                is_valid = False
+        else:
+            is_valid = False
+else:
+    is_valid = False
+    clean_dict['race_choice'] = self.get_random_option('race')
+
+if 'class_choice' in request_dict.keys() \
+        and request_dict['class_choice'] in self.content_source.valid_user_class_choices():
+    clean_dict['class_choice'] = request_dict['class_choice']
+    class_template = self.content_source.get_class_template(request_dict['class_choice'])
+    if 'subclass_primary_choice' in request_dict.keys():
+        if class_template.subclasses_primary:
+            if request_dict['subclass_primary_choice'] == 'random':
+                clean_dict['subclass_primary_choice'] = 'random'
+            elif request_dict['subclass_primary_choice'] in class_template.subclasses_primary.keys():
+                clean_dict['subclass_primary_choice'] = request_dict['subclass_primary_choice']
+            else:
+                is_valid = False
+        else:
+            is_valid = False
+    if 'subclass_secondary_choice' in request_dict.keys():
+        if class_template.subclasses_secondary:
+            if request_dict['subclass_secondary_choice'] == 'random':
+                clean_dict['subclass_secondary_choice'] = 'random'
+            elif request_dict['subclass_secondary_choice'] in class_template.subclasses_secondary.keys():
+                clean_dict['subclass_secondary_choice'] = request_dict['subclass_secondary_choice']
+            else:
+                is_valid = False
+        else:
+            is_valid = False
+else:
+    is_valid = False
+    clean_dict['class_choice'] = self.get_random_option('class')

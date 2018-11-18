@@ -587,6 +587,9 @@ class ContentSource:
             if race_template.subraces:
                 options_dict['race_options'][race_template.int_name]['subrace_label'] = race_template.subrace_label
                 options_dict['race_options'][race_template.int_name]['subraces'] = collections.OrderedDict()
+                # Add random option
+                options_dict['race_options'][race_template.int_name]['subraces']["random_" + race_template.int_name] = \
+                    {'display': "Random " + race_template.display_name}
                 for subrace_template in race_template.subraces.values():
                     assert isinstance(subrace_template, SubraceTemplate)
                     if subrace_template.display_name:
