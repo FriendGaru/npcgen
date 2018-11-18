@@ -614,6 +614,9 @@ class ContentSource:
                 options_dict['class_options'][class_template.int_name]['subclass_primary_label'] = \
                     class_template.subclass_primary_label
                 options_dict['class_options'][class_template.int_name]['subclasses_primary'] = collections.OrderedDict()
+                # Random Option
+                options_dict['class_options'][class_template.int_name]['subclasses_primary']["random_subclass_primary"] = \
+                    {'display': "Random " + class_template.subclass_primary_label}
                 for subclass_template in class_template.subclasses_primary.values():
                     assert isinstance(subclass_template, SubclassTemplate)
                     if subclass_template.display_name:
@@ -626,6 +629,10 @@ class ContentSource:
                 options_dict['class_options'][class_template.int_name]['subclass_secondary_label'] = \
                     class_template.subclass_secondary_label
                 options_dict['class_options'][class_template.int_name]['subclasses_secondary'] = collections.OrderedDict()
+                # Random option
+                options_dict['class_options'][class_template.int_name]['subclasses_secondary'][
+                    "random_subclass_secondary"] = \
+                    {'display': "Random " + class_template.subclass_secondary_label}
                 for subclass_template in class_template.subclasses_secondary.values():
                     assert isinstance(subclass_template, SubclassTemplate)
                     if subclass_template.display_name:
